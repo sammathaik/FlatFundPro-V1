@@ -24,7 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth check timeout - allowing page to load');
+        setLoading(false);
+      }
+    }, 3000);
+
+    checkUser().finally(() => clearTimeout(timeoutId));
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
@@ -40,13 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      clearTimeout(timeoutId);
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   async function checkUser() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Error getting session:', error);
+        setLoading(false);
+        return;
+      }
       if (session?.user) {
         setUser(session.user);
         await loadUserRole(session.user.id);
