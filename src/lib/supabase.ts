@@ -89,6 +89,18 @@ export interface PaymentSubmission {
   reviewed_by?: string;
   reviewed_at?: string;
   created_at?: string;
+  payer_name?: string;
+  payee_name?: string;
+  bank_name?: string;
+  currency?: string;
+  platform?: string;
+  payment_type?: string;
+  sender_upi_id?: string;
+  receiver_account?: string;
+  ifsc_code?: string;
+  narration?: string;
+  screenshot_source?: string;
+  other_text?: string;
 }
 
 export interface AuditLog {

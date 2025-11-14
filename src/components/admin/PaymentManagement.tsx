@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check } from 'lucide-react';
+import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
@@ -20,6 +20,18 @@ interface PaymentWithDetails {
   created_at: string;
   block: { block_name: string };
   flat: { flat_number: string };
+  payer_name?: string | null;
+  payee_name?: string | null;
+  bank_name?: string | null;
+  currency?: string | null;
+  platform?: string | null;
+  payment_type?: string | null;
+  sender_upi_id?: string | null;
+  receiver_account?: string | null;
+  ifsc_code?: string | null;
+  narration?: string | null;
+  screenshot_source?: string | null;
+  other_text?: string | null;
 }
 
 export default function PaymentManagement() {
@@ -33,6 +45,17 @@ export default function PaymentManagement() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<'Received' | 'Reviewed' | 'Approved'>('Received');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (paymentId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(paymentId)) {
+      newExpanded.delete(paymentId);
+    } else {
+      newExpanded.add(paymentId);
+    }
+    setExpandedRows(newExpanded);
+  };
 
   useEffect(() => {
     if (adminData?.apartment_id) {
@@ -165,6 +188,18 @@ export default function PaymentManagement() {
       status: payment.status,
       submitted_at: payment.created_at,
       screenshot_url: payment.screenshot_url,
+      payer_name: payment.payer_name || '',
+      payee_name: payment.payee_name || '',
+      bank_name: payment.bank_name || '',
+      currency: payment.currency || '',
+      platform: payment.platform || '',
+      payment_type: payment.payment_type || '',
+      sender_upi_id: payment.sender_upi_id || '',
+      receiver_account: payment.receiver_account || '',
+      ifsc_code: payment.ifsc_code || '',
+      narration: payment.narration || '',
+      screenshot_source: payment.screenshot_source || '',
+      other_text: payment.other_text || '',
     }));
 
     exportToCSV(exportData, 'payment_submissions');
@@ -255,6 +290,9 @@ export default function PaymentManagement() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">
+
+              </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Location
               </th>
@@ -271,9 +309,6 @@ export default function PaymentManagement() {
                 Txn Ref
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Comments
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -286,79 +321,186 @@ export default function PaymentManagement() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {filteredPayments.map((payment) => (
-              <tr key={payment.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  <div className="font-medium">{payment.block?.block_name}</div>
-                  <div className="text-gray-500">{payment.flat?.flat_number}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{payment.name}</div>
-                  <div className="text-xs text-gray-500">{payment.email}</div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {payment.payment_quarter || '-'}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {payment.transaction_reference ? (
-                    <span className="font-mono text-xs">{payment.transaction_reference}</span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
-                  {payment.comments ? (
-                    <span className="truncate block" title={payment.comments}>{payment.comments}</span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      payment.status === 'Approved'
-                        ? 'bg-green-100 text-green-800'
-                        : payment.status === 'Reviewed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    {payment.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {payment.payment_date ? formatDate(payment.payment_date) : formatDateTime(payment.created_at)}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+              <>
+                <tr key={payment.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
                     <button
-                      onClick={() => {
-                        setSelectedPayment(payment);
-                      }}
-                      className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                      title="View Details"
+                      onClick={() => toggleRow(payment.id)}
+                      className="p-1 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                      title={expandedRows.has(payment.id) ? "Collapse" : "Expand"}
                     >
-                      <Eye className="w-4 h-4" />
+                      {expandedRows.has(payment.id) ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
                     </button>
-                    <button
-                      onClick={() => openStatusModal(payment)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Update Status"
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div className="font-medium">{payment.block?.block_name}</div>
+                    <div className="text-gray-500">{payment.flat?.flat_number}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">{payment.name}</div>
+                    <div className="text-xs text-gray-500">{payment.email}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    {payment.payment_quarter || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {payment.transaction_reference ? (
+                      <span className="font-mono text-xs">{payment.transaction_reference}</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        payment.status === 'Approved'
+                          ? 'bg-green-100 text-green-800'
+                          : payment.status === 'Reviewed'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
                     >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deletePayment(payment)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                      {payment.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {payment.payment_date ? formatDate(payment.payment_date) : formatDateTime(payment.created_at)}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedPayment(payment);
+                        }}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openStatusModal(payment)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Update Status"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => deletePayment(payment)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {expandedRows.has(payment.id) && (
+                  <tr key={`${payment.id}-details`} className="bg-amber-50">
+                    <td colSpan={9} className="px-6 py-4">
+                      <div className="bg-white rounded-lg border border-amber-200 p-4">
+                        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <span className="w-1 h-4 bg-amber-600 rounded"></span>
+                          Payment Details
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {payment.payer_name && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payer Name</label>
+                              <p className="text-sm text-gray-900">{payment.payer_name}</p>
+                            </div>
+                          )}
+                          {payment.payee_name && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payee Name</label>
+                              <p className="text-sm text-gray-900">{payment.payee_name}</p>
+                            </div>
+                          )}
+                          {payment.bank_name && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Bank Name</label>
+                              <p className="text-sm text-gray-900">{payment.bank_name}</p>
+                            </div>
+                          )}
+                          {payment.currency && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Currency</label>
+                              <p className="text-sm text-gray-900">{payment.currency}</p>
+                            </div>
+                          )}
+                          {payment.platform && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Platform</label>
+                              <p className="text-sm text-gray-900">{payment.platform}</p>
+                            </div>
+                          )}
+                          {payment.payment_type && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payment Type</label>
+                              <p className="text-sm text-gray-900">{payment.payment_type}</p>
+                            </div>
+                          )}
+                          {payment.sender_upi_id && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Sender UPI ID</label>
+                              <p className="text-sm text-gray-900 font-mono">{payment.sender_upi_id}</p>
+                            </div>
+                          )}
+                          {payment.receiver_account && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Receiver Account</label>
+                              <p className="text-sm text-gray-900 font-mono">{payment.receiver_account}</p>
+                            </div>
+                          )}
+                          {payment.ifsc_code && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">IFSC Code</label>
+                              <p className="text-sm text-gray-900 font-mono">{payment.ifsc_code}</p>
+                            </div>
+                          )}
+                          {payment.screenshot_source && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Screenshot Source</label>
+                              <p className="text-sm text-gray-900">{payment.screenshot_source}</p>
+                            </div>
+                          )}
+                        </div>
+                        {payment.narration && (
+                          <div className="mt-4">
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Narration</label>
+                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.narration}</p>
+                          </div>
+                        )}
+                        {payment.comments && (
+                          <div className="mt-4">
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Comments</label>
+                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.comments}</p>
+                          </div>
+                        )}
+                        {payment.other_text && (
+                          <div className="mt-4">
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Other Information</label>
+                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.other_text}</p>
+                          </div>
+                        )}
+                        {!payment.payer_name && !payment.payee_name && !payment.bank_name && !payment.currency &&
+                         !payment.platform && !payment.payment_type && !payment.sender_upi_id && !payment.receiver_account &&
+                         !payment.ifsc_code && !payment.narration && !payment.screenshot_source && !payment.other_text && (
+                          <div className="text-sm text-gray-500 italic">
+                            No additional payment details available. Details will be populated automatically via make.com integration.
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
