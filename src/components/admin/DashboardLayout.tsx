@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 
@@ -24,6 +24,8 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
+    { id: 'payment-setup', label: 'Payment Setup', icon: FileText },
+    { id: 'payment-status', label: 'Payment Status', icon: BarChart3 },
   ];
 
   const tabs = isSuperAdmin ? superAdminTabs : adminTabs;

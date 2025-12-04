@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import React from 'react';
+import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
@@ -34,6 +35,12 @@ interface PaymentWithDetails {
   other_text?: string | null;
 }
 
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  maintenance: 'Maintenance',
+  contingency: 'Contingency',
+  emergency: 'Emergency',
+};
+
 export default function PaymentManagement() {
   const { adminData } = useAuth();
   const [payments, setPayments] = useState<PaymentWithDetails[]>([]);
@@ -42,10 +49,13 @@ export default function PaymentManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [quarterFilter, setQuarterFilter] = useState('all');
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState('all');
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<'Received' | 'Reviewed' | 'Approved'>('Received');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -57,6 +67,24 @@ export default function PaymentManagement() {
     setExpandedRows(newExpanded);
   };
 
+  const toggleSelect = (paymentId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(paymentId)) {
+      newSelected.delete(paymentId);
+    } else {
+      newSelected.add(paymentId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredPayments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredPayments.map(p => p.id)));
+    }
+  };
+
   useEffect(() => {
     if (adminData?.apartment_id) {
       loadPayments();
@@ -65,7 +93,7 @@ export default function PaymentManagement() {
 
   useEffect(() => {
     filterPayments();
-  }, [payments, searchTerm, statusFilter, quarterFilter]);
+  }, [payments, searchTerm, statusFilter, quarterFilter, paymentTypeFilter]);
 
   async function loadPayments() {
     if (!adminData?.apartment_id) return;
@@ -112,6 +140,10 @@ export default function PaymentManagement() {
       filtered = filtered.filter((p) => p.payment_quarter === quarterFilter);
     }
 
+    if (paymentTypeFilter !== 'all') {
+      filtered = filtered.filter((p) => (p.payment_type || '').toLowerCase() === paymentTypeFilter.toLowerCase());
+    }
+
     setFilteredPayments(filtered);
   }
 
@@ -119,6 +151,7 @@ export default function PaymentManagement() {
     setSelectedPayment(payment);
     setNewStatus(payment.status);
     setShowStatusModal(true);
+    setActionMenuOpen(null);
   }
 
   async function updateStatus() {
@@ -167,9 +200,46 @@ export default function PaymentManagement() {
         email: payment.email,
       });
 
+      setActionMenuOpen(null);
       loadPayments();
     } catch (error: any) {
       alert('Error deleting payment: ' + error.message);
+    }
+  }
+
+  async function deleteSelectedPayments() {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    if (!confirm(`Delete ${count} payment submission${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const idsToDelete = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('payment_submissions')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (error) throw error;
+
+      // Log audit for each deleted payment
+      for (const id of idsToDelete) {
+        const payment = payments.find(p => p.id === id);
+        if (payment) {
+          await logAudit('delete', 'payment_submissions', id, {
+            name: payment.name,
+            email: payment.email,
+            bulk_delete: true,
+          });
+        }
+      }
+
+      setSelectedIds(new Set());
+      loadPayments();
+    } catch (error: any) {
+      alert('Error deleting payments: ' + error.message);
     }
   }
 
@@ -207,6 +277,8 @@ export default function PaymentManagement() {
   }
 
   const statusOptions: Array<'Received' | 'Reviewed' | 'Approved'> = ['Received', 'Reviewed', 'Approved'];
+  const allSelected = filteredPayments.length > 0 && selectedIds.size === filteredPayments.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < filteredPayments.length;
 
   if (loading) {
     return (
@@ -218,12 +290,21 @@ export default function PaymentManagement() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Payment Submissions</h2>
           <p className="text-gray-600 mt-1">Review and manage payment proofs from residents</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={deleteSelectedPayments}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Selected ({selectedIds.size})
+            </button>
+          )}
           <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium"
@@ -278,20 +359,47 @@ export default function PaymentManagement() {
             <option value="Approved">Approved</option>
           </select>
         </div>
+        <div className="sm:w-60 relative">
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <select
+            value={paymentTypeFilter}
+            onChange={(e) => setPaymentTypeFilter(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
+          >
+            <option value="all">All Payment Types</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="contingency">Contingency</option>
+            <option value="emergency">Emergency</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
         <p className="text-sm text-blue-800">
           Showing {filteredPayments.length} of {payments.length} payment submissions
+          {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">
-
+              <th className="px-4 py-3 text-left w-12">
+                <button
+                  onClick={toggleSelectAll}
+                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                  title={allSelected ? "Deselect all" : "Select all"}
+                >
+                  {allSelected ? (
+                    <CheckSquare className="w-5 h-5 text-amber-600" />
+                  ) : someSelected ? (
+                    <div className="w-5 h-5 border-2 border-amber-600 bg-amber-50 rounded"></div>
+                  ) : (
+                    <Square className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Location
@@ -303,59 +411,48 @@ export default function PaymentManagement() {
                 Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Quarter
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Txn Ref
+                Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Payment Date
+                Date
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {filteredPayments.map((payment) => (
-              <>
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
+              <React.Fragment key={payment.id}>
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-4">
                     <button
-                      onClick={() => toggleRow(payment.id)}
-                      className="p-1 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                      title={expandedRows.has(payment.id) ? "Collapse" : "Expand"}
+                      onClick={() => toggleSelect(payment.id)}
+                      className="p-1 hover:bg-gray-200 rounded transition-colors"
                     >
-                      {expandedRows.has(payment.id) ? (
-                        <ChevronUp className="w-5 h-5" />
+                      {selectedIds.has(payment.id) ? (
+                        <CheckSquare className="w-5 h-5 text-amber-600" />
                       ) : (
-                        <ChevronDown className="w-5 h-5" />
+                        <Square className="w-5 h-5 text-gray-400" />
                       )}
                     </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     <div className="font-medium">{payment.block?.block_name}</div>
-                    <div className="text-gray-500">{payment.flat?.flat_number}</div>
+                    <div className="text-gray-500 text-xs">{payment.flat?.flat_number}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">{payment.name}</div>
                     <div className="text-xs text-gray-500">{payment.email}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                     {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {payment.payment_quarter || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {payment.transaction_reference ? (
-                      <span className="font-mono text-xs">{payment.transaction_reference}</span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -371,45 +468,92 @@ export default function PaymentManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {payment.payment_date ? formatDate(payment.payment_date) : formatDateTime(payment.created_at)}
+                    {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => {
-                          setSelectedPayment(payment);
-                        }}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="View Details"
+                        onClick={() => toggleRow(payment.id)}
+                        className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title={expandedRows.has(payment.id) ? "Collapse" : "Expand"}
                       >
-                        <Eye className="w-4 h-4" />
+                        {expandedRows.has(payment.id) ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
                       </button>
-                      <button
-                        onClick={() => openStatusModal(payment)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Update Status"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deletePayment(payment)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setActionMenuOpen(actionMenuOpen === payment.id ? null : payment.id)}
+                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="More actions"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {actionMenuOpen === payment.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActionMenuOpen(null)}
+                            ></div>
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                              <button
+                                onClick={() => {
+                                  setSelectedPayment(payment);
+                                  setActionMenuOpen(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => openStatusModal(payment)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                Update Status
+                              </button>
+                              <button
+                                onClick={() => deletePayment(payment)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
                 {expandedRows.has(payment.id) && (
                   <tr key={`${payment.id}-details`} className="bg-amber-50">
-                    <td colSpan={9} className="px-6 py-4">
+                    <td colSpan={8} className="px-6 py-4">
                       <div className="bg-white rounded-lg border border-amber-200 p-4">
                         <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <span className="w-1 h-4 bg-amber-600 rounded"></span>
-                          Payment Details
+                          Complete Payment Details
                         </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Contact Number</label>
+                            <p className="text-sm text-gray-900">{payment.contact_number || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Quarter</label>
+                            <p className="text-sm text-gray-900">{payment.payment_quarter || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Transaction Ref</label>
+                            <p className="text-sm text-gray-900 font-mono text-xs">{payment.transaction_reference || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Submitted On</label>
+                            <p className="text-sm text-gray-900">{formatDateTime(payment.created_at)}</p>
+                          </div>
                           {payment.payer_name && (
                             <div>
                               <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payer Name</label>
@@ -440,28 +584,22 @@ export default function PaymentManagement() {
                               <p className="text-sm text-gray-900">{payment.platform}</p>
                             </div>
                           )}
-                          {payment.payment_type && (
-                            <div>
-                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payment Type</label>
-                              <p className="text-sm text-gray-900">{payment.payment_type}</p>
-                            </div>
-                          )}
                           {payment.sender_upi_id && (
                             <div>
                               <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Sender UPI ID</label>
-                              <p className="text-sm text-gray-900 font-mono">{payment.sender_upi_id}</p>
+                              <p className="text-sm text-gray-900 font-mono text-xs">{payment.sender_upi_id}</p>
                             </div>
                           )}
                           {payment.receiver_account && (
                             <div>
                               <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Receiver Account</label>
-                              <p className="text-sm text-gray-900 font-mono">{payment.receiver_account}</p>
+                              <p className="text-sm text-gray-900 font-mono text-xs">{payment.receiver_account}</p>
                             </div>
                           )}
                           {payment.ifsc_code && (
                             <div>
                               <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">IFSC Code</label>
-                              <p className="text-sm text-gray-900 font-mono">{payment.ifsc_code}</p>
+                              <p className="text-sm text-gray-900 font-mono text-xs">{payment.ifsc_code}</p>
                             </div>
                           )}
                           {payment.screenshot_source && (
@@ -471,39 +609,276 @@ export default function PaymentManagement() {
                             </div>
                           )}
                         </div>
-                        {payment.narration && (
-                          <div className="mt-4">
-                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Narration</label>
-                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.narration}</p>
+                        {(payment.narration || payment.comments || payment.other_text) && (
+                          <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                            {payment.narration && (
+                              <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Narration</label>
+                                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.narration}</p>
+                              </div>
+                            )}
+                            {payment.comments && (
+                              <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Comments</label>
+                                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.comments}</p>
+                              </div>
+                            )}
+                            {payment.other_text && (
+                              <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Other Information</label>
+                                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.other_text}</p>
+                              </div>
+                            )}
                           </div>
                         )}
-                        {payment.comments && (
-                          <div className="mt-4">
-                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Comments</label>
-                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.comments}</p>
-                          </div>
-                        )}
-                        {payment.other_text && (
-                          <div className="mt-4">
-                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Other Information</label>
-                            <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.other_text}</p>
-                          </div>
-                        )}
-                        {!payment.payer_name && !payment.payee_name && !payment.bank_name && !payment.currency &&
-                         !payment.platform && !payment.payment_type && !payment.sender_upi_id && !payment.receiver_account &&
-                         !payment.ifsc_code && !payment.narration && !payment.screenshot_source && !payment.other_text && (
-                          <div className="text-sm text-gray-500 italic">
-                            No additional payment details available. Details will be populated automatically via make.com integration.
+                        {payment.screenshot_url && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <label className="text-xs font-semibold text-gray-500 uppercase block mb-2">Payment Screenshot</label>
+                            <a
+                              href={payment.screenshot_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
+                            >
+                              View Screenshot →
+                            </a>
                           </div>
                         )}
                       </div>
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
+
+        {filteredPayments.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No payment submissions found matching your criteria.
+          </div>
+        )}
+      </div>
+
+      {/* Mobile/Tablet Card View */}
+      <div className="lg:hidden space-y-4">
+        {filteredPayments.map((payment) => (
+          <div key={payment.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <button
+                    onClick={() => toggleSelect(payment.id)}
+                    className="mt-1 p-1"
+                  >
+                    {selectedIds.has(payment.id) ? (
+                      <CheckSquare className="w-5 h-5 text-amber-600" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">{payment.name}</h3>
+                      <span
+                        className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 ${
+                          payment.status === 'Approved'
+                            ? 'bg-green-100 text-green-800'
+                            : payment.status === 'Reviewed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {payment.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 truncate">{payment.email}</p>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-gray-600">
+                      <span className="font-medium">{payment.block?.block_name}</span>
+                      <span>•</span>
+                      <span>{payment.flat?.flat_number}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setActionMenuOpen(actionMenuOpen === payment.id ? null : payment.id)}
+                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                  {actionMenuOpen === payment.id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setActionMenuOpen(null)}
+                      ></div>
+                      <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                        <button
+                          onClick={() => {
+                            setSelectedPayment(payment);
+                            setActionMenuOpen(null);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => openStatusModal(payment)}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Update Status
+                        </button>
+                        <button
+                          onClick={() => deletePayment(payment)}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Amount</label>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Type</label>
+                  <p className="text-sm text-gray-900">
+                    {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Date</label>
+                  <p className="text-sm text-gray-900">
+                    {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Quarter</label>
+                  <p className="text-sm text-gray-900">{payment.payment_quarter || '-'}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => toggleRow(payment.id)}
+                className="w-full mt-3 pt-3 border-t border-gray-200 flex items-center justify-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium"
+              >
+                {expandedRows.has(payment.id) ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    Hide Details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    Show All Details
+                  </>
+                )}
+              </button>
+
+              {expandedRows.has(payment.id) && (
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    {payment.contact_number && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Contact</label>
+                        <p className="text-sm text-gray-900">{payment.contact_number}</p>
+                      </div>
+                    )}
+                    {payment.transaction_reference && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Txn Ref</label>
+                        <p className="text-sm text-gray-900 font-mono text-xs break-all">{payment.transaction_reference}</p>
+                      </div>
+                    )}
+                    {payment.payer_name && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payer</label>
+                        <p className="text-sm text-gray-900">{payment.payer_name}</p>
+                      </div>
+                    )}
+                    {payment.payee_name && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payee</label>
+                        <p className="text-sm text-gray-900">{payment.payee_name}</p>
+                      </div>
+                    )}
+                    {payment.bank_name && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Bank</label>
+                        <p className="text-sm text-gray-900">{payment.bank_name}</p>
+                      </div>
+                    )}
+                    {payment.platform && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Platform</label>
+                        <p className="text-sm text-gray-900">{payment.platform}</p>
+                      </div>
+                    )}
+                    {payment.sender_upi_id && (
+                      <div className="col-span-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Sender UPI</label>
+                        <p className="text-sm text-gray-900 font-mono text-xs break-all">{payment.sender_upi_id}</p>
+                      </div>
+                    )}
+                    {payment.receiver_account && (
+                      <div className="col-span-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Receiver Account</label>
+                        <p className="text-sm text-gray-900 font-mono text-xs break-all">{payment.receiver_account}</p>
+                      </div>
+                    )}
+                    {payment.ifsc_code && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">IFSC</label>
+                        <p className="text-sm text-gray-900 font-mono text-xs">{payment.ifsc_code}</p>
+                      </div>
+                    )}
+                  </div>
+                  {payment.narration && (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Narration</label>
+                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-200">{payment.narration}</p>
+                    </div>
+                  )}
+                  {payment.comments && (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Comments</label>
+                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-200">{payment.comments}</p>
+                    </div>
+                  )}
+                  {payment.other_text && (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Other Info</label>
+                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-200">{payment.other_text}</p>
+                    </div>
+                  )}
+                  {payment.screenshot_url && (
+                    <div>
+                      <a
+                        href={payment.screenshot_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
+                      >
+                        View Screenshot →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
 
         {filteredPayments.length === 0 && (
           <div className="text-center py-12 text-gray-500">
@@ -655,7 +1030,7 @@ export default function PaymentManagement() {
                         name="status"
                         value={status}
                         checked={newStatus === status}
-                        onChange={(e) => setNewStatus(e.target.value as any)}
+                        onChange={(e) => setNewStatus(e.target.value as 'Received' | 'Reviewed' | 'Approved')}
                         className="mr-3"
                       />
                       <span className="font-medium text-gray-900">{status}</span>

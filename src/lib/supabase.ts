@@ -31,6 +31,7 @@ export interface Apartment {
   city?: string;
   country?: string;
   status: 'active' | 'inactive';
+  public_access_code?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +60,7 @@ export interface Admin {
   phone: string | null;
   status: 'active' | 'inactive';
   created_at: string;
+  apartment?: Apartment;
 }
 
 export interface SuperAdmin {
@@ -101,8 +103,23 @@ export interface PaymentSubmission {
   narration?: string;
   screenshot_source?: string;
   other_text?: string;
+  expected_collection_id?: string | null;
 }
 
+export interface ExpectedCollection {
+  id: string;
+  apartment_id: string;
+  payment_type: 'maintenance' | 'contingency' | 'emergency';
+  financial_year: string;
+  quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  quarter_basis?: 'financial' | 'yearly';
+  due_date: string;
+  amount_due: number;
+  daily_fine: number;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
 export interface AuditLog {
   id?: string;
   user_id?: string;

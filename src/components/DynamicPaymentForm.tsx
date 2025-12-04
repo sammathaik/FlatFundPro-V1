@@ -12,6 +12,7 @@ interface FormData {
   payment_amount: string;
   payment_date: string;
   screenshot: File | null;
+  payment_type: string;
 }
 
 interface FormErrors {
@@ -20,6 +21,7 @@ interface FormErrors {
   block?: string;
   flat?: string;
   email?: string;
+  payment_type?: string;
   screenshot?: string;
   submit?: string;
 }
@@ -43,12 +45,15 @@ export default function DynamicPaymentForm() {
     payment_amount: '',
     payment_date: '',
     screenshot: null,
+    payment_type: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<{ date: string; quarter: string } | null>(null);
 
   useEffect(() => {
     loadApartments();
@@ -153,6 +158,10 @@ export default function DynamicPaymentForm() {
       newErrors.email = 'Please enter a valid email address';
     }
 
+    if (!formData.payment_type) {
+      newErrors.payment_type = 'Please choose what this payment is for';
+    }
+
     if (!formData.screenshot) {
       newErrors.screenshot = 'Payment screenshot is required';
     } else {
@@ -202,6 +211,80 @@ export default function DynamicPaymentForm() {
     }
   };
 
+  // Calculate payment quarter from payment_date (matching database function logic)
+  const calculatePaymentQuarter = (paymentDate: string | null, submissionDate: Date = new Date()): string => {
+    let date: Date;
+    
+    if (paymentDate) {
+      date = new Date(paymentDate);
+    } else {
+      date = submissionDate;
+    }
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // 1-12
+
+    let quarter: number;
+    if (month >= 4 && month <= 6) {
+      quarter = 1; // Q1: Apr-Jun
+    } else if (month >= 7 && month <= 9) {
+      quarter = 2; // Q2: Jul-Sep
+    } else if (month >= 10 && month <= 12) {
+      quarter = 3; // Q3: Oct-Dec
+    } else {
+      quarter = 4; // Q4: Jan-Mar
+    }
+
+    return `Q${quarter}-${year}`;
+  };
+
+  // Check for duplicate submissions using database function
+  // Duplicate is defined as: same block_id, flat_id, and payment_quarter (regardless of payment_type)
+  const checkForDuplicate = async (): Promise<{ isDuplicate: boolean; existingRecord?: any }> => {
+    if (!formData.blockId || !formData.flatId) {
+      return { isDuplicate: false };
+    }
+
+    try {
+      // Use the database function to check for duplicates
+      // This function has SECURITY DEFINER so it can check all records regardless of RLS
+      const { data, error } = await supabase.rpc('check_payment_duplicate', {
+        p_block_id: formData.blockId,
+        p_flat_id: formData.flatId,
+        p_payment_date: formData.payment_date || null,
+        p_submission_date: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error('Error checking for duplicates:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        // If function doesn't exist, log but don't block (allows migration to be run later)
+        // But we should still try to prevent duplicates
+        alert('Warning: Duplicate check is not available. Please ensure you are not submitting a duplicate payment.');
+        return { isDuplicate: false };
+      }
+
+      if (data && data.length > 0 && data[0].is_duplicate) {
+        return { 
+          isDuplicate: true, 
+          existingRecord: {
+            payment_date: data[0].existing_payment_date,
+            created_at: data[0].existing_created_at,
+            payment_quarter: data[0].existing_quarter,
+            payment_type: data[0].existing_payment_type,
+          }
+        };
+      }
+
+      return { isDuplicate: false };
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+      // On error, we should still warn the user
+      alert('Warning: Could not verify for duplicates. Please ensure you are not submitting a duplicate payment.');
+      return { isDuplicate: false };
+    }
+  };
+
   const uploadScreenshot = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${formData.flatId.replace(/\s+/g, '_')}.${fileExt}`;
@@ -229,7 +312,36 @@ export default function DynamicPaymentForm() {
       return;
     }
 
-    setShowConfirmDialog(true);
+    // Check for duplicate before showing confirm dialog
+    setSubmissionState('loading');
+    try {
+      const duplicateCheck = await checkForDuplicate();
+      
+      if (duplicateCheck.isDuplicate) {
+        setSubmissionState('idle');
+        const existingRecord = duplicateCheck.existingRecord;
+        const existingDate = existingRecord.payment_date 
+          ? new Date(existingRecord.payment_date).toLocaleDateString()
+          : new Date(existingRecord.created_at).toLocaleDateString();
+        
+        setDuplicateInfo({
+          date: existingDate,
+          quarter: existingRecord.payment_quarter || calculatePaymentQuarter(formData.payment_date || null),
+        });
+        setShowDuplicateAlert(true);
+        return;
+      }
+      
+      setSubmissionState('idle');
+      setShowConfirmDialog(true);
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      setSubmissionState('idle');
+      // Still allow submission if check fails, but warn user
+      if (confirm('Warning: Could not verify for duplicates. Do you want to proceed with submission?')) {
+        setShowConfirmDialog(true);
+      }
+    }
   };
 
   const handleConfirmSubmit = async () => {
@@ -253,10 +365,15 @@ export default function DynamicPaymentForm() {
         email: formData.email.trim(),
         contact_number: formData.contact_number.trim() || undefined,
         payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : undefined,
-        payment_date: formData.payment_date || undefined,
+        // Ensure payment_date is saved if provided (even if empty string, convert to undefined)
+        payment_date: formData.payment_date && formData.payment_date.trim() ? formData.payment_date.trim() : undefined,
+        payment_type: formData.payment_type,
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
       };
+      
+      // Debug log to verify payment_date is being saved
+      console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
 
       const { error: dbError } = await supabase
         .from('payment_submissions')
@@ -551,6 +668,30 @@ export default function DynamicPaymentForm() {
               </div>
 
               <div>
+                <label htmlFor="payment_type" className="block text-sm font-semibold text-gray-700 mb-2">
+                  What is this payment for? <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="payment_type"
+                  name="payment_type"
+                  value={formData.payment_type}
+                  onChange={handleInputChange}
+                  disabled={submissionState === 'loading'}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    errors.payment_type ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">-- Select Type --</option>
+                  <option value="maintenance">Maintenance collection</option>
+                  <option value="contingency">Contingency fund</option>
+                  <option value="emergency">Emergency fund</option>
+                </select>
+                {errors.payment_type && (
+                  <p className="mt-1 text-sm text-red-600">{errors.payment_type}</p>
+                )}
+              </div>
+
+              <div>
                 <label htmlFor="payment_date" className="block text-sm font-semibold text-gray-700 mb-2">
                   Payment or Transaction Date
                 </label>
@@ -654,6 +795,77 @@ export default function DynamicPaymentForm() {
                 {submissionState === 'loading' ? 'Uploading...' : 'Upload & Submit'}
               </button>
             </form>
+
+            {showDuplicateAlert && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDuplicateAlert(false)}>
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="w-10 h-10 text-red-600" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-gray-800 text-center mb-4">
+                    Duplicate Submission Detected
+                  </h3>
+
+                  <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+                    <p className="text-sm text-red-800 font-semibold mb-2">
+                      A similar payment submission has already been received for:
+                    </p>
+                    <div className="space-y-2 text-sm text-red-700">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Building/Block:</span>
+                        <span>{getSelectedBlockName()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Flat Number:</span>
+                        <span>{getSelectedFlatNumber()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Quarter:</span>
+                        <span>{duplicateInfo?.quarter || 'N/A'}</span>
+                      </div>
+                      {duplicateInfo && (
+                        <div className="mt-3 pt-3 border-t border-red-200">
+                          <p className="text-xs text-red-700">
+                            <strong>Note:</strong> A payment submission already exists for this flat, block, and quarter combination, regardless of payment type.
+                          </p>
+                        </div>
+                      )}
+                      {duplicateInfo?.date && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Previous Submission Date:</span>
+                          <span>{duplicateInfo.date}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded">
+                    <p className="text-sm text-amber-800">
+                      <strong>Please Note:</strong> A payment submission for this building, flat, payment type, and quarter has already been received.
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+                    <p className="text-sm text-blue-800">
+                      <strong>Next Steps:</strong> If you believe this is an error or need to submit a different payment, please reach out to your <strong>Admin/Secretary/Treasurer</strong> for further clarification before submitting again.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowDuplicateAlert(false);
+                      setDuplicateInfo(null);
+                    }}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
+                  >
+                    Understood
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showConfirmDialog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowConfirmDialog(false)}>

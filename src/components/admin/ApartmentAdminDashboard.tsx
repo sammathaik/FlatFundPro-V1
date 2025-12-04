@@ -3,6 +3,8 @@ import DashboardLayout from './DashboardLayout';
 import ApartmentAdminOverview from './ApartmentAdminOverview';
 import BuildingManagement from './BuildingManagement';
 import PaymentManagement from './PaymentManagement';
+import AdminPaymentStatusTab from './AdminPaymentStatusTab';
+import ExpectedCollectionsAdmin from './ExpectedCollectionsAdmin';
 
 export default function ApartmentAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -12,6 +14,8 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'overview' && <ApartmentAdminOverview />}
       {activeTab === 'buildings' && <BuildingManagement />}
       {activeTab === 'payments' && <PaymentManagement />}
+      {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
+      {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
     </DashboardLayout>
   );
 }

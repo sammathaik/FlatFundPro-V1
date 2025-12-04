@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
 import { Loader2 } from 'lucide-react';
+import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 
 function App() {
   const { user, userRole, loading } = useAuth();
@@ -73,6 +74,10 @@ function App() {
       return null;
     }
     return <LoginPage portalType="super-admin" onBack={() => navigate('/super-admin')} />;
+  }
+
+  if (currentPath.startsWith('/admin/payment-status')) {
+    return <PublicPaymentStatusPage navigate={navigate} />;
   }
 
   if (currentPath === '/admin') {
