@@ -8,6 +8,7 @@ import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
 import { Loader2 } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
+import { DiagnosticPage } from './components/DiagnosticPage';
 
 function App() {
   const { user, userRole, loading } = useAuth();
@@ -26,6 +27,10 @@ function App() {
     window.history.pushState({}, '', path);
     setCurrentPath(path);
   };
+
+  if (currentPath === '/diagnostic') {
+    return <DiagnosticPage />;
+  }
 
   if (loading) {
     return (
