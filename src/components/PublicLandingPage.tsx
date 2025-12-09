@@ -35,6 +35,14 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
 
       <div className="bg-gray-900 text-white py-8">
         <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-6">
+            <button
+              onClick={() => onNavigate('/marketing')}
+              className="text-white hover:text-amber-300 font-medium text-sm transition-colors border border-white hover:border-amber-300 px-6 py-3 rounded-lg"
+            >
+              Learn More About FlatFund Pro →
+            </button>
+          </div>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
             <button
               onClick={() => onNavigate('/admin')}

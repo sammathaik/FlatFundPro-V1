@@ -6,6 +6,7 @@ import SuperAdminLandingPage from './components/admin/SuperAdminLandingPage';
 import LoginPage from './components/LoginPage';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
+import MarketingLandingPage from './components/MarketingLandingPage';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
@@ -168,6 +169,14 @@ function App() {
       return null;
     }
     return <LoginPage portalType="admin" onBack={() => navigate('/admin')} />;
+  }
+
+  if (currentPath === '/marketing' || currentPath === '/home') {
+    return <MarketingLandingPage />;
+  }
+
+  if (currentPath === '/login') {
+    return <LoginPage portalType="admin" onBack={() => navigate('/')} />;
   }
 
   return <PublicLandingPage onNavigate={navigate} />;
