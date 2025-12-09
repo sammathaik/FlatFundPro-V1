@@ -8,11 +8,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
     url: supabaseUrl,
+    allEnvVars: import.meta.env,
   });
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const fallbackUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const fallbackKey = supabaseAnonKey || 'placeholder-key';
+
+export const supabase = createClient(fallbackUrl, fallbackKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -24,6 +27,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 });
+
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
 export interface Apartment {
   id: string;

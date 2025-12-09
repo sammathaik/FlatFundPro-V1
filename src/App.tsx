@@ -6,9 +6,10 @@ import SuperAdminLandingPage from './components/admin/SuperAdminLandingPage';
 import LoginPage from './components/LoginPage';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
+import { isSupabaseConfigured } from './lib/supabase';
 
 function App() {
   const { user, userRole, loading } = useAuth();
@@ -30,6 +31,35 @@ function App() {
 
   if (currentPath === '/diagnostic') {
     return <DiagnosticPage />;
+  }
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl bg-white rounded-2xl shadow-xl p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <AlertTriangle className="w-12 h-12 text-red-600" />
+            <h1 className="text-3xl font-bold text-gray-800">Configuration Error</h1>
+          </div>
+          <p className="text-gray-600 mb-4">
+            The application cannot connect to the database because environment variables are missing.
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="font-semibold text-red-800 mb-2">Missing Configuration:</p>
+            <ul className="list-disc list-inside text-red-700 space-y-1">
+              <li>VITE_SUPABASE_URL</li>
+              <li>VITE_SUPABASE_ANON_KEY</li>
+            </ul>
+          </div>
+          <button
+            onClick={() => window.location.href = '/diagnostic'}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
+          >
+            View Diagnostic Page
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
