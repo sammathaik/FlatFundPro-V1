@@ -1,7 +1,19 @@
 import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target } from 'lucide-react';
 import { useState } from 'react';
 
-export default function MarketingLandingPage() {
+interface MarketingLandingPageProps {
+  navigate?: (path: string) => void;
+}
+
+export default function MarketingLandingPage({ navigate }: MarketingLandingPageProps = {}) {
+  const handleNavigate = (path: string) => {
+    if (navigate) {
+      navigate(path);
+    } else {
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,19 +61,19 @@ export default function MarketingLandingPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <a
-                href="/login"
+              <button
+                onClick={() => handleNavigate('/admin')}
                 className="hidden sm:inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors text-sm font-medium"
               >
                 Sign In
-              </a>
-              <a
-                href="/login"
+              </button>
+              <button
+                onClick={() => handleNavigate('/admin')}
                 className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm"
               >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -90,12 +102,12 @@ export default function MarketingLandingPage() {
                   Request Demo
                   <ArrowRight className="w-5 h-5" />
                 </a>
-                <a
-                  href="/login"
+                <button
+                  onClick={() => handleNavigate('/admin')}
                   className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 rounded-lg transition-colors font-semibold text-lg border-2 border-gray-200"
                 >
                   Try It Now
-                </a>
+                </button>
               </div>
               <div className="mt-8 flex items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
@@ -383,13 +395,13 @@ export default function MarketingLandingPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <a
-              href="/login"
+            <button
+              onClick={() => handleNavigate('/admin')}
               className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />
-            </a>
+            </button>
             <a
               href="#demo"
               className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-gray-900 px-8 py-4 rounded-lg transition-colors font-semibold text-lg"

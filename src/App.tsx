@@ -172,7 +172,7 @@ function App() {
   }
 
   if (currentPath === '/marketing' || currentPath === '/home') {
-    return <MarketingLandingPage />;
+    return <MarketingLandingPage navigate={navigate} />;
   }
 
   if (currentPath === '/login') {
