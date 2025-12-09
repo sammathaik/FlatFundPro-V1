@@ -1,5 +1,6 @@
 import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface MarketingLandingPageProps {
   navigate?: (path: string) => void;
@@ -30,18 +31,30 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
     setLoading(true);
 
     try {
-      const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const { error } = await supabase
+        .from('marketing_leads')
+        .insert([
+          {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone || null,
+            apartment_name: formData.apartment_name,
+            city: formData.city,
+            message: formData.message || null,
+            status: 'new'
+          }
+        ]);
 
-      if (response.ok) {
+      if (error) {
+        console.error('Error submitting form:', error);
+        alert('There was an error submitting your request. Please try again.');
+      } else {
         setSubmitted(true);
         setFormData({ name: '', email: '', phone: '', apartment_name: '', city: '', message: '' });
       }
     } catch (error) {
       console.error('Error submitting form:', error);
+      alert('There was an error submitting your request. Please try again.');
     } finally {
       setLoading(false);
     }

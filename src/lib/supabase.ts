@@ -135,3 +135,17 @@ export interface AuditLog {
   details?: Record<string, unknown>;
   created_at?: string;
 }
+
+export interface MarketingLead {
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  apartment_name: string;
+  city: string;
+  message?: string;
+  status?: 'new' | 'contacted' | 'qualified' | 'converted' | 'closed';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
