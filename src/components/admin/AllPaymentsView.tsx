@@ -115,18 +115,19 @@ export default function AllPaymentsView() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">All Payment Submissions</h2>
-          <p className="text-gray-600 mt-1">Read-only view of all payments across apartments</p>
+    <div className="overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">All Payment Submissions</h2>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Read-only view of all payments across apartments</p>
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap flex-shrink-0"
         >
           <Download className="w-4 h-4" />
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
+          <span className="sm:hidden">Export</span>
         </button>
       </div>
 
@@ -175,84 +176,88 @@ export default function AllPaymentsView() {
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Apartment
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Location
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Quarter
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Payment Date
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredPayments.map((payment) => (
-              <tr key={payment.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {payment.apartment?.apartment_name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {payment.block?.block_name} - {payment.flat?.flat_number}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{payment.name}</div>
-                  <div className="text-xs text-gray-500">{payment.email}</div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {payment.payment_quarter || '-'}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      payment.status === 'Approved'
-                        ? 'bg-green-100 text-green-800'
-                        : payment.status === 'Reviewed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    {payment.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {payment.payment_date ? formatDate(payment.payment_date) : formatDateTime(payment.created_at)}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => setSelectedPayment(payment)}
-                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <div className="inline-block min-w-full align-middle">
+          <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Apartment
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Location
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Name
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Amount
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Quarter
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Status
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Payment Date
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredPayments.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                      {payment.apartment?.apartment_name}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                      {payment.block?.block_name} - {payment.flat?.flat_number}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900 whitespace-nowrap">{payment.name}</div>
+                      <div className="text-xs text-gray-500 whitespace-nowrap">{payment.email}</div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                      {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                      {payment.payment_quarter || '-'}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                          payment.status === 'Approved'
+                            ? 'bg-green-100 text-green-800'
+                            : payment.status === 'Reviewed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                      {payment.payment_date ? formatDate(payment.payment_date) : formatDateTime(payment.created_at)}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {filteredPayments.length === 0 && (
           <div className="text-center py-12 text-gray-500">
