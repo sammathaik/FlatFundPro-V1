@@ -23,6 +23,7 @@ type PaymentSnapshot = {
   expected_collection_id: string | null;
   payment_amount: number | null;
   payment_type: string | null;
+  payment_source: string | null;
   payment_quarter: string | null;
   payment_date: string | null;
   status: string | null; // 'Received' | 'Reviewed' | 'Approved'

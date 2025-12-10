@@ -27,6 +27,7 @@ interface PaymentWithDetails {
   currency?: string | null;
   platform?: string | null;
   payment_type?: string | null;
+  payment_source?: string | null;
   sender_upi_id?: string | null;
   receiver_account?: string | null;
   ifsc_code?: string | null;
@@ -264,6 +265,7 @@ export default function PaymentManagement() {
       currency: payment.currency || '',
       platform: payment.platform || '',
       payment_type: payment.payment_type || '',
+      payment_source: payment.payment_source || '',
       sender_upi_id: payment.sender_upi_id || '',
       receiver_account: payment.receiver_account || '',
       ifsc_code: payment.ifsc_code || '',
@@ -584,6 +586,12 @@ export default function PaymentManagement() {
                               <p className="text-sm text-gray-900">{payment.platform}</p>
                             </div>
                           )}
+                          {payment.payment_source && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payment Method</label>
+                              <p className="text-sm text-gray-900">{payment.payment_source}</p>
+                            </div>
+                          )}
                           {payment.sender_upi_id && (
                             <div>
                               <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Sender UPI ID</label>
@@ -823,6 +831,12 @@ export default function PaymentManagement() {
                       <div>
                         <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Platform</label>
                         <p className="text-sm text-gray-900">{payment.platform}</p>
+                      </div>
+                    )}
+                    {payment.payment_source && (
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payment Method</label>
+                        <p className="text-sm text-gray-900">{payment.payment_source}</p>
                       </div>
                     )}
                     {payment.sender_upi_id && (
