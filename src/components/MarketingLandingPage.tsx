@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -331,67 +331,365 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Ease of Use Section */}
       <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <MousePointer className="w-4 h-4" />
+              Incredibly Simple
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              So Easy, Anyone Can Use It
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              No technical skills required. No training needed. If you can use WhatsApp, you can use FlatFund Pro.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              {
+                icon: MousePointer,
+                title: 'One-Click Actions',
+                description: 'Approve payments, send reminders, or generate reports with just one click',
+                color: 'blue'
+              },
+              {
+                icon: Smartphone,
+                title: 'Mobile Friendly',
+                description: 'Works perfectly on your phone, tablet, or computer. Manage on the go!',
+                color: 'green'
+              },
+              {
+                icon: Eye,
+                title: 'Clear Dashboard',
+                description: 'See everything at a glance. No confusing menus or hidden features',
+                color: 'purple'
+              },
+              {
+                icon: Zap,
+                title: '5-Minute Setup',
+                description: 'Import your data from Excel or add manually. Start in minutes, not days',
+                color: 'amber'
+              }
+            ].map((item, index) => (
+              <div key={index} className="bg-white border-2 border-gray-100 rounded-xl p-6 hover:border-amber-300 hover:shadow-lg transition-all">
+                <div className={`bg-${item.color}-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
+                  <item.icon className={`w-6 h-6 text-${item.color}-600`} />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 lg:p-12">
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Everything is Visual and Intuitive</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  step: 'Dashboard',
+                  description: 'Color-coded cards show you payment status instantly. Green means paid, Yellow means pending, Red means overdue.',
+                  icon: BarChart3
+                },
+                {
+                  step: 'Payment Tracking',
+                  description: 'Click on any flat to see full payment history. Filter by building, date, or status in one click.',
+                  icon: DollarSign
+                },
+                {
+                  step: 'Reports',
+                  description: 'Choose date range, click "Generate Report" and download Excel or PDF. That\'s it!',
+                  icon: FileText
+                }
+              ].map((item, index) => (
+                <div key={index} className="bg-white rounded-xl p-6 shadow-sm">
+                  <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                    <item.icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-2">{item.step}</h4>
+                  <p className="text-sm text-gray-600">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Real-World Use Cases */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              See How Societies Like Yours Benefit
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Real stories from real apartment admins who made the switch
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                society: 'Green Valley Apartments',
+                location: 'Mumbai',
+                flats: 120,
+                icon: Building2,
+                problem: 'Spent 15+ hours monthly chasing payments via phone calls',
+                solution: 'Now residents submit payments online. Auto-reminders handle follow-ups.',
+                result: 'Saves 12 hours/month. Collection rate improved from 70% to 92%',
+                admin: 'Priya S., Secretary'
+              },
+              {
+                society: 'Sunshine Residency',
+                location: 'Bangalore',
+                flats: 85,
+                icon: Building2,
+                problem: 'Excel sheets got corrupted. Lost 6 months of payment records',
+                solution: 'All data now secure in cloud. Can access from anywhere.',
+                result: 'Zero data loss. Full payment history always available',
+                admin: 'Rajesh K., Treasurer'
+              },
+              {
+                society: 'Palm Greens',
+                location: 'Pune',
+                flats: 200,
+                icon: Building2,
+                problem: 'Residents constantly questioned payment status transparency',
+                solution: 'Public payment status page lets everyone see who paid, who didn\'t',
+                result: 'No more disputes. Complete transparency builds trust',
+                admin: 'Amit P., Admin'
+              }
+            ].map((useCase, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <useCase.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/90 text-sm">{useCase.flats} Flats</p>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-1">{useCase.society}</h3>
+                  <p className="text-white/80 text-sm">{useCase.location}</p>
+                </div>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="bg-red-100 px-2 py-1 rounded text-xs font-semibold text-red-700">Before</div>
+                    </div>
+                    <p className="text-sm text-gray-700">{useCase.problem}</p>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="bg-blue-100 px-2 py-1 rounded text-xs font-semibold text-blue-700">Solution</div>
+                    </div>
+                    <p className="text-sm text-gray-700">{useCase.solution}</p>
+                  </div>
+                  <div className="mb-4 bg-green-50 rounded-lg p-3">
+                    <div className="flex items-start gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                      <div className="bg-green-100 px-2 py-1 rounded text-xs font-semibold text-green-700">Result</div>
+                    </div>
+                    <p className="text-sm font-semibold text-green-900">{useCase.result}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 italic">- {useCase.admin}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Heart className="w-4 h-4" />
+              Loved by Admins
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              What Apartment Admins Say
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Don't just take our word for it. Here's what your fellow admins love about FlatFund Pro
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "I was skeptical about moving from Excel, but FlatFund Pro is so much easier! Now I don't dread the end of the month.",
+                name: "Sneha M.",
+                role: "Building Secretary",
+                society: "Lake View Towers, Hyderabad",
+                rating: 5
+              },
+              {
+                quote: "Best part? Residents can see the payment status themselves. No more 'Did you receive my payment?' calls at 9 PM!",
+                name: "Vikram S.",
+                role: "Apartment Admin",
+                society: "Royal Apartments, Delhi",
+                rating: 5
+              },
+              {
+                quote: "Setup was surprisingly quick. Imported our data in 10 minutes and we were live. The support team is fantastic too!",
+                name: "Meera R.",
+                role: "Treasurer",
+                society: "Sunrise Society, Chennai",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <div key={index} className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-100">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Award key={i} className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  ))}
+                </div>
+                <blockquote className="text-gray-700 mb-4 italic">"{testimonial.quote}"</blockquote>
+                <div className="border-t border-amber-200 pt-4">
+                  <p className="font-bold text-gray-900">{testimonial.name}</p>
+                  <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  <p className="text-xs text-gray-500 mt-1">{testimonial.society}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-                Transform Your Apartment Management
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                Transform Your Apartment Management Today
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-gray-300 mb-8">
                 Join hundreds of apartment societies that have already simplified their payment management with FlatFund Pro.
               </p>
               <div className="space-y-4">
                 {[
-                  'Save 10+ hours every month on payment tracking',
-                  'Reduce payment delays by up to 60%',
-                  'Eliminate manual errors and data entry',
-                  'Improve transparency for all residents',
-                  'Generate reports in seconds, not days',
-                  'Access from anywhere, anytime'
+                  { text: 'Save 10+ hours every month on payment tracking', icon: Clock },
+                  { text: 'Reduce payment delays by up to 60%', icon: TrendingUp },
+                  { text: 'Eliminate manual errors and data entry', icon: CheckCircle },
+                  { text: 'Improve transparency for all residents', icon: Eye },
+                  { text: 'Generate reports in seconds, not days', icon: FileText },
+                  { text: 'Access from anywhere, anytime', icon: Smartphone }
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                    <p className="text-gray-700 text-lg">{benefit}</p>
+                    <benefit.icon className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
+                    <p className="text-gray-200 text-lg">{benefit.text}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-amber-100 to-orange-100 p-8 rounded-2xl">
-              <div className="bg-white p-8 rounded-xl shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Quick Stats</h3>
+            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 p-8 rounded-2xl border border-amber-500/30">
+              <div className="bg-gray-800 p-8 rounded-xl shadow-lg">
+                <h3 className="text-2xl font-bold text-white mb-6">Proven Results</h3>
                 <div className="space-y-6">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-600">Collection Efficiency</span>
-                      <span className="text-2xl font-bold text-amber-600">+40%</span>
+                      <span className="text-gray-300">Collection Efficiency</span>
+                      <span className="text-2xl font-bold text-amber-400">+40%</span>
                     </div>
-                    <div className="bg-gray-100 rounded-full h-3">
+                    <div className="bg-gray-700 rounded-full h-3">
                       <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full" style={{ width: '95%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-600">Time Saved</span>
-                      <span className="text-2xl font-bold text-blue-600">80%</span>
+                      <span className="text-gray-300">Time Saved</span>
+                      <span className="text-2xl font-bold text-blue-400">80%</span>
                     </div>
-                    <div className="bg-gray-100 rounded-full h-3">
+                    <div className="bg-gray-700 rounded-full h-3">
                       <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full" style={{ width: '80%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-600">Error Reduction</span>
-                      <span className="text-2xl font-bold text-green-600">95%</span>
+                      <span className="text-gray-300">Error Reduction</span>
+                      <span className="text-2xl font-bold text-green-400">95%</span>
                     </div>
-                    <div className="bg-gray-100 rounded-full h-3">
+                    <div className="bg-gray-700 rounded-full h-3">
                       <div className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full" style={{ width: '95%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-300">Admin Satisfaction</span>
+                      <span className="text-2xl font-bold text-purple-400">98%</span>
+                    </div>
+                    <div className="bg-gray-700 rounded-full h-3">
+                      <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full" style={{ width: '98%' }}></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-gray-600">
+              Everything you need to know about getting started
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {[
+              {
+                question: 'How long does it take to set up FlatFund Pro?',
+                answer: 'Most societies are up and running in under 10 minutes. Simply add your buildings and flats, and you\'re ready to go. You can import data from Excel or add manually. Our intuitive interface guides you through every step.'
+              },
+              {
+                question: 'Do residents need to create accounts?',
+                answer: 'No! Residents simply visit your payment portal (which we provide), select their flat, and submit payment details with proof. No registration or login required for residents. It\'s that simple!'
+              },
+              {
+                question: 'Can I see payment status without logging in?',
+                answer: 'Yes! FlatFund Pro provides a public payment status page where anyone can see which flats have paid and which haven\'t (without showing personal details or amounts). This creates complete transparency.'
+              },
+              {
+                question: 'What if I need help or have questions?',
+                answer: 'We offer 24/7 support via email and chat. Our team responds within hours, not days. Plus, our platform is so intuitive that most admins never need to contact support!'
+              },
+              {
+                question: 'Can I export data to Excel?',
+                answer: 'Absolutely! Generate reports and download them as Excel or PDF files anytime. Your data is always yours to export, analyze, or archive.'
+              },
+              {
+                question: 'Is my data secure?',
+                answer: 'Yes! We use bank-grade encryption and secure cloud storage. Your data is backed up automatically and protected with role-based access control. Only authorized admins can access sensitive information.'
+              },
+              {
+                question: 'Can I manage multiple buildings?',
+                answer: 'Yes! FlatFund Pro supports multiple buildings, blocks, and even multiple apartment complexes under one account. Perfect for large societies.'
+              },
+              {
+                question: 'What happens after the free trial?',
+                answer: 'You can continue with our affordable subscription plans. Pricing is transparent and based on the number of flats. No hidden costs, cancel anytime.'
+              }
+            ].map((faq, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm border-2 border-gray-100 p-6 hover:border-amber-200 transition-all">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-start gap-2">
+                  <MessageCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-1" />
+                  {faq.question}
+                </h3>
+                <p className="text-gray-600 pl-7">{faq.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
