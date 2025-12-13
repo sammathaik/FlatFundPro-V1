@@ -1,6 +1,7 @@
-import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell, QrCode } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import QRCodeGenerator from './QRCodeGenerator';
 
 interface MarketingLandingPageProps {
   navigate?: (path: string) => void;
@@ -130,6 +131,13 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   Setup in Minutes
+                </div>
+              </div>
+              <div className="hidden lg:flex items-center gap-3 mt-8 p-4 bg-white rounded-xl border-2 border-amber-200 shadow-md">
+                <QrCode className="w-10 h-10 text-amber-600" />
+                <div>
+                  <p className="font-semibold text-gray-900">Scan for Quick Demo</p>
+                  <p className="text-sm text-gray-600">Jump to request form</p>
                 </div>
               </div>
             </div>
@@ -743,27 +751,34 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
 
       {/* Contact/Demo Form */}
       <section id="demo" className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Request a Demo
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600 mb-6">
               See FlatFund Pro in action. Fill out the form below and we'll get back to you within 24 hours.
             </p>
+            <div className="inline-flex items-center gap-3 bg-amber-50 px-6 py-3 rounded-xl border-2 border-amber-200">
+              <QrCode className="w-6 h-6 text-amber-600" />
+              <span className="text-sm font-medium text-gray-700">
+                Share this page via QR code - scroll down for printable version
+              </span>
+            </div>
           </div>
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 sm:p-12">
-            {submitted ? (
-              <div className="text-center py-12">
-                <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 sm:p-12">
+              {submitted ? (
+                <div className="text-center py-12">
+                  <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Thank You!</h3>
+                  <p className="text-gray-600 text-lg">
+                    We've received your request. Our team will contact you within 24 hours.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Thank You!</h3>
-                <p className="text-gray-600 text-lg">
-                  We've received your request. Our team will contact you within 24 hours.
-                </p>
-              </div>
-            ) : (
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
@@ -855,6 +870,35 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 </button>
               </form>
             )}
+            </div>
+
+            <div className="hidden lg:flex flex-col items-center justify-center">
+              <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-amber-200">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Quick Access</h3>
+                  <p className="text-sm text-gray-600">Scan to request demo</p>
+                </div>
+                <QRCodeGenerator
+                  url={typeof window !== 'undefined' ? `${window.location.origin}/#demo` : 'https://flatfundpro.com/#demo'}
+                  size={220}
+                  showDownload={true}
+                  title="Request Demo"
+                  subtitle="FlatFund Pro"
+                />
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 text-center leading-relaxed mb-3">
+                    Perfect for printing on flyers, posters, or sharing at society meetings
+                  </p>
+                  <button
+                    onClick={() => handleNavigate('/qr-print')}
+                    className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    View All QR Templates
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

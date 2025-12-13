@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
 import MarketingLandingPage from './components/MarketingLandingPage';
+import QRCodePrintPage from './components/QRCodePrintPage';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
@@ -173,6 +174,10 @@ function App() {
 
   if (currentPath === '/marketing' || currentPath === '/home') {
     return <MarketingLandingPage navigate={navigate} />;
+  }
+
+  if (currentPath === '/qr-print') {
+    return <QRCodePrintPage onBack={() => navigate('/marketing')} />;
   }
 
   if (currentPath === '/login') {
