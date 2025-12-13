@@ -1,5 +1,5 @@
 import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell, QrCode } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import QRCodeGenerator from './QRCodeGenerator';
 
@@ -26,6 +26,18 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === '#demo') {
+      setTimeout(() => {
+        const demoSection = document.getElementById('demo');
+        if (demoSection) {
+          demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -879,7 +891,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   <p className="text-sm text-gray-600">Scan to request demo</p>
                 </div>
                 <QRCodeGenerator
-                  url={typeof window !== 'undefined' ? `${window.location.origin}/#demo` : 'https://flatfundpro.com/#demo'}
+                  url={typeof window !== 'undefined' ? `${window.location.origin}/marketing#demo` : 'https://flatfundpro.com/marketing#demo'}
                   size={220}
                   showDownload={true}
                   title="Request Demo"

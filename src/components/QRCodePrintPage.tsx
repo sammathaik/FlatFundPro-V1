@@ -6,7 +6,7 @@ interface QRCodePrintPageProps {
 }
 
 export default function QRCodePrintPage({ onBack }: QRCodePrintPageProps) {
-  const demoUrl = typeof window !== 'undefined' ? `${window.location.origin}/#demo` : 'https://flatfundpro.com/#demo';
+  const demoUrl = typeof window !== 'undefined' ? `${window.location.origin}/marketing#demo` : 'https://flatfundpro.com/marketing#demo';
 
   const handlePrint = () => {
     window.print();
