@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Download, QrCode } from 'lucide-react';
+import { Download } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface QRCodeGeneratorProps {
   url: string;
@@ -31,89 +32,41 @@ export default function QRCodeGenerator({
     canvas.width = size;
     canvas.height = size;
 
-    const qrSize = Math.floor(size * 0.8);
-    const moduleSize = Math.floor(qrSize / 33);
-    const actualQRSize = moduleSize * 33;
-    const offsetX = Math.floor((size - actualQRSize) / 2);
-    const offsetY = Math.floor((size - actualQRSize) / 2);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-
-    const qrData = generateQRMatrix(url);
-
-    ctx.fillStyle = '#000000';
-    for (let y = 0; y < qrData.length; y++) {
-      for (let x = 0; x < qrData[y].length; x++) {
-        if (qrData[y][x]) {
-          ctx.fillRect(
-            offsetX + x * moduleSize,
-            offsetY + y * moduleSize,
-            moduleSize,
-            moduleSize
-          );
-        }
+    QRCode.toCanvas(canvas, url, {
+      width: size,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'H'
+    }, (error) => {
+      if (error) {
+        console.error('QR Code generation error:', error);
+        return;
       }
-    }
 
-    const logoSize = Math.floor(actualQRSize * 0.2);
-    const logoX = Math.floor((size - logoSize) / 2);
-    const logoY = Math.floor((size - logoSize) / 2);
+      const logoSize = Math.floor(size * 0.15);
+      const logoX = Math.floor((size - logoSize) / 2);
+      const logoY = Math.floor((size - logoSize) / 2);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(logoX - 4, logoY - 4, logoSize + 8, logoSize + 8);
-    ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(logoX - 4, logoY - 4, logoSize + 8, logoSize + 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(logoX - 6, logoY - 6, logoSize + 12, logoSize + 12);
 
-    ctx.fillStyle = '#d97706';
-    ctx.fillRect(logoX, logoY, logoSize, logoSize);
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(logoX - 6, logoY - 6, logoSize + 12, logoSize + 12);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${Math.floor(logoSize * 0.4)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('FF', logoX + logoSize / 2, logoY + logoSize / 2);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(logoX, logoY, logoSize, logoSize);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.floor(logoSize * 0.45)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('FF', logoX + logoSize / 2, logoY + logoSize / 2);
+    });
   }, [url, size]);
-
-  const generateQRMatrix = (data: string): boolean[][] => {
-    const size = 33;
-    const matrix: boolean[][] = Array(size).fill(null).map(() => Array(size).fill(false));
-
-    for (let i = 0; i < 8; i++) {
-      for (let j = 0; j < 8; j++) {
-        if (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) {
-          matrix[i][j] = true;
-          matrix[i][size - 1 - j] = true;
-          matrix[size - 1 - i][j] = true;
-        }
-      }
-    }
-
-    let seed = data.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const random = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        if (
-          (i < 8 && j < 8) ||
-          (i < 8 && j >= size - 8) ||
-          (i >= size - 8 && j < 8) ||
-          (i >= size / 2 - 2 && i <= size / 2 + 2 && j >= size / 2 - 2 && j <= size / 2 + 2)
-        ) {
-          continue;
-        }
-        if (random() > 0.5) {
-          matrix[i][j] = true;
-        }
-      }
-    }
-
-    return matrix;
-  };
 
   const downloadQRCode = () => {
     if (!canvasRef.current) return;
