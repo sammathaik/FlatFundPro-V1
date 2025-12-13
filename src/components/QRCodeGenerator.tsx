@@ -43,28 +43,7 @@ export default function QRCodeGenerator({
     }, (error) => {
       if (error) {
         console.error('QR Code generation error:', error);
-        return;
       }
-
-      const logoSize = Math.floor(size * 0.15);
-      const logoX = Math.floor((size - logoSize) / 2);
-      const logoY = Math.floor((size - logoSize) / 2);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(logoX - 6, logoY - 6, logoSize + 12, logoSize + 12);
-
-      ctx.strokeStyle = '#d97706';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(logoX - 6, logoY - 6, logoSize + 12, logoSize + 12);
-
-      ctx.fillStyle = '#d97706';
-      ctx.fillRect(logoX, logoY, logoSize, logoSize);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.floor(logoSize * 0.45)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('FF', logoX + logoSize / 2, logoY + logoSize / 2);
     });
   }, [url, size]);
 
