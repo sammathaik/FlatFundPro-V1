@@ -52,36 +52,47 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [apartmentInfo, setApartmentInfo] = useState<ApartmentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [allFlats, setAllFlats] = useState<any[]>([]);
+  const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
+  const [switchingFlat, setSwitchingFlat] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, [occupant]);
+  }, [occupant, selectedFlatId]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [paymentsResult, infoResult] = await Promise.all([
-        supabase.rpc('get_occupant_payments_with_session', {
-          session_token: occupant.sessionToken
-        }),
-        supabase
-          .from('flat_numbers')
-          .select(
-            `
-            flat_number,
-            buildings_blocks_phases!inner(
-              block_name,
-              apartments!inner(apartment_name)
-            )
-          `
-          )
-          .eq('id', occupant.flat_id)
-          .single(),
-      ]);
+      // Load all flats for this occupant
+      if (occupant.all_flats && occupant.all_flats.length > 0) {
+        setAllFlats(occupant.all_flats);
+      }
+
+      // Load payments for selected flat
+      const paymentsResult = await supabase
+        .from('payment_submissions')
+        .select('*')
+        .eq('flat_id', selectedFlatId)
+        .order('created_at', { ascending: false });
 
       if (paymentsResult.data) {
         setPayments(paymentsResult.data);
       }
+
+      // Load apartment info for selected flat
+      const infoResult = await supabase
+        .from('flat_numbers')
+        .select(
+          `
+          flat_number,
+          buildings_blocks_phases!inner(
+            block_name,
+            apartments!inner(apartment_name)
+          )
+        `
+        )
+        .eq('id', selectedFlatId)
+        .single();
 
       if (infoResult.data) {
         setApartmentInfo({
@@ -95,6 +106,14 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFlatSwitch = async (flatId: string) => {
+    if (flatId === selectedFlatId) return;
+
+    setSwitchingFlat(true);
+    setSelectedFlatId(flatId);
+    setSwitchingFlat(false);
   };
 
   const categories = ['all', ...new Set(payments.map((p) => p.payment_type))];
@@ -139,6 +158,11 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   };
 
   const exportToCSV = () => {
+    const currentFlat = allFlats.find(f => f.flat_id === selectedFlatId);
+    const flatLabel = currentFlat
+      ? `${currentFlat.apartment_name}_${currentFlat.block_name}_Flat${currentFlat.flat_number}`
+      : apartmentInfo?.flat_number || 'unknown';
+
     const headers = [
       'Date',
       'Payment Type',
@@ -173,7 +197,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
     link.setAttribute('href', url);
     link.setAttribute(
       'download',
-      `payments_${apartmentInfo?.flat_number}_${new Date().toISOString().split('T')[0]}.csv`
+      `payments_${flatLabel}_${new Date().toISOString().split('T')[0]}.csv`
     );
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
@@ -218,6 +242,44 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {allFlats.length > 1 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Flats</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              You are registered in multiple flats. Select a flat to view its payment history.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {allFlats.map((flat) => (
+                <button
+                  key={flat.flat_id}
+                  onClick={() => handleFlatSwitch(flat.flat_id)}
+                  disabled={switchingFlat}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    selectedFlatId === flat.flat_id
+                      ? 'border-amber-500 bg-amber-50'
+                      : 'border-gray-200 hover:border-amber-300 bg-white'
+                  } disabled:opacity-50`}
+                >
+                  <p className="font-semibold text-gray-900">
+                    Flat {flat.flat_number}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {flat.apartment_name}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {flat.block_name}
+                  </p>
+                  {selectedFlatId === flat.flat_id && (
+                    <p className="text-xs text-amber-600 font-medium mt-2">
+                      Currently Viewing
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

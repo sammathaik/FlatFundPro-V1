@@ -8,13 +8,15 @@ interface OccupantLoginPageProps {
 }
 
 export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLoginPageProps) {
-  const [step, setStep] = useState<'email' | 'mobile' | 'otp'>('email');
+  const [step, setStep] = useState<'email' | 'mobile' | 'otp' | 'flat-selection'>('email');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sentOtp, setSentOtp] = useState('');
+  const [availableFlats, setAvailableFlats] = useState<any[]>([]);
+  const [selectedFlatId, setSelectedFlatId] = useState<string>('');
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,14 +88,55 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
       const { data, error } = await supabase.rpc('verify_occupant_otp', {
         p_email: email.toLowerCase().trim(),
         p_otp: otp,
+        p_flat_id: null,
       });
 
       if (error) throw error;
 
       if (!data.success) {
-        setError(data.message || 'Invalid OTP');
+        if (data.needs_flat_selection && data.flats) {
+          setAvailableFlats(data.flats);
+          setStep('flat-selection');
+        } else {
+          setError(data.message || 'Invalid OTP');
+        }
       } else {
         // Pass both occupant data and session token
+        onLoginSuccess({
+          ...data.occupant,
+          sessionToken: data.session_token
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFlatSelection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (!selectedFlatId) {
+      setError('Please select a flat');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('verify_occupant_otp', {
+        p_email: email.toLowerCase().trim(),
+        p_otp: otp,
+        p_flat_id: selectedFlatId,
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        setError(data.message || 'Failed to create session');
+      } else {
         onLoginSuccess({
           ...data.occupant,
           sessionToken: data.session_token
@@ -327,6 +370,83 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                 className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium transition-all"
               >
                 Change Email
+              </button>
+            </form>
+          )}
+
+          {step === 'flat-selection' && (
+            <form onSubmit={handleFlatSelection} className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
+                <p className="text-sm font-medium mb-1">Multiple Flats Found</p>
+                <p className="text-xs">
+                  You are registered as an occupant in multiple flats. Please select which flat you want to view.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Your Flat
+                </label>
+                <div className="space-y-3">
+                  {availableFlats.map((flat) => (
+                    <label
+                      key={flat.flat_id}
+                      className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        selectedFlatId === flat.flat_id
+                          ? 'border-amber-500 bg-amber-50'
+                          : 'border-gray-200 hover:border-amber-300 bg-white'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="flat"
+                        value={flat.flat_id}
+                        checked={selectedFlatId === flat.flat_id}
+                        onChange={(e) => setSelectedFlatId(e.target.value)}
+                        className="mt-1 text-amber-600 focus:ring-amber-500"
+                      />
+                      <div className="ml-3 flex-1">
+                        <p className="font-semibold text-gray-900">
+                          Flat {flat.flat_number}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {flat.apartment_name} - {flat.block_name}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {flat.occupant_type}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !selectedFlatId}
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Continuing...' : 'Continue to Dashboard'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('email');
+                  setOtp('');
+                  setSentOtp('');
+                  setAvailableFlats([]);
+                  setSelectedFlatId('');
+                }}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium transition-all"
+              >
+                Start Over
               </button>
             </form>
           )}
