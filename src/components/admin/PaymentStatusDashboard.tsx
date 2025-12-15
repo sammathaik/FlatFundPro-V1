@@ -1030,53 +1030,55 @@ export default function PaymentStatusDashboard({
                               )}
                             </div>
                           </div>
-                          {allowManagement && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => toggleCollectionExpansion(collection.id)}
-                                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50"
-                              >
-                                <Eye className="w-4 h-4" />
-                                {isExpanded ? 'Hide' : 'View'} Details
-                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                              </button>
-                              <button
-                                onClick={() => handleToggleActivation(collection.id, true)}
-                                disabled={activatingId === collection.id}
-                                className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                                title="Deactivate collection"
-                              >
-                                <PowerOff className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingId(collection.id);
-                                  setForm({
-                                    payment_type: collection.payment_type,
-                                    financial_year: collection.financial_year,
-                                    quarter: collection.quarter,
-                                    quarter_basis: collection.quarter_basis || 'financial',
-                                    due_date: collection.due_date,
-                                    amount_due: String(collection.amount_due ?? ''),
-                                    daily_fine: String(collection.daily_fine ?? '0'),
-                                    notes: collection.notes || '',
-                                    collection_name: collection.collection_name || '',
-                                    payment_frequency: collection.payment_frequency || 'quarterly',
-                                    is_active: collection.is_active || false,
-                                  });
-                                  setSuccessMessage(null);
-                                  setTimeout(() => {
-                                    const formElement = document.querySelector('[data-payment-setup-form]');
-                                    formElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                  }, 100);
-                                }}
-                                disabled={deletingId === collection.id}
-                                className="text-sm text-gray-600 hover:text-blue-600 px-2"
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleCollectionExpansion(collection.id)}
+                              className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50"
+                            >
+                              <Eye className="w-4 h-4" />
+                              {isExpanded ? 'Hide' : 'View'} Details
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                            {allowManagement && (
+                              <>
+                                <button
+                                  onClick={() => handleToggleActivation(collection.id, true)}
+                                  disabled={activatingId === collection.id}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                  title="Deactivate collection"
+                                >
+                                  <PowerOff className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingId(collection.id);
+                                    setForm({
+                                      payment_type: collection.payment_type,
+                                      financial_year: collection.financial_year,
+                                      quarter: collection.quarter,
+                                      quarter_basis: collection.quarter_basis || 'financial',
+                                      due_date: collection.due_date,
+                                      amount_due: String(collection.amount_due ?? ''),
+                                      daily_fine: String(collection.daily_fine ?? '0'),
+                                      notes: collection.notes || '',
+                                      collection_name: collection.collection_name || '',
+                                      payment_frequency: collection.payment_frequency || 'quarterly',
+                                      is_active: collection.is_active || false,
+                                    });
+                                    setSuccessMessage(null);
+                                    setTimeout(() => {
+                                      const formElement = document.querySelector('[data-payment-setup-form]');
+                                      formElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }, 100);
+                                  }}
+                                  disabled={deletingId === collection.id}
+                                  className="text-sm text-gray-600 hover:text-blue-600 px-2"
+                                >
+                                  Edit
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-4 gap-4 mb-4">
@@ -1224,32 +1226,34 @@ export default function PaymentStatusDashboard({
                                 </span>
                               </div>
                             </div>
-                            {allowManagement && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => toggleCollectionExpansion(collection.id)}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  {isExpanded ? 'Hide' : 'View'}
-                                </button>
-                                <button
-                                  onClick={() => handleToggleActivation(collection.id, false)}
-                                  disabled={activatingId === collection.id}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-green-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                  title="Reactivate collection"
-                                >
-                                  <Power className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteExpectedCollection(collection.id)}
-                                  disabled={deletingId === collection.id}
-                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-2 py-1.5 rounded-lg hover:bg-gray-100"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleCollectionExpansion(collection.id)}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100"
+                              >
+                                <Eye className="w-4 h-4" />
+                                {isExpanded ? 'Hide' : 'View'}
+                              </button>
+                              {allowManagement && (
+                                <>
+                                  <button
+                                    onClick={() => handleToggleActivation(collection.id, false)}
+                                    disabled={activatingId === collection.id}
+                                    className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-green-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                                    title="Reactivate collection"
+                                  >
+                                    <Power className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExpectedCollection(collection.id)}
+                                    disabled={deletingId === collection.id}
+                                    className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-2 py-1.5 rounded-lg hover:bg-gray-100"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
 
