@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {
   getAllFlaggedPayments,
+  getNonFlaggedPaymentsWithIndicators,
   getFraudStatistics,
   getRiskLevelLabel,
   getRiskLevelColor,
@@ -30,6 +31,7 @@ interface Props {
 
 export function FraudDetectionDashboard({ apartmentId }: Props) {
   const [flaggedPayments, setFlaggedPayments] = useState<FlaggedPayment[]>([]);
+  const [nonFlaggedPayments, setNonFlaggedPayments] = useState<FlaggedPayment[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState<FlaggedPayment | null>(null);
@@ -42,11 +44,13 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [flagged, stats] = await Promise.all([
+      const [flagged, nonFlagged, stats] = await Promise.all([
         getAllFlaggedPayments(apartmentId),
+        getNonFlaggedPaymentsWithIndicators(apartmentId),
         getFraudStatistics(apartmentId),
       ]);
       setFlaggedPayments(flagged as any);
+      setNonFlaggedPayments(nonFlagged as any);
       setStatistics(stats);
     } catch (error) {
       console.error('Error loading fraud data:', error);
@@ -319,6 +323,123 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
           )}
         </div>
       </div>
+
+      {nonFlaggedPayments.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Non-Flagged Payments with Indicators</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Payments with suspicious indicators but below the flagging threshold
+                </p>
+              </div>
+              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                {nonFlaggedPayments.length} payments
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Submitter
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Risk Score
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Indicators
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Analyzed
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {nonFlaggedPayments.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{payment.name}</div>
+                        <div className="text-sm text-gray-500">{payment.email}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        ₹{payment.payment_amount?.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getRiskLevelBgColor(
+                            payment.fraud_score
+                          )} ${getRiskLevelColor(payment.fraud_score)}`}
+                        >
+                          {payment.fraud_score}
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          {getRiskLevelLabel(payment.fraud_score)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {payment.fraud_indicators?.slice(0, 3).map((indicator, idx) => (
+                          <span
+                            key={idx}
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs ${
+                              indicator.severity === 'CRITICAL'
+                                ? 'bg-red-100 text-red-700'
+                                : indicator.severity === 'HIGH'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            {indicator.type.split('_').slice(0, 2).join(' ')}
+                          </span>
+                        ))}
+                        {payment.fraud_indicators && payment.fraud_indicators.length > 3 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                            +{payment.fraud_indicators.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {payment.fraud_checked_at
+                          ? new Date(payment.fraud_checked_at).toLocaleDateString()
+                          : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="text-blue-600 hover:text-blue-900 font-medium flex items-center"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {selectedPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

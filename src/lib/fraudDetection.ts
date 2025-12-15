@@ -106,6 +106,49 @@ export async function getAllFlaggedPayments(apartmentId?: string) {
   }
 }
 
+export async function getNonFlaggedPaymentsWithIndicators(apartmentId?: string) {
+  try {
+    let query = supabase
+      .from('payment_submissions')
+      .select(`
+        id,
+        name,
+        email,
+        payment_amount,
+        payment_date,
+        status,
+        fraud_score,
+        is_fraud_flagged,
+        fraud_indicators,
+        fraud_checked_at,
+        transaction_reference,
+        sender_upi_id,
+        apartments(apartment_name)
+      `)
+      .eq('is_fraud_flagged', false)
+      .not('fraud_indicators', 'is', null)
+      .order('fraud_score', { ascending: false });
+
+    if (apartmentId) {
+      query = query.eq('apartment_id', apartmentId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching non-flagged payments:', error);
+      return [];
+    }
+
+    return (data || []).filter(payment =>
+      Array.isArray(payment.fraud_indicators) && payment.fraud_indicators.length > 0
+    );
+  } catch (error) {
+    console.error('Error fetching non-flagged payments:', error);
+    return [];
+  }
+}
+
 export async function getFraudStatistics(apartmentId?: string) {
   try {
     let query = supabase
