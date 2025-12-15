@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, Loader2, PlusCircle, RefreshCcw, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
 import { supabase, ExpectedCollection } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -10,6 +10,13 @@ const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   maintenance: 'Maintenance Collection',
   contingency: 'Contingency Fund',
   emergency: 'Emergency Fund',
+};
+
+const FREQUENCY_LABELS: Record<string, string> = {
+  'one-time': 'One-Time',
+  'monthly': 'Monthly',
+  'quarterly': 'Quarterly',
+  'yearly': 'Yearly',
 };
 
 type BlockWithFlats = {
@@ -26,7 +33,7 @@ type PaymentSnapshot = {
   payment_source: string | null;
   payment_quarter: string | null;
   payment_date: string | null;
-  status: string | null; // 'Received' | 'Reviewed' | 'Approved'
+  status: string | null;
   created_at: string | null;
 };
 
@@ -47,8 +54,7 @@ interface FlatStatusDisplay {
   status: FlatStatus;
   paidAmount: number;
   expectedAmount: number;
-  // Tooltip information for temporary comparison
-  paymentStatus?: string | null; // 'Approved', 'Reviewed', 'Received', or null
+  paymentStatus?: string | null;
   paymentDate?: string | null;
   maintenanceDueDate?: string;
   transactionAmount?: number | null;
@@ -63,6 +69,9 @@ interface ExpectedCollectionFormState {
   amount_due: string;
   daily_fine: string;
   notes: string;
+  collection_name: string;
+  payment_frequency: 'one-time' | 'monthly' | 'quarterly' | 'yearly';
+  is_active: boolean;
 }
 
 const STATUS_META: Record<FlatStatus, { label: string; color: string; bg: string }> = {
@@ -72,13 +81,12 @@ const STATUS_META: Record<FlatStatus, { label: string; color: string; bg: string
 };
 
 const PAYMENT_TYPES: PaymentType[] = ['maintenance', 'contingency', 'emergency'];
-
 const QUARTERS: QuarterType[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 function getDefaultFinancialYearLabel() {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const month = now.getMonth(); // 0-based
+  const month = now.getMonth();
   const fyEndYear = month >= 3 ? currentYear + 1 : currentYear;
   return `FY${String(fyEndYear).slice(-2)}`;
 }
@@ -91,67 +99,38 @@ function getCurrentFinancialQuarter(): QuarterType {
   return 'Q4';
 }
 
-// Sort flats in ascending order by flat number (handles numeric sorting like "101" < "102" < "2A" < "2B")
 function sortFlats<T extends { flat_number: string }>(flats: T[]): T[] {
   return [...flats].sort((a, b) => a.flat_number.localeCompare(b.flat_number, undefined, { numeric: true }));
 }
 
-
-
 function matchesCollection(payment: PaymentSnapshot, collection: ExpectedCollection) {
-  // Direct match via expected_collection_id
   if (payment.expected_collection_id && payment.expected_collection_id === collection.id) {
     return true;
   }
 
-  // Check payment type matches
   const paymentType = payment.payment_type?.toLowerCase() || '';
   const collectionType = collection.payment_type?.toLowerCase() || '';
   const typeMatches = paymentType === collectionType;
-  
+
   if (!typeMatches) {
-    // Debug log for type mismatches
-    if (payment.payment_type || collection.payment_type) {
-      console.debug('[PaymentStatus] Type mismatch:', {
-        payment_type: payment.payment_type,
-        expected_type: collection.payment_type,
-      });
-    }
     return false;
   }
 
-  // Check quarter matches
-  // payment_quarter format: "Q1-2025" or "Q2-2026"
-  // collection.quarter format: "Q1", "Q2", etc.
-  // collection.financial_year format: "FY25", "FY26", etc. (or just "2025", "2026")
-  
   if (!payment.payment_quarter) {
-    console.debug('[PaymentStatus] Missing payment_quarter:', {
-      payment_id: payment.flat_id,
-      payment_type: payment.payment_type,
-    });
     return false;
   }
-  
+
   if (!collection.quarter || !collection.financial_year) {
-    console.debug('[PaymentStatus] Missing collection quarter/year:', {
-      collection_id: collection.id,
-      quarter: collection.quarter,
-      financial_year: collection.financial_year,
-    });
     return false;
   }
-  
+
   const paymentQuarterLower = payment.payment_quarter.toLowerCase();
   const collectionQuarterLower = collection.quarter.toLowerCase();
   const financialYearLower = collection.financial_year.toLowerCase();
-  
-  // Extract year from financial_year (handle both "FY25" and "2025" formats)
+
   let yearToMatch: string;
   if (financialYearLower.startsWith('fy')) {
-    // "FY25" -> extract "25" and convert to full year
     const yearSuffix = financialYearLower.replace('fy', '');
-    // Assume 2000s if year suffix is 2 digits
     if (yearSuffix.length === 2) {
       const fullYear = '20' + yearSuffix;
       yearToMatch = fullYear;
@@ -159,28 +138,12 @@ function matchesCollection(payment: PaymentSnapshot, collection: ExpectedCollect
       yearToMatch = financialYearLower.replace('fy', '20');
     }
   } else {
-    // Already a full year like "2025"
     yearToMatch = financialYearLower;
   }
-  
-  // Check if payment_quarter includes the quarter (e.g., "Q1" in "Q1-2025")
+
   const quarterMatches = paymentQuarterLower.includes(collectionQuarterLower);
-  
-  // Check if payment_quarter includes the year (e.g., "2025" in "Q1-2025")
   const yearMatches = paymentQuarterLower.includes(yearToMatch);
-  
-  // Debug log for mismatches
-  if (!quarterMatches || !yearMatches) {
-    console.debug('[PaymentStatus] Quarter/Year mismatch:', {
-      payment_quarter: payment.payment_quarter,
-      expected_quarter: collection.quarter,
-      expected_year: collection.financial_year,
-      year_to_match: yearToMatch,
-      quarter_matches: quarterMatches,
-      year_matches: yearMatches,
-    });
-  }
-  
+
   return quarterMatches && yearMatches;
 }
 
@@ -194,7 +157,7 @@ export default function PaymentStatusDashboard({
 }: PaymentStatusDashboardProps) {
   const [blocks, setBlocks] = useState<BlockWithFlats[]>([]);
   const [expectedCollections, setExpectedCollections] = useState<ExpectedCollection[]>([]);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [payments, setPayments] = useState<PaymentSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,6 +165,8 @@ export default function PaymentStatusDashboard({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showArchivedSection, setShowArchivedSection] = useState(false);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
   const [form, setForm] = useState<ExpectedCollectionFormState>({
     payment_type: 'maintenance',
     financial_year: getDefaultFinancialYearLabel(),
@@ -211,11 +176,13 @@ export default function PaymentStatusDashboard({
     amount_due: '',
     daily_fine: '0',
     notes: '',
+    collection_name: '',
+    payment_frequency: 'quarterly',
+    is_active: false,
   });
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apartmentId, accessCode]);
 
   async function loadData() {
@@ -228,7 +195,7 @@ export default function PaymentStatusDashboard({
           .from('expected_collections')
           .select('*')
           .eq('apartment_id', apartmentId)
-          .order('due_date', { ascending: true }),
+          .order('due_date', { ascending: false }),
         supabase
           .from('buildings_blocks_phases')
           .select('id, block_name, flats:flat_numbers(id, flat_number)')
@@ -247,8 +214,9 @@ export default function PaymentStatusDashboard({
         })),
       );
 
-      if (!selectedCollectionId && expectedRes.data && expectedRes.data.length > 0) {
-        setSelectedCollectionId(expectedRes.data[0].id);
+      const activeCollections = (expectedRes.data || []).filter(c => c.is_active);
+      if (activeCollections.length > 0) {
+        setExpandedCollections(new Set([activeCollections[0].id]));
       }
 
       await loadPayments(expectedRes.data || []);
@@ -271,53 +239,154 @@ export default function PaymentStatusDashboard({
       return;
     }
 
-    // Admin view can query the table directly
     const { data, error } = await supabase
       .from('payment_submissions')
-      .select('flat_id, expected_collection_id, payment_amount, payment_type, payment_quarter, payment_date, status, created_at')
+      .select('flat_id, expected_collection_id, payment_amount, payment_type, payment_quarter, payment_date, status, created_at, payment_source')
       .eq('apartment_id', apartmentId);
 
     if (error) throw error;
     setPayments(data || []);
-
-    if (!selectedCollectionId && collections.length > 0) {
-      setSelectedCollectionId(collections[0].id);
-    }
   }
 
-  const selectedCollection = useMemo(
-    () => expectedCollections.find((c) => c.id === selectedCollectionId) || expectedCollections[0] || null,
-    [expectedCollections, selectedCollectionId],
+  const activeCollections = useMemo(
+    () => expectedCollections.filter(c => c.is_active === true).sort((a, b) =>
+      new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
+    ),
+    [expectedCollections]
   );
 
-  const blockStatuses = useMemo(() => {
-    if (!selectedCollection) return [];
+  const archivedCollections = useMemo(
+    () => expectedCollections.filter(c => c.is_active !== true).sort((a, b) =>
+      new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
+    ),
+    [expectedCollections]
+  );
 
-    const baseAmount = Number(selectedCollection.amount_due || 0);
-    const dailyFine = Number(selectedCollection.daily_fine || 0);
-    const dueDate = new Date(selectedCollection.due_date);
+  function getCollectionStats(collection: ExpectedCollection) {
+    const baseAmount = Number(collection.amount_due || 0);
+    const dailyFine = Number(collection.daily_fine || 0);
+    const dueDate = new Date(collection.due_date);
     dueDate.setHours(0, 0, 0, 0);
 
-    // Debug logging
-    console.debug('[PaymentStatus] Status calculation:', {
-      collection_id: selectedCollection.id,
-      payment_type: selectedCollection.payment_type,
-      quarter: selectedCollection.quarter,
-      financial_year: selectedCollection.financial_year,
-      base_amount: baseAmount,
-      due_date: selectedCollection.due_date,
-      daily_fine: dailyFine,
-      total_payments: payments.length,
+    let paidCount = 0;
+    let partialCount = 0;
+    let pendingCount = 0;
+    let totalCollected = 0;
+    let totalExpected = 0;
+
+    blocks.forEach(block => {
+      block.flats.forEach(flat => {
+        const relevantPayments = payments.filter(
+          payment => payment.flat_id === flat.id && matchesCollection(payment, collection)
+        );
+
+        const validPayments = relevantPayments.filter(
+          payment => payment.payment_amount != null && payment.payment_amount !== ''
+        );
+
+        if (validPayments.length === 0) {
+          pendingCount++;
+          totalExpected += baseAmount;
+          return;
+        }
+
+        let paidStatusFound = false;
+        let partialStatusFound = false;
+        let latestPaymentDate: Date | null = null;
+
+        for (const payment of validPayments) {
+          const paymentAmount = Number(payment.payment_amount || 0);
+          if (paymentAmount <= 0) continue;
+
+          const paymentDate = payment.payment_date ? new Date(payment.payment_date) : null;
+
+          if (paymentDate) {
+            paymentDate.setHours(0, 0, 0, 0);
+            if (!latestPaymentDate || paymentDate > latestPaymentDate) {
+              latestPaymentDate = paymentDate;
+            }
+          }
+
+          let isOnTime = false;
+          let isLate = false;
+          let daysLate = 0;
+          let expectedAmountWithFine = baseAmount;
+
+          if (paymentDate) {
+            daysLate = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            isOnTime = daysLate <= 0;
+            isLate = daysLate > 0;
+
+            if (isLate) {
+              const fineAmount = daysLate * dailyFine;
+              expectedAmountWithFine = baseAmount + fineAmount;
+            }
+          }
+
+          if (isOnTime && payment.status === 'Approved') {
+            if (Math.abs(paymentAmount - baseAmount) < 0.01) {
+              paidStatusFound = true;
+              break;
+            }
+          }
+
+          if (isLate && payment.status === 'Approved') {
+            if (Math.abs(paymentAmount - expectedAmountWithFine) < 0.01) {
+              paidStatusFound = true;
+              break;
+            }
+          }
+
+          if (isOnTime && paymentAmount < baseAmount) {
+            partialStatusFound = true;
+          }
+
+          if (isLate && Math.abs(paymentAmount - expectedAmountWithFine) >= 0.01) {
+            partialStatusFound = true;
+          }
+        }
+
+        const paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
+        totalCollected += paidAmount;
+
+        if (paidStatusFound) {
+          paidCount++;
+          totalExpected += baseAmount;
+        } else if (partialStatusFound || validPayments.length > 0) {
+          partialCount++;
+          if (latestPaymentDate) {
+            const daysLate = Math.floor((latestPaymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysLate > 0) {
+              const fineAmount = daysLate * dailyFine;
+              totalExpected += baseAmount + fineAmount;
+            } else {
+              totalExpected += baseAmount;
+            }
+          } else {
+            totalExpected += baseAmount;
+          }
+        } else {
+          pendingCount++;
+          totalExpected += baseAmount;
+        }
+      });
     });
+
+    return { paidCount, partialCount, pendingCount, totalCollected, totalExpected };
+  }
+
+  function getBlockStatuses(collection: ExpectedCollection) {
+    const baseAmount = Number(collection.amount_due || 0);
+    const dailyFine = Number(collection.daily_fine || 0);
+    const dueDate = new Date(collection.due_date);
+    dueDate.setHours(0, 0, 0, 0);
 
     return blocks.map((block) => {
       const flats = (block.flats || []).map((flat) => {
-        // Find all payments for this flat that match the selected collection
         const relevantPayments = payments.filter(
-          (payment) => payment.flat_id === flat.id && matchesCollection(payment, selectedCollection),
+          (payment) => payment.flat_id === flat.id && matchesCollection(payment, collection),
         );
 
-        // UNPAID: No entry in payments table for the active maintenance quarter collection
         if (relevantPayments.length === 0) {
           return {
             id: flat.id,
@@ -328,13 +397,10 @@ export default function PaymentStatusDashboard({
           } as FlatStatusDisplay;
         }
 
-        // Filter payments that have valid amount (not null/empty)
-        // Criteria: payment_amount field value is not empty or null
         const validPayments = relevantPayments.filter(
           (payment) => payment.payment_amount != null && payment.payment_amount !== '',
         );
 
-        // If no valid payments, status is UNPAID
         if (validPayments.length === 0) {
           return {
             id: flat.id,
@@ -345,20 +411,17 @@ export default function PaymentStatusDashboard({
           } as FlatStatusDisplay;
         }
 
-        // Check each valid payment against PAID criteria
         let paidStatusFound = false;
         let partialStatusFound = false;
         let latestPaymentDate: Date | null = null;
 
         for (const payment of validPayments) {
           const paymentAmount = Number(payment.payment_amount || 0);
-          
-          // Skip if payment amount is 0 or invalid
+
           if (paymentAmount <= 0) continue;
 
           const paymentDate = payment.payment_date ? new Date(payment.payment_date) : null;
-          
-          // Track latest payment date for PARTIAL status calculation
+
           if (paymentDate) {
             paymentDate.setHours(0, 0, 0, 0);
             if (!latestPaymentDate || paymentDate > latestPaymentDate) {
@@ -366,8 +429,6 @@ export default function PaymentStatusDashboard({
             }
           }
 
-          // Calculate days late (inclusive: payment date > due date means late)
-          // If payment_date is missing, we cannot determine if it's on time or late
           let isOnTime = false;
           let isLate = false;
           let daysLate = 0;
@@ -375,90 +436,57 @@ export default function PaymentStatusDashboard({
 
           if (paymentDate) {
             daysLate = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            isOnTime = daysLate <= 0; // payment_date <= due_date
-            isLate = daysLate > 0;    // payment_date > due_date
-            
+            isOnTime = daysLate <= 0;
+            isLate = daysLate > 0;
+
             if (isLate) {
-              // Fine is inclusive: each day from due date
-              // If due date is Jan 1 and payment is Jan 2, that's 1 day late
               const fineAmount = daysLate * dailyFine;
               expectedAmountWithFine = baseAmount + fineAmount;
             }
           }
 
-          // PAID Criteria 1:
-          // 1. Payment date <= payment due date
-          // 2. Payment_amount field value is not empty or null (already filtered)
-          // 3. Payment amount field value is equal to expected maintenance amount
-          // 4. Status is approved
           if (isOnTime && payment.status === 'Approved') {
-            // Use exact equality check (allowing for floating point precision)
             if (Math.abs(paymentAmount - baseAmount) < 0.01) {
               paidStatusFound = true;
-              // Found a payment that meets PAID criteria, stop checking
               break;
             }
           }
 
-          // PAID Criteria 2:
-          // 1. Payment date > payment due date
-          // 2. Payment_amount field value is not empty or null (already filtered)
-          // 3. Payment amount should be equal to maintenance amount plus inclusive fine
-          // 4. Status is approved
           if (isLate && payment.status === 'Approved') {
-            // Use exact equality check (allowing for floating point precision)
             if (Math.abs(paymentAmount - expectedAmountWithFine) < 0.01) {
               paidStatusFound = true;
-              // Found a payment that meets PAID criteria, stop checking
               break;
             }
           }
 
-          // PARTIAL Criteria 1:
-          // 1. Payment date <= payment due date
-          // 2. Payment_amount field value is not empty or null (already filtered)
-          // 3. Payment amount field value is less than the expected maintenance amount
           if (isOnTime) {
             if (paymentAmount < baseAmount) {
               partialStatusFound = true;
-              // Continue checking other payments in case one meets PAID criteria
             }
           }
 
-          // PARTIAL Criteria 2:
-          // 1. Payment date > payment due date
-          // 2. Payment_amount field value is not empty or null (already filtered)
-          // 3. Payment amount is not equal to expected maintenance amount plus inclusive fine
           if (isLate) {
             if (Math.abs(paymentAmount - expectedAmountWithFine) >= 0.01) {
               partialStatusFound = true;
-              // Continue checking other payments in case one meets PAID criteria
             }
           }
 
-          // If payment_date is missing, we can't determine on-time/late, but we can check PARTIAL
-          // if amount doesn't match base amount exactly
           if (!paymentDate && payment.status !== 'Approved') {
-            // Without payment_date, we can't determine PAID status
-            // But if amount doesn't match base, it's likely PARTIAL
             if (Math.abs(paymentAmount - baseAmount) >= 0.01) {
               partialStatusFound = true;
             }
           }
         }
 
-        // Determine final status
         let status: FlatStatus = 'pending';
         let paidAmount = 0;
         let expectedAmount = baseAmount;
-        
-        // Get payment details for tooltip (use the most recent valid payment)
+
         let paymentStatus: string | null = null;
         let paymentDate: string | null = null;
         let transactionAmount: number | null = null;
-        
+
         if (validPayments.length > 0) {
-          // Get the most recent payment (by payment_date or created_at)
           const mostRecentPayment = validPayments.reduce((latest, current) => {
             const currentDate = current.payment_date ? new Date(current.payment_date) : null;
             const latestDate = latest.payment_date ? new Date(latest.payment_date) : null;
@@ -466,26 +494,20 @@ export default function PaymentStatusDashboard({
             if (!currentDate) return latest;
             return currentDate > latestDate ? current : latest;
           }, validPayments[0]);
-          
+
           paymentStatus = mostRecentPayment.status || null;
           paymentDate = mostRecentPayment.payment_date || null;
           transactionAmount = mostRecentPayment.payment_amount ? Number(mostRecentPayment.payment_amount) : null;
         }
 
         if (paidStatusFound) {
-          // At least one payment meets PAID criteria
           status = 'paid';
-          // Sum all valid payments for display
           paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
-          // Expected is base amount (fine already included in payment if late)
           expectedAmount = baseAmount;
         } else if (partialStatusFound || validPayments.length > 0) {
-          // At least one payment exists but doesn't meet PAID criteria
           status = 'partial';
-          // Sum all valid payments for display
           paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
-          
-          // Calculate expected based on latest payment date (if available)
+
           if (latestPaymentDate) {
             const daysLate = Math.floor((latestPaymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
             if (daysLate > 0) {
@@ -495,57 +517,13 @@ export default function PaymentStatusDashboard({
               expectedAmount = baseAmount;
             }
           } else {
-            // No payment_date available, use base amount
             expectedAmount = baseAmount;
           }
         } else {
-          // No valid payments (shouldn't reach here, but safety check)
           status = 'pending';
           paidAmount = 0;
           expectedAmount = baseAmount;
         }
-
-        // Debug logging for each flat
-        console.debug('[PaymentStatus] Flat status:', {
-          flat_number: flat.flat_number,
-          block_name: block.block_name,
-          matching_payments: relevantPayments.length,
-          valid_payments: validPayments.length,
-          paid_amount: paidAmount,
-          expected_amount: expectedAmount,
-          base_amount: baseAmount,
-          due_date: selectedCollection.due_date,
-          difference: expectedAmount - paidAmount,
-          final_status: status,
-          paid_criteria_met: paidStatusFound,
-          partial_criteria_met: partialStatusFound,
-          payments: validPayments.map(p => {
-            const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
-            if (paymentDate) paymentDate.setHours(0, 0, 0, 0);
-            const daysLate = paymentDate ? Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
-            const isOnTime = paymentDate ? daysLate! <= 0 : false;
-            const isLate = paymentDate ? daysLate! > 0 : false;
-            const fineAmount = (daysLate && daysLate > 0) ? daysLate * dailyFine : 0;
-            const expectedForThisPayment = baseAmount + fineAmount;
-            const paymentAmount = Number(p.payment_amount || 0);
-            return {
-              amount: p.payment_amount,
-              status: p.status,
-              type: p.payment_type,
-              quarter: p.payment_quarter,
-              payment_date: p.payment_date,
-              days_late: daysLate,
-              is_on_time: isOnTime,
-              is_late: isLate,
-              fine_amount: fineAmount,
-              expected_for_this_payment: expectedForThisPayment,
-              meets_paid_criteria_1: isOnTime && p.status === 'Approved' && Math.abs(paymentAmount - baseAmount) < 0.01,
-              meets_paid_criteria_2: isLate && p.status === 'Approved' && Math.abs(paymentAmount - expectedForThisPayment) < 0.01,
-              meets_partial_criteria_1: isOnTime && paymentAmount < baseAmount,
-              meets_partial_criteria_2: isLate && Math.abs(paymentAmount - expectedForThisPayment) >= 0.01,
-            };
-          }),
-        });
 
         return {
           id: flat.id,
@@ -555,33 +533,41 @@ export default function PaymentStatusDashboard({
           expectedAmount: expectedAmount,
           paymentStatus: paymentStatus,
           paymentDate: paymentDate,
-          maintenanceDueDate: selectedCollection.due_date,
+          maintenanceDueDate: collection.due_date,
           transactionAmount: transactionAmount,
         } as FlatStatusDisplay;
       });
 
-      // Sort flats in ascending order by flat number (numeric sort)
       const sortedFlats = sortFlats(flats);
-
       return { ...block, flats: sortedFlats };
     });
-  }, [blocks, payments, selectedCollection]);
+  }
 
-  const summary = useMemo(() => {
-    const counts = { paid: 0, partial: 0, pending: 0 };
-    let totalCollected = 0;
-    let totalExpected = 0;
+  async function handleToggleActivation(collectionId: string, currentStatus: boolean) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this collection?`)) {
+      return;
+    }
 
-    blockStatuses.forEach((block) => {
-      block.flats.forEach((flat) => {
-        counts[flat.status] += 1;
-        totalCollected += flat.paidAmount || 0;
-        totalExpected += flat.expectedAmount || 0;
-      });
-    });
+    setActivatingId(collectionId);
+    try {
+      const { error } = await supabase
+        .from('expected_collections')
+        .update({ is_active: !currentStatus })
+        .eq('id', collectionId);
 
-    return { counts, totalCollected, totalExpected };
-  }, [blockStatuses]);
+      if (error) throw error;
+
+      setSuccessMessage(`Collection ${action}d successfully.`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+      await loadData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Unable to ${action} collection`;
+      alert(message);
+    } finally {
+      setActivatingId(null);
+    }
+  }
 
   async function handleCreateExpectedCollection() {
     if (!form.amount_due) {
@@ -607,60 +593,45 @@ export default function PaymentStatusDashboard({
       return;
     }
 
+    if (!form.collection_name.trim()) {
+      alert('Please enter a collection name.');
+      return;
+    }
+
     const isEditing = !!editingId;
     setSaving(true);
     setSuccessMessage(null);
-    
+
     try {
-      // Base payload without quarter_basis (in case column doesn't exist yet)
-      const basePayload = {
+      const payload = {
         apartment_id: apartmentId,
         payment_type: form.payment_type,
         financial_year: form.financial_year.trim(),
         quarter: form.quarter,
+        quarter_basis: form.quarter_basis,
         due_date: form.due_date,
         amount_due: amountDue,
         daily_fine: Number.isNaN(dailyFine) ? 0 : dailyFine,
         notes: form.notes?.trim() || null,
+        collection_name: form.collection_name.trim(),
+        payment_frequency: form.payment_frequency,
+        is_active: form.is_active,
+        start_date: form.due_date,
       };
 
-      // Try with quarter_basis first, fallback to without it if column doesn't exist
-      let payload = { ...basePayload, quarter_basis: form.quarter_basis };
       let error;
-      let usedFallback = false;
-      
+
       if (isEditing) {
         const { error: updateError } = await supabase
           .from('expected_collections')
           .update(payload)
           .eq('id', editingId);
         error = updateError;
-        
-        // If error is about missing quarter_basis column, retry without it
-        if (error && (error.message?.includes('quarter_basis') || error.code === 'PGRST204')) {
-          console.warn('quarter_basis column not found, updating without it. Please run migration.');
-          usedFallback = true;
-          const { error: retryError } = await supabase
-            .from('expected_collections')
-            .update(basePayload)
-            .eq('id', editingId);
-          error = retryError;
-        }
       } else {
         const { error: insertError } = await supabase
           .from('expected_collections')
           .insert([payload]);
         error = insertError;
-        
-        // If error is about missing quarter_basis column, retry without it
-        if (error && (error.message?.includes('quarter_basis') || error.code === 'PGRST204')) {
-          console.warn('quarter_basis column not found, inserting without it. Please run migration.');
-          usedFallback = true;
-          const { error: retryError } = await supabase
-            .from('expected_collections')
-            .insert([basePayload]);
-          error = retryError;
-        }
       }
 
       if (error) {
@@ -668,16 +639,7 @@ export default function PaymentStatusDashboard({
         console.error('Payload attempted:', payload);
         throw error;
       }
-      
-      // Show warning if we had to use fallback
-      if (usedFallback) {
-        console.warn(
-          '⚠️ Record saved without quarter_basis. ' +
-          'Please run migration: 20251115123000_add_quarter_basis_to_expected_collections.sql'
-        );
-      }
 
-      // Reset form to defaults
       setForm({
         payment_type: 'maintenance',
         financial_year: getDefaultFinancialYearLabel(),
@@ -687,38 +649,37 @@ export default function PaymentStatusDashboard({
         amount_due: '',
         daily_fine: '0',
         notes: '',
+        collection_name: '',
+        payment_frequency: 'quarterly',
+        is_active: false,
       });
-      
+
       setEditingId(null);
       setSuccessMessage(
-        isEditing 
-          ? 'Expected collection updated successfully.' 
-          : 'Expected collection created successfully.'
+        isEditing
+          ? 'Collection updated successfully.'
+          : 'Collection created successfully.'
       );
 
-      // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(null), 5000);
 
       await loadData();
     } catch (err) {
       console.error('Error saving expected collection:', err);
       let message = 'Unable to save expected collection';
-      
+
       if (err instanceof Error) {
         message = err.message;
-        
-        // Check for specific error types
+
         if (message.includes('duplicate key') || message.includes('unique constraint')) {
           message = 'A collection with this payment type, quarter, and financial year already exists for this apartment. Please use a different combination.';
-        } else if (message.includes('quarter_basis') || message.includes('column') && message.includes('does not exist')) {
-          message = 'Database migration required: The quarter_basis column is missing. Please run the migration: 20251115123000_add_quarter_basis_to_expected_collections.sql';
         } else if (message.includes('violates check constraint')) {
           message = 'Invalid data: Please check that all fields have valid values (payment type, quarter, etc.).';
         } else if (message.includes('permission denied') || message.includes('policy')) {
           message = 'Permission denied: You may not have access to modify this collection. Please refresh and try again.';
         }
       }
-      
+
       alert(`Error: ${message}\n\nPlease check the browser console (F12) for more details.`);
     } finally {
       setSaving(false);
@@ -726,7 +687,7 @@ export default function PaymentStatusDashboard({
   }
 
   async function handleDeleteExpectedCollection(id: string) {
-    if (!confirm('Delete this expected collection? Payments linked to it will remain, but the target will be removed.')) {
+    if (!confirm('Delete this collection? Payments linked to it will remain, but the target will be removed.')) {
       return;
     }
 
@@ -735,23 +696,31 @@ export default function PaymentStatusDashboard({
       const { error } = await supabase.from('expected_collections').delete().eq('id', id);
       if (error) throw error;
 
-      if (selectedCollectionId === id) {
-        setSelectedCollectionId(null);
-      }
-
+      setSuccessMessage('Collection deleted successfully.');
+      setTimeout(() => setSuccessMessage(null), 5000);
       await loadData();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to delete expected collection';
+      const message = err instanceof Error ? err.message : 'Unable to delete collection';
       alert(message);
     } finally {
       setDeletingId(null);
     }
   }
 
+  function toggleCollectionExpansion(collectionId: string) {
+    const newExpanded = new Set(expandedCollections);
+    if (newExpanded.has(collectionId)) {
+      newExpanded.delete(collectionId);
+    } else {
+      newExpanded.add(collectionId);
+    }
+    setExpandedCollections(newExpanded);
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <Loader2 className="w-10 h-10 text-amber-600 animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
         <p className="text-gray-600">Loading payment status dashboard...</p>
       </div>
     );
@@ -777,10 +746,10 @@ export default function PaymentStatusDashboard({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-amber-600" />
+          <BarChart3 className="w-6 h-6 text-blue-600" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
               {showChart ? 'Payment Status' : 'Payment Setup'} · {apartmentName}
@@ -788,7 +757,7 @@ export default function PaymentStatusDashboard({
             <p className="text-gray-600">
               {showChart
                 ? 'Live view of maintenance collections across every flat'
-                : 'Define expected maintenance/other collections and fines; this powers the Payment Status dashboard.'}
+                : 'Define expected maintenance/other collections and fines'}
             </p>
           </div>
         </div>
@@ -807,12 +776,16 @@ export default function PaymentStatusDashboard({
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4" data-payment-setup-form>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Expected Collections</h3>
-              <p className="text-sm text-gray-600">Define the dues per quarter and payment type.</p>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingId ? 'Edit Collection' : 'Add New Collection'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {editingId ? 'Update the collection details' : 'Define dues per quarter and payment type'}
+              </p>
             </div>
             <button
               onClick={loadData}
-              className="inline-flex items-center gap-2 text-sm font-medium text-amber-600 hover:text-amber-700"
+              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
             >
               <RefreshCcw className="w-4 h-4" />
               Refresh
@@ -820,24 +793,35 @@ export default function PaymentStatusDashboard({
           </div>
 
           {successMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-900">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-900 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
               {successMessage}
             </div>
           )}
 
           {editingId && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-900">
-              <strong>Editing mode:</strong> You are currently editing an expected collection. Click "Update Expected Collection" to save changes or "Cancel Edit" to discard.
+              <strong>Editing mode:</strong> You are currently editing a collection. Click "Update Collection" to save changes or "Cancel Edit" to discard.
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Payment Type</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Collection Name</label>
+              <input
+                type="text"
+                value={form.collection_name}
+                onChange={(e) => setForm({ ...form, collection_name: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., Annual Maintenance 2025"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Payment Type</label>
               <select
                 value={form.payment_type}
                 onChange={(e) => setForm({ ...form, payment_type: e.target.value as PaymentType })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {PAYMENT_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -847,32 +831,45 @@ export default function PaymentStatusDashboard({
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Quarter Type</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Frequency</label>
               <select
-                value={form.quarter_basis}
-                onChange={(e) => setForm({ ...form, quarter_basis: e.target.value as 'financial' | 'yearly' })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                value={form.payment_frequency}
+                onChange={(e) => setForm({ ...form, payment_frequency: e.target.value as any })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="financial">Financial-year quarters (Apr–Mar)</option>
-                <option value="yearly">Calendar-year quarters (Jan–Dec)</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="one-time">One-Time</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Financial Year</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Quarter Type</label>
+              <select
+                value={form.quarter_basis}
+                onChange={(e) => setForm({ ...form, quarter_basis: e.target.value as 'financial' | 'yearly' })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="financial">Financial-year (Apr–Mar)</option>
+                <option value="yearly">Calendar-year (Jan–Dec)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Financial Year</label>
               <input
                 type="text"
                 value={form.financial_year}
                 onChange={(e) => setForm({ ...form, financial_year: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="FY25"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Quarter</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Quarter</label>
               <select
                 value={form.quarter}
                 onChange={(e) => setForm({ ...form, quarter: e.target.value as QuarterType })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {QUARTERS.map((quarter) => (
                   <option key={quarter} value={quarter}>
@@ -882,59 +879,69 @@ export default function PaymentStatusDashboard({
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Due Date</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Due Date</label>
               <input
                 type="date"
                 value={form.due_date}
                 onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Amount Due / Flat (₹)</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Amount Due / Flat</label>
               <input
                 type="number"
                 min="0"
                 value={form.amount_due}
                 onChange={(e) => setForm({ ...form, amount_due: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="5000"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Daily Fine After Due Date (₹)</label>
+              <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Daily Fine</label>
               <input
                 type="number"
                 min="0"
                 value={form.daily_fine}
                 onChange={(e) => setForm({ ...form, daily_fine: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="50"
               />
             </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Notes (optional)</label>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-700 uppercase block mb-2">Notes (optional)</label>
+            <input
+              type="text"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Includes clubhouse upgrade"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
-                type="text"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-amber-500 focus:border-amber-500"
-                placeholder="e.g., Includes clubhouse upgrade"
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-            </div>
+              <span className="text-sm font-medium text-gray-700">Activate immediately</span>
+            </label>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleCreateExpectedCollection}
               disabled={saving}
-              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <PlusCircle className="w-4 h-4" />
-              {saving ? 'Saving...' : editingId ? 'Update Expected Collection' : 'Add Expected Collection'}
+              {saving ? 'Saving...' : editingId ? 'Update Collection' : 'Add Collection'}
             </button>
             {editingId && (
               <button
@@ -949,6 +956,9 @@ export default function PaymentStatusDashboard({
                     amount_due: '',
                     daily_fine: '0',
                     notes: '',
+                    collection_name: '',
+                    payment_frequency: 'quarterly',
+                    is_active: false,
                   });
                   setSuccessMessage(null);
                 }}
@@ -958,212 +968,368 @@ export default function PaymentStatusDashboard({
               </button>
             )}
           </div>
-
-          {expectedCollections.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full mt-4 text-sm">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
-                  <tr>
-                    <th className="text-left px-4 py-2">Period</th>
-                    <th className="text-left px-4 py-2">Type</th>
-                    <th className="text-left px-4 py-2">Due Date</th>
-                    <th className="text-left px-4 py-2">Amount</th>
-                    <th className="text-left px-4 py-2">Daily Fine</th>
-                    <th className="text-left px-4 py-2">Selected</th>
-                    <th className="text-left px-4 py-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {expectedCollections.map((collection) => (
-                    <tr 
-                      key={collection.id}
-                      className={editingId === collection.id ? 'bg-amber-50' : ''}
-                    >
-                      <td className="px-4 py-2 font-medium text-gray-900">
-                        {collection.quarter} · {collection.financial_year}
-                      </td>
-                      <td className="px-4 py-2">{PAYMENT_TYPE_LABELS[collection.payment_type] || collection.payment_type}</td>
-                      <td className="px-4 py-2">{formatDate(collection.due_date)}</td>
-                      <td className="px-4 py-2">₹{Number(collection.amount_due).toLocaleString()}</td>
-                      <td className="px-4 py-2">₹{Number(collection.daily_fine || 0).toLocaleString()}/day</td>
-                      <td className="px-4 py-2">
-                        <input
-                          type="radio"
-                          name="selectedCollection"
-                          checked={selectedCollection?.id === collection.id}
-                          onChange={() => setSelectedCollectionId(collection.id)}
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="flex justify-end gap-3">
-                          <button
-                            onClick={() => {
-                              setEditingId(collection.id);
-                              setForm({
-                                payment_type: collection.payment_type,
-                                financial_year: collection.financial_year,
-                                quarter: collection.quarter,
-                                quarter_basis: collection.quarter_basis || 'financial',
-                                due_date: collection.due_date,
-                                amount_due: String(collection.amount_due ?? ''),
-                                daily_fine: String(collection.daily_fine ?? '0'),
-                                notes: collection.notes || '',
-                              });
-                              setSuccessMessage(null);
-                              // Scroll to form after a brief delay to allow state update
-                              setTimeout(() => {
-                                const formElement = document.querySelector('[data-payment-setup-form]');
-                                formElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              }, 100);
-                            }}
-                            disabled={deletingId === collection.id}
-                            className="inline-flex items-center gap-1 text-sm text-gray-700 hover:text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteExpectedCollection(collection.id)}
-                            disabled={deletingId === collection.id}
-                            className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900 text-sm">
-              No expected collections yet. Add one above to start tracking statuses.
-            </div>
-          )}
         </div>
       )}
 
-      {showChart && !selectedCollection && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 mt-1 text-amber-600" />
+      {showChart && activeCollections.length === 0 && archivedCollections.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 mt-1 text-blue-600" />
           <div>
-            <p className="font-semibold">No expected collections configured</p>
-            <p className="text-sm">
+            <p className="font-semibold text-blue-900">No collections configured</p>
+            <p className="text-sm text-blue-800">
               Admins need to define the amount per quarter to enable the Payment Status dashboard.
             </p>
           </div>
         </div>
       )}
 
-      {showChart && selectedCollection && (
+      {showChart && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Selected Collection</p>
-              <p className="text-lg font-bold text-gray-900">
-                {selectedCollection.quarter} · {selectedCollection.financial_year}
-              </p>
-              <p className="text-sm text-gray-600">
-                {PAYMENT_TYPE_LABELS[selectedCollection.payment_type] || selectedCollection.payment_type}
-                {selectedCollection.quarter_basis === 'financial' && ' · Financial-year quarters (Apr–Mar)'}
-                {selectedCollection.quarter_basis === 'yearly' && ' · Calendar-year quarters (Jan–Dec)'}
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Amount Due / Flat</p>
-              <p className="text-lg font-bold text-gray-900">
-                ₹{Number(selectedCollection.amount_due).toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600">Due by {formatDate(selectedCollection.due_date)}</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Daily Fine After Due Date</p>
-              <p className="text-lg font-bold text-gray-900">
-                ₹{Number(selectedCollection.daily_fine || 0).toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600">Applied per day past due date</p>
-            </div>
-          </div>
+          {activeCollections.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <h3 className="text-xl font-bold text-gray-900">Active Collections</h3>
+                </div>
+                <span className="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
+                  {activeCollections.length}
+                </span>
+              </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              {(['paid', 'partial', 'pending'] as FlatStatus[]).map((status) => (
-                <div key={status} className="flex items-center gap-2">
-                  <span className={`w-3 h-3 rounded-full ${STATUS_META[status].color}`} />
-                  <span className="text-sm font-medium text-gray-700">
-                    {STATUS_META[status].label}: {summary.counts[status]}
+              <div className="space-y-4">
+                {activeCollections.map((collection) => {
+                  const stats = getCollectionStats(collection);
+                  const isExpanded = expandedCollections.has(collection.id);
+                  const blockStatuses = isExpanded ? getBlockStatuses(collection) : [];
+                  const collectionProgress = stats.totalExpected > 0
+                    ? ((stats.totalCollected / stats.totalExpected) * 100).toFixed(1)
+                    : '0';
+
+                  return (
+                    <div key={collection.id} className="bg-white border-2 border-green-200 rounded-xl overflow-hidden">
+                      <div className="p-5 bg-gradient-to-r from-green-50 to-white">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-lg font-bold text-gray-900">
+                                {collection.collection_name || `${PAYMENT_TYPE_LABELS[collection.payment_type]} - ${collection.quarter} ${collection.financial_year}`}
+                              </h4>
+                              <span className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                Active
+                              </span>
+                              <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
+                                {FREQUENCY_LABELS[collection.payment_frequency || 'quarterly']}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>Due: {formatDate(collection.due_date)}</span>
+                              <span>₹{Number(collection.amount_due).toLocaleString()}/flat</span>
+                              {collection.daily_fine && collection.daily_fine > 0 && (
+                                <span>Fine: ₹{Number(collection.daily_fine).toLocaleString()}/day</span>
+                              )}
+                            </div>
+                          </div>
+                          {allowManagement && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleCollectionExpansion(collection.id)}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50"
+                              >
+                                <Eye className="w-4 h-4" />
+                                {isExpanded ? 'Hide' : 'View'} Details
+                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={() => handleToggleActivation(collection.id, true)}
+                                disabled={activatingId === collection.id}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                title="Deactivate collection"
+                              >
+                                <PowerOff className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingId(collection.id);
+                                  setForm({
+                                    payment_type: collection.payment_type,
+                                    financial_year: collection.financial_year,
+                                    quarter: collection.quarter,
+                                    quarter_basis: collection.quarter_basis || 'financial',
+                                    due_date: collection.due_date,
+                                    amount_due: String(collection.amount_due ?? ''),
+                                    daily_fine: String(collection.daily_fine ?? '0'),
+                                    notes: collection.notes || '',
+                                    collection_name: collection.collection_name || '',
+                                    payment_frequency: collection.payment_frequency || 'quarterly',
+                                    is_active: collection.is_active || false,
+                                  });
+                                  setSuccessMessage(null);
+                                  setTimeout(() => {
+                                    const formElement = document.querySelector('[data-payment-setup-form]');
+                                    formElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  }, 100);
+                                }}
+                                disabled={deletingId === collection.id}
+                                className="text-sm text-gray-600 hover:text-blue-600 px-2"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-4 mb-4">
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Paid</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{stats.paidCount}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{stats.partialCount}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Unpaid</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{stats.pendingCount}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Collection Rate</p>
+                            <p className="text-2xl font-bold text-green-600">{collectionProgress}%</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-3 border border-gray-200">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-gray-700">Collected vs Expected</span>
+                            <span className="font-bold text-gray-900">
+                              ₹{stats.totalCollected.toLocaleString()} / ₹{stats.totalExpected.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-500 transition-all duration-300"
+                              style={{ width: `${Math.min(parseFloat(collectionProgress), 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="p-5 border-t border-gray-200 bg-gray-50">
+                          {blockStatuses.length === 0 ? (
+                            <div className="text-center text-gray-600 py-8">
+                              No flats configured yet. Add buildings and flats to visualize payment status.
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {blockStatuses.map((block) => (
+                                <div key={block.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h5 className="font-semibold text-gray-900">{block.block_name}</h5>
+                                    <span className="text-sm text-gray-500">{block.flats.length} flats</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {block.flats.map((flat) => {
+                                      const difference = flat.expectedAmount - flat.paidAmount;
+
+                                      let tooltipText = `Flat ${flat.flat_number}\n`;
+                                      tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
+                                      tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
+                                      tooltipText += `Paid: ₹${flat.paidAmount.toLocaleString()}\n`;
+                                      tooltipText += `Expected: ₹${flat.expectedAmount.toLocaleString()}\n`;
+                                      tooltipText += `Difference: ₹${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
+
+                                      return (
+                                        <div
+                                          key={flat.id}
+                                          className={`w-12 h-12 flex flex-col items-center justify-center rounded-lg text-xs font-semibold text-gray-800 ${STATUS_META[flat.status].bg} cursor-help`}
+                                          title={tooltipText}
+                                        >
+                                          <span>{flat.flat_number}</span>
+                                          <span className="text-[10px] font-normal">
+                                            {flat.status === 'paid' ? 'Paid' : flat.status === 'partial' ? 'Part' : 'Unpaid'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {archivedCollections.length > 0 && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowArchivedSection(!showArchivedSection)}
+                className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-4 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <h3 className="text-lg font-bold text-gray-900">Archived Collections</h3>
+                  </div>
+                  <span className="bg-gray-200 text-gray-700 text-sm font-semibold px-3 py-1 rounded-full">
+                    {archivedCollections.length}
                   </span>
                 </div>
-              ))}
-              <div className="ml-auto text-right">
-                <p className="text-xs font-semibold text-gray-500 uppercase">Collected vs Expected</p>
-                <p className="text-lg font-bold text-gray-900">
-                  ₹{summary.totalCollected.toLocaleString()} / ₹{summary.totalExpected.toLocaleString()}
-                </p>
-              </div>
-            </div>
+                {showArchivedSection ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+              </button>
 
-            {blockStatuses.length === 0 && (
-              <div className="text-center text-gray-600 py-12">
-                No flats configured yet. Add buildings and flats to visualize payment status.
-              </div>
-            )}
+              {showArchivedSection && (
+                <div className="space-y-3">
+                  {archivedCollections.map((collection) => {
+                    const stats = getCollectionStats(collection);
+                    const isExpanded = expandedCollections.has(collection.id);
+                    const blockStatuses = isExpanded ? getBlockStatuses(collection) : [];
+                    const collectionProgress = stats.totalExpected > 0
+                      ? ((stats.totalCollected / stats.totalExpected) * 100).toFixed(1)
+                      : '0';
 
-            <div className="space-y-6">
-              {blockStatuses.map((block) => (
-                <div key={block.id} className="border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-900">{block.block_name}</h4>
-                    <span className="text-sm text-gray-500">{block.flats.length} flats</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {block.flats.map((flat) => {
-                      const difference = flat.expectedAmount - flat.paidAmount;
-                      const meetsRequirement = flat.paidAmount >= flat.expectedAmount;
-                      
-                      // Build tooltip with payment details for comparison
-                      let tooltipText = `Flat ${flat.flat_number}\n`;
-                      tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
-                      tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                      tooltipText += `Paid: ₹${flat.paidAmount.toLocaleString()}\n`;
-                      tooltipText += `Expected: ₹${flat.expectedAmount.toLocaleString()}\n`;
-                      tooltipText += `Difference: ₹${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
-                      tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                      
-                      // Add payment details for comparison
-                      tooltipText += `Payment Details:\n`;
-                      tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                      tooltipText += `Approved Status: ${flat.paymentStatus || 'N/A'}\n`;
-                      tooltipText += `Payment Date: ${flat.paymentDate ? formatDate(flat.paymentDate) : 'N/A'}\n`;
-                      tooltipText += `Maintenance Due Date: ${flat.maintenanceDueDate ? formatDate(flat.maintenanceDueDate) : 'N/A'}\n`;
-                      tooltipText += `Transaction Amount: ${flat.transactionAmount ? `₹${flat.transactionAmount.toLocaleString()}` : 'N/A'}\n`;
-                      
-                      return (
-                        <div
-                          key={flat.id}
-                          className={`w-12 h-12 flex flex-col items-center justify-center rounded-lg text-xs font-semibold text-gray-800 ${STATUS_META[flat.status].bg} cursor-help`}
-                          title={tooltipText}
-                        >
-                          <span>{flat.flat_number}</span>
-                          <span className="text-[10px] font-normal">
-                            {flat.status === 'paid'
-                              ? 'Paid'
-                              : flat.status === 'partial'
-                              ? 'Partial'
-                              : 'Unpaid'}
-                          </span>
+                    return (
+                      <div key={collection.id} className="bg-white border border-gray-300 rounded-xl overflow-hidden">
+                        <div className="p-4 bg-gray-50">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-base font-bold text-gray-900">
+                                  {collection.collection_name || `${PAYMENT_TYPE_LABELS[collection.payment_type]} - ${collection.quarter} ${collection.financial_year}`}
+                                </h4>
+                                <span className="bg-gray-300 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">
+                                  Archived
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <span>Due: {formatDate(collection.due_date)}</span>
+                                <span>₹{Number(collection.amount_due).toLocaleString()}/flat</span>
+                                <span className="text-gray-500">
+                                  {collectionProgress}% collected (₹{stats.totalCollected.toLocaleString()})
+                                </span>
+                              </div>
+                            </div>
+                            {allowManagement && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => toggleCollectionExpansion(collection.id)}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  {isExpanded ? 'Hide' : 'View'}
+                                </button>
+                                <button
+                                  onClick={() => handleToggleActivation(collection.id, false)}
+                                  disabled={activatingId === collection.id}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-green-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                                  title="Reactivate collection"
+                                >
+                                  <Power className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteExpectedCollection(collection.id)}
+                                  disabled={deletingId === collection.id}
+                                  className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600 px-2 py-1.5 rounded-lg hover:bg-gray-100"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {isExpanded && (
+                          <div className="p-4 border-t border-gray-200 bg-white">
+                            <div className="grid grid-cols-4 gap-3 mb-4">
+                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <p className="text-xs font-semibold text-gray-600 uppercase">Paid</p>
+                                </div>
+                                <p className="text-xl font-bold text-gray-900">{stats.paidCount}</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                  <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
+                                </div>
+                                <p className="text-xl font-bold text-gray-900">{stats.partialCount}</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  <p className="text-xs font-semibold text-gray-600 uppercase">Unpaid</p>
+                                </div>
+                                <p className="text-xl font-bold text-gray-900">{stats.pendingCount}</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Rate</p>
+                                <p className="text-xl font-bold text-gray-700">{collectionProgress}%</p>
+                              </div>
+                            </div>
+
+                            {blockStatuses.length === 0 ? (
+                              <div className="text-center text-gray-600 py-6 text-sm">
+                                No flats configured
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {blockStatuses.map((block) => (
+                                  <div key={block.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h5 className="font-semibold text-gray-900 text-sm">{block.block_name}</h5>
+                                      <span className="text-xs text-gray-500">{block.flats.length} flats</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {block.flats.map((flat) => {
+                                        const difference = flat.expectedAmount - flat.paidAmount;
+
+                                        let tooltipText = `Flat ${flat.flat_number}\n`;
+                                        tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
+                                        tooltipText += `Paid: ₹${flat.paidAmount.toLocaleString()}\n`;
+                                        tooltipText += `Expected: ₹${flat.expectedAmount.toLocaleString()}\n`;
+
+                                        return (
+                                          <div
+                                            key={flat.id}
+                                            className={`w-10 h-10 flex flex-col items-center justify-center rounded text-[10px] font-semibold text-gray-800 ${STATUS_META[flat.status].bg} cursor-help`}
+                                            title={tooltipText}
+                                          >
+                                            <span>{flat.flat_number}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          )}
         </>
       )}
     </div>
   );
 }
-

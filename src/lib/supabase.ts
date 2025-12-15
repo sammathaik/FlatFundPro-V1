@@ -125,6 +125,11 @@ export interface ExpectedCollection {
   amount_due: number;
   daily_fine: number;
   notes?: string | null;
+  payment_frequency?: 'one-time' | 'monthly' | 'quarterly' | 'yearly';
+  is_active?: boolean;
+  collection_name?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   created_at: string;
   updated_at: string;
 }
