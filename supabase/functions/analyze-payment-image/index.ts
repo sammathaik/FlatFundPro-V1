@@ -112,13 +112,22 @@ Deno.serve(async (req: Request) => {
     // Phase 4: Error Level Analysis (Forgery Detection)
     const elaResult = await analyzeErrorLevel(imageBytes);
 
+    // Phase 5: Text-Based Fraud Detection (NEW - Primary Detection)
+    const textValidationResult = await validatePaymentTextFields(supabase, payment_submission_id);
+
     // Calculate composite fraud risk score
-    const fraudRiskScore = calculateCompositeScore(
+    // Text validation takes priority (70% weight), image analysis is secondary (30% weight)
+    const imageScore = calculateCompositeScore(
       phashResult.similarity_score || 0,
       exifResult.has_editor_metadata,
       visualResult.consistency_score,
       elaResult.ela_score
     );
+
+    const textScore = textValidationResult.fraud_score || 0;
+
+    // Weighted composite: 70% text-based, 30% image-based
+    const fraudRiskScore = Math.round((textScore * 0.7) + (imageScore * 0.3));
 
     const isFlagged = fraudRiskScore >= 70;
 
@@ -140,7 +149,12 @@ Deno.serve(async (req: Request) => {
         exif_creation_date: exifResult.creation_date,
         visual_consistency_score: visualResult.consistency_score,
         bank_pattern_matched: visualResult.pattern_matched,
-        visual_anomalies: visualResult.anomalies,
+        visual_anomalies: {
+          ...visualResult.anomalies,
+          text_validation: textValidationResult.indicators || [],
+          text_fraud_score: textScore,
+          image_fraud_score: imageScore,
+        },
         ela_score: elaResult.ela_score,
         ela_manipulation_detected: elaResult.manipulation_detected,
         ela_suspicious_regions: elaResult.suspicious_regions,
@@ -388,4 +402,23 @@ function calculateCompositeScore(
   totalScore += elaScore * 0.25;
 
   return Math.min(Math.max(Math.round(totalScore), 0), 100);
+}
+
+// Text-Based Fraud Validation
+async function validatePaymentTextFields(supabase: any, paymentId: string) {
+  try {
+    const { data, error } = await supabase.rpc('validate_payment_text_fields', {
+      p_payment_id: paymentId,
+    });
+
+    if (error) {
+      console.error('Text validation error:', error);
+      return { fraud_score: 0, is_flagged: false, indicators: [] };
+    }
+
+    return data || { fraud_score: 0, is_flagged: false, indicators: [] };
+  } catch (error) {
+    console.error('Text validation exception:', error);
+    return { fraud_score: 0, is_flagged: false, indicators: [] };
+  }
 }
