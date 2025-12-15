@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Users, Edit2, Trash2, Plus, ChevronDown, ChevronUp, X, Save, Building, Mail, Phone, User, Home } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Users, Edit2, Trash2, Plus, ChevronDown, ChevronUp, X, Save, Building, Mail, Phone, User, Home, Download, Search, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Occupant {
@@ -43,6 +43,7 @@ export default function OccupantManagement() {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [flats, setFlats] = useState<any[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadData();
@@ -247,6 +248,76 @@ export default function OccupantManagement() {
     }
   };
 
+  const filteredOccupants = useMemo(() => {
+    if (!searchTerm.trim()) return occupants;
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    return occupants.filter(
+      (occupant) =>
+        occupant.apartment_name.toLowerCase().includes(searchLower) ||
+        occupant.block_name.toLowerCase().includes(searchLower) ||
+        occupant.flat_number.toLowerCase().includes(searchLower) ||
+        occupant.email.toLowerCase().includes(searchLower) ||
+        occupant.occupant_type.toLowerCase().includes(searchLower)
+    );
+  }, [occupants, searchTerm]);
+
+  const exportToCSV = () => {
+    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Email Address', 'Occupant Type', 'Created At'];
+    const rows = filteredOccupants.map((occupant) => [
+      occupant.apartment_name,
+      occupant.block_name,
+      occupant.block_type,
+      occupant.flat_number,
+      occupant.email,
+      occupant.occupant_type,
+      new Date(occupant.created_at).toLocaleDateString(),
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `occupants_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToExcel = () => {
+    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Email Address', 'Occupant Type', 'Created At'];
+    const rows = filteredOccupants.map((occupant) => [
+      occupant.apartment_name,
+      occupant.block_name,
+      occupant.block_type,
+      occupant.flat_number,
+      occupant.email,
+      occupant.occupant_type,
+      new Date(occupant.created_at).toLocaleDateString(),
+    ]);
+
+    const excelContent = [
+      headers.join('\t'),
+      ...rows.map((row) => row.join('\t')),
+    ].join('\n');
+
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `occupants_${new Date().toISOString().split('T')[0]}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -257,18 +328,63 @@ export default function OccupantManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-amber-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Occupant Management</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Occupant Management</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {filteredOccupants.length} {filteredOccupants.length === 1 ? 'occupant' : 'occupants'}
+              {searchTerm && ` (filtered from ${occupants.length})`}
+            </p>
+          </div>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg"
-        >
-          <Plus className="w-5 h-5" />
-          Add Occupant
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-md"
+            title="Export to CSV"
+          >
+            <Download className="w-4 h-4" />
+            CSV
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-md"
+            title="Export to Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Excel
+          </button>
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Add Occupant
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by apartment, building, flat number, email, or type..."
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -297,14 +413,16 @@ export default function OccupantManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {occupants.length === 0 ? (
+              {filteredOccupants.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    No occupants found. Add the first occupant to get started.
+                    {searchTerm
+                      ? 'No occupants match your search criteria.'
+                      : 'No occupants found. Add the first occupant to get started.'}
                   </td>
                 </tr>
               ) : (
-                occupants.map((occupant) => (
+                filteredOccupants.map((occupant) => (
                   <>
                     <tr key={occupant.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
