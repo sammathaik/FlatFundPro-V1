@@ -13,6 +13,7 @@ interface FormData {
   payment_date: string;
   screenshot: File | null;
   payment_type: string;
+  occupant_type: 'Owner' | 'Tenant' | '';
 }
 
 interface FormErrors {
@@ -24,6 +25,7 @@ interface FormErrors {
   payment_type?: string;
   screenshot?: string;
   submit?: string;
+  occupant_type?: string;
 }
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
@@ -46,6 +48,7 @@ export default function DynamicPaymentForm() {
     payment_date: '',
     screenshot: null,
     payment_type: '',
+    occupant_type: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -54,6 +57,7 @@ export default function DynamicPaymentForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{ date: string; quarter: string } | null>(null);
+  const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
 
   useEffect(() => {
     loadApartments();
@@ -156,6 +160,10 @@ export default function DynamicPaymentForm() {
       newErrors.email = 'Email address is required';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.occupant_type) {
+      newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
     }
 
     if (!formData.payment_type) {
@@ -315,15 +323,33 @@ export default function DynamicPaymentForm() {
     // Check for duplicate before showing confirm dialog
     setSubmissionState('loading');
     try {
+      // First check email-flat mapping
+      const { data: validationResult } = await supabase.rpc('validate_and_create_flat_email_mapping', {
+        p_apartment_id: formData.apartmentId,
+        p_block_id: formData.blockId,
+        p_flat_id: formData.flatId,
+        p_email: formData.email.trim().toLowerCase(),
+        p_occupant_type: formData.occupant_type
+      });
+
+      if (validationResult && !validationResult.success) {
+        setSubmissionState('idle');
+        setShowEmailMismatchModal(true);
+        setErrors({
+          submit: validationResult.message || 'This flat is mapped to another email address. Please contact your management committee.'
+        });
+        return;
+      }
+
       const duplicateCheck = await checkForDuplicate();
-      
+
       if (duplicateCheck.isDuplicate) {
         setSubmissionState('idle');
         const existingRecord = duplicateCheck.existingRecord;
-        const existingDate = existingRecord.payment_date 
+        const existingDate = existingRecord.payment_date
           ? new Date(existingRecord.payment_date).toLocaleDateString()
           : new Date(existingRecord.created_at).toLocaleDateString();
-        
+
         setDuplicateInfo({
           date: existingDate,
           quarter: existingRecord.payment_quarter || calculatePaymentQuarter(formData.payment_date || null),
@@ -331,7 +357,7 @@ export default function DynamicPaymentForm() {
         setShowDuplicateAlert(true);
         return;
       }
-      
+
       setSubmissionState('idle');
       setShowConfirmDialog(true);
     } catch (error) {
@@ -370,6 +396,7 @@ export default function DynamicPaymentForm() {
         payment_type: formData.payment_type,
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
+        occupant_type: formData.occupant_type,
       };
       
       // Debug log to verify payment_date is being saved
@@ -396,6 +423,8 @@ export default function DynamicPaymentForm() {
         payment_amount: '',
         payment_date: '',
         screenshot: null,
+        payment_type: '',
+        occupant_type: '',
       });
 
       const fileInput = document.getElementById('screenshot') as HTMLInputElement;
@@ -424,6 +453,7 @@ export default function DynamicPaymentForm() {
     setSubmissionState('idle');
     setErrors({});
     setUploadProgress(0);
+    setShowEmailMismatchModal(false);
   };
 
   if (loadingData) {
@@ -612,25 +642,50 @@ export default function DynamicPaymentForm() {
                 )}
               </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="your.email@example.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={submissionState === 'loading'}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="your.email@example.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="occupant_type" className="block text-sm font-semibold text-gray-700 mb-2">
+                    I am <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="occupant_type"
+                    name="occupant_type"
+                    value={formData.occupant_type}
+                    onChange={handleInputChange}
+                    disabled={submissionState === 'loading'}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                      errors.occupant_type ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select...</option>
+                    <option value="Owner">Owner</option>
+                    <option value="Tenant">Tenant</option>
+                  </select>
+                  {errors.occupant_type && (
+                    <p className="mt-1 text-sm text-red-600">{errors.occupant_type}</p>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -795,6 +850,33 @@ export default function DynamicPaymentForm() {
                 {submissionState === 'loading' ? 'Uploading...' : 'Upload & Submit'}
               </button>
             </form>
+
+            {showEmailMismatchModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                      <AlertCircle className="w-10 h-10 text-red-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                      Email Address Mismatch
+                    </h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                      This flat is already mapped to another email address. If you believe this is an error, please contact your management committee for assistance.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowEmailMismatchModal(false);
+                        setErrors({});
+                      }}
+                      className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      Understood
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {showDuplicateAlert && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDuplicateAlert(false)}>
