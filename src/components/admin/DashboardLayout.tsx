@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 
@@ -21,6 +21,8 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'admins', label: 'Admins', icon: Users },
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
     { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
+    { id: 'settings', label: 'System Settings', icon: Settings },
+    { id: 'audit', label: 'Audit Logs', icon: Shield },
   ];
 
   const adminTabs = [

@@ -5,6 +5,8 @@ import AdminManagement from './AdminManagement';
 import SuperAdminOverview from './SuperAdminOverview';
 import LeadsManagement from './LeadsManagement';
 import AnalyticsReports from './AnalyticsReports';
+import SystemSettings from './SystemSettings';
+import AuditLogs from './AuditLogs';
 
 export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -16,6 +18,8 @@ export default function SuperAdminDashboard() {
       {activeTab === 'admins' && <AdminManagement />}
       {activeTab === 'leads' && <LeadsManagement />}
       {activeTab === 'analytics' && <AnalyticsReports />}
+      {activeTab === 'settings' && <SystemSettings />}
+      {activeTab === 'audit' && <AuditLogs />}
     </DashboardLayout>
   );
 }
