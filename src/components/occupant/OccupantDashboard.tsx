@@ -28,8 +28,8 @@ interface Payment {
   payment_date: string | null;
   payment_type: string;
   payment_quarter: string;
-  payment_mode: string | null;
-  transaction_id: string | null;
+  platform: string | null;
+  transaction_reference: string | null;
   comments: string | null;
   created_at: string;
   status: string;
@@ -103,20 +103,20 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       : payments.filter((p) => p.payment_type === selectedCategory);
 
   const totalPaid = payments
-    .filter((p) => p.status === 'paid')
+    .filter((p) => p.status === 'Approved')
     .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
 
   const totalPending = payments
-    .filter((p) => p.status === 'pending')
+    .filter((p) => p.status === 'Received' || p.status === 'Reviewed')
     .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'Approved':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
+      case 'Received':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'partially_paid':
+      case 'Reviewed':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -125,11 +125,11 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'Approved':
         return <CheckCircle className="w-4 h-4" />;
-      case 'pending':
+      case 'Received':
         return <Clock className="w-4 h-4" />;
-      case 'partially_paid':
+      case 'Reviewed':
         return <AlertCircle className="w-4 h-4" />;
       default:
         return <FileText className="w-4 h-4" />;
@@ -142,8 +142,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       'Payment Type',
       'Quarter',
       'Amount',
-      'Payment Mode',
-      'Transaction ID',
+      'Platform',
+      'Transaction Reference',
       'Status',
       'Comments',
     ];
@@ -154,8 +154,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       payment.payment_type,
       payment.payment_quarter,
       payment.payment_amount || 0,
-      payment.payment_mode || '',
-      payment.transaction_id || '',
+      payment.platform || '',
+      payment.transaction_reference || '',
       payment.status,
       payment.comments || '',
     ]);
@@ -258,7 +258,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </div>
             <p className="text-3xl font-bold">₹{totalPaid.toLocaleString()}</p>
             <p className="text-sm opacity-80 mt-1">
-              {payments.filter((p) => p.status === 'paid').length} payments
+              {payments.filter((p) => p.status === 'Approved').length} payments
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </div>
             <p className="text-3xl font-bold">₹{totalPending.toLocaleString()}</p>
             <p className="text-sm opacity-80 mt-1">
-              {payments.filter((p) => p.status === 'pending').length} payments
+              {payments.filter((p) => p.status === 'Received' || p.status === 'Reviewed').length} payments
             </p>
           </div>
 
@@ -338,13 +338,13 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                       Amount
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Mode
+                      Platform
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Transaction ID
+                      Transaction Ref
                     </th>
                   </tr>
                 </thead>
@@ -378,7 +378,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{payment.payment_mode || '-'}</span>
+                        <span className="text-sm text-gray-600">{payment.platform || '-'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -387,12 +387,12 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                           )}`}
                         >
                           {getStatusIcon(payment.status)}
-                          {payment.status.replace('_', ' ')}
+                          {payment.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-600 font-mono">
-                          {payment.transaction_id || '-'}
+                          {payment.transaction_reference || '-'}
                         </span>
                       </td>
                     </tr>
