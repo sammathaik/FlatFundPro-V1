@@ -416,7 +416,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 {
                   step: 'Payment Tracking',
                   description: 'Click on any flat to see full payment history. Filter by building, date, or status in one click.',
-                  icon: DollarSign
+                  icon: Coins
                 },
                 {
                   step: 'Reports',
