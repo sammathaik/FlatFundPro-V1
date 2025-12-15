@@ -109,6 +109,9 @@ export interface PaymentSubmission {
   screenshot_source?: string;
   other_text?: string;
   expected_collection_id?: string | null;
+  occupant_type?: 'Owner' | 'Tenant';
+  building_block_phase?: string;
+  flat_number?: string;
 }
 
 export interface ExpectedCollection {

@@ -11,6 +11,7 @@ interface FormData {
   payment_amount: string;
   payment_date: string;
   screenshot: File | null;
+  occupant_type: 'Owner' | 'Tenant' | '';
 }
 
 interface FormErrors {
@@ -20,6 +21,7 @@ interface FormErrors {
   email?: string;
   screenshot?: string;
   submit?: string;
+  occupant_type?: string;
 }
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
@@ -38,12 +40,14 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     payment_amount: '',
     payment_date: '',
     screenshot: null,
+    occupant_type: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,6 +75,10 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
       newErrors.email = 'Please enter a valid email address';
     }
 
+    if (!formData.occupant_type) {
+      newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
+    }
+
     if (!formData.screenshot) {
       newErrors.screenshot = 'Payment screenshot is required';
     } else {
@@ -89,7 +97,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormErrors]) {
@@ -164,7 +172,56 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     setUploadProgress(0);
 
     try {
-      setUploadProgress(30);
+      setUploadProgress(10);
+
+      const apartmentId = import.meta.env.VITE_APARTMENT_ID;
+      if (!apartmentId) {
+        throw new Error('Apartment configuration is missing');
+      }
+
+      const { data: blockData } = await supabase
+        .from('buildings_blocks_phases')
+        .select('id, apartment_id')
+        .eq('apartment_id', apartmentId)
+        .eq('block_name', formData.building_block_phase.trim())
+        .maybeSingle();
+
+      if (!blockData) {
+        throw new Error('Invalid building/block/phase');
+      }
+
+      const { data: flatData } = await supabase
+        .from('flat_numbers')
+        .select('id')
+        .eq('block_id', blockData.id)
+        .eq('flat_number', formData.flat_number.trim())
+        .maybeSingle();
+
+      if (!flatData) {
+        throw new Error('Invalid flat number');
+      }
+
+      setUploadProgress(20);
+
+      const { data: validationResult } = await supabase.rpc('validate_and_create_flat_email_mapping', {
+        p_apartment_id: apartmentId,
+        p_block_id: blockData.id,
+        p_flat_id: flatData.id,
+        p_email: formData.email.trim().toLowerCase(),
+        p_occupant_type: formData.occupant_type
+      });
+
+      if (!validationResult.success) {
+        setSubmissionState('idle');
+        setUploadProgress(0);
+        setShowEmailMismatchModal(true);
+        setErrors({
+          submit: validationResult.message || 'This flat is mapped to another email address. Please contact your management committee.'
+        });
+        return;
+      }
+
+      setUploadProgress(40);
 
       const screenshotUrl = await uploadScreenshot(formData.screenshot!);
 
@@ -180,6 +237,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         payment_date: formData.payment_date || undefined,
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
+        occupant_type: formData.occupant_type,
       };
 
       const { error: dbError } = await supabase
@@ -206,6 +264,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         payment_amount: '',
         payment_date: '',
         screenshot: null,
+        occupant_type: '',
       });
       setPreviewUrl(null);
 
@@ -219,7 +278,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
       console.error('Submission error:', error);
       setSubmissionState('error');
       setErrors({
-        submit: 'Failed to submit payment proof. Please try again.',
+        submit: error instanceof Error ? error.message : 'Failed to submit payment proof. Please try again.',
       });
     }
   };
@@ -228,6 +287,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     setSubmissionState('idle');
     setErrors({});
     setUploadProgress(0);
+    setShowEmailMismatchModal(false);
   };
 
   if (submissionState === 'success') {
@@ -263,7 +323,35 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
   }
 
   return (
-    <section id="submit-form" className="py-20 px-4 bg-gradient-to-br from-gray-50 to-amber-50">
+    <>
+      {showEmailMismatchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-10 h-10 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Email Address Mismatch
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                This flat is already mapped to another email address. If you believe this is an error, please contact your management committee for assistance.
+              </p>
+              <button
+                onClick={() => {
+                  setShowEmailMismatchModal(false);
+                  setErrors({});
+                }}
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section id="submit-form" className="py-20 px-4 bg-gradient-to-br from-gray-50 to-amber-50">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full mb-4">
@@ -360,25 +448,50 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                 )}
               </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
-                    errors.email ? 'border-red-500' : 'border-gray-200'
-                  }`}
-                  placeholder="your.email@example.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={submissionState === 'loading'}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                      errors.email ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                    placeholder="your.email@example.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="occupant_type" className="block text-sm font-semibold text-gray-700 mb-2">
+                    I am <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="occupant_type"
+                    name="occupant_type"
+                    value={formData.occupant_type}
+                    onChange={handleInputChange}
+                    disabled={submissionState === 'loading'}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                      errors.occupant_type ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select...</option>
+                    <option value="Owner">Owner</option>
+                    <option value="Tenant">Tenant</option>
+                  </select>
+                  {errors.occupant_type && (
+                    <p className="mt-1 text-sm text-red-600">{errors.occupant_type}</p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -550,5 +663,6 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         </div>
       </div>
     </section>
+    </>
   );
 }
