@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Home, UserCheck, DollarSign } from 'lucide-react';
+import { Building2, Users, Home, UserCheck, DollarSign, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function SuperAdminOverview() {
@@ -21,7 +21,7 @@ export default function SuperAdminOverview() {
       const [apartmentsResult, adminsResult, buildingsResult, flatsResult, occupantsResult, collectionsResult] = await Promise.all([
         supabase.from('apartments').select('id', { count: 'exact', head: true }),
         supabase.from('admins').select('id', { count: 'exact', head: true }),
-        supabase.from('building_block_phase').select('id', { count: 'exact', head: true }),
+        supabase.from('buildings_blocks_phases').select('id', { count: 'exact', head: true }),
         supabase.from('flat_numbers').select('id', { count: 'exact', head: true }),
         supabase.from('flat_email_mappings').select('id', { count: 'exact', head: true }),
         supabase.from('expected_collections').select('id', { count: 'exact', head: true }).eq('is_active', true),
@@ -112,25 +112,60 @@ export default function SuperAdminOverview() {
           <h3 className="text-lg font-bold text-gray-900 mb-2">Quick Insights</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
-              <span className="text-gray-700 font-medium">Avg Flats per Building</span>
+              <div className="flex items-center gap-2 group relative">
+                <span className="text-gray-700 font-medium">Avg Flats per Building</span>
+                <Info className="w-4 h-4 text-blue-500 cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
+                  <div className="font-semibold mb-1">Calculation:</div>
+                  <div>Total Flats ÷ Buildings/Blocks</div>
+                  <div className="mt-1 text-gray-300">({stats.flats} ÷ {stats.buildings})</div>
+                </div>
+              </div>
               <span className="text-lg font-bold text-blue-900">
                 {stats.buildings > 0 ? Math.round(stats.flats / stats.buildings) : 0}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
-              <span className="text-gray-700 font-medium">Occupancy Coverage</span>
+              <div className="flex items-center gap-2 group relative">
+                <span className="text-gray-700 font-medium">Occupancy Coverage</span>
+                <Info className="w-4 h-4 text-blue-500 cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
+                  <div className="font-semibold mb-1">Calculation:</div>
+                  <div>(Registered Occupants ÷ Total Flats) × 100%</div>
+                  <div className="mt-1 text-gray-300">({stats.occupants} ÷ {stats.flats}) × 100%</div>
+                  <div className="mt-2 text-gray-300">Shows percentage of flats with registered occupants</div>
+                </div>
+              </div>
               <span className="text-lg font-bold text-blue-900">
                 {stats.flats > 0 ? Math.round((stats.occupants / stats.flats) * 100) : 0}%
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
-              <span className="text-gray-700 font-medium">Avg Collections/Apartment</span>
+              <div className="flex items-center gap-2 group relative">
+                <span className="text-gray-700 font-medium">Avg Collections/Apartment</span>
+                <Info className="w-4 h-4 text-blue-500 cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
+                  <div className="font-semibold mb-1">Calculation:</div>
+                  <div>Active Collections ÷ Total Apartments</div>
+                  <div className="mt-1 text-gray-300">({stats.activeCollections} ÷ {stats.apartments})</div>
+                  <div className="mt-2 text-gray-300">Average number of active payment collections per apartment complex</div>
+                </div>
+              </div>
               <span className="text-lg font-bold text-blue-900">
                 {stats.apartments > 0 ? Math.round(stats.activeCollections / stats.apartments) : 0}
               </span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-gray-700 font-medium">Buildings per Apartment</span>
+              <div className="flex items-center gap-2 group relative">
+                <span className="text-gray-700 font-medium">Buildings per Apartment</span>
+                <Info className="w-4 h-4 text-blue-500 cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
+                  <div className="font-semibold mb-1">Calculation:</div>
+                  <div>Buildings/Blocks ÷ Total Apartments</div>
+                  <div className="mt-1 text-gray-300">({stats.buildings} ÷ {stats.apartments})</div>
+                  <div className="mt-2 text-gray-300">Average building/block count per apartment complex</div>
+                </div>
+              </div>
               <span className="text-lg font-bold text-blue-900">
                 {stats.apartments > 0 ? Math.round(stats.buildings / stats.apartments) : 0}
               </span>
