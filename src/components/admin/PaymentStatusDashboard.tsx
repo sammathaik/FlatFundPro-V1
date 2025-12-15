@@ -103,6 +103,41 @@ function sortFlats<T extends { flat_number: string }>(flats: T[]): T[] {
   return [...flats].sort((a, b) => a.flat_number.localeCompare(b.flat_number, undefined, { numeric: true }));
 }
 
+function getCurrencySymbol(country: string | null): string {
+  if (!country) return '₹'; // Default to INR
+
+  const countryLower = country.toLowerCase();
+
+  // Country to currency mapping
+  const currencyMap: Record<string, string> = {
+    'india': '₹',
+    'united states': '$',
+    'usa': '$',
+    'us': '$',
+    'canada': 'C$',
+    'united kingdom': '£',
+    'uk': '£',
+    'europe': '€',
+    'european union': '€',
+    'germany': '€',
+    'france': '€',
+    'spain': '€',
+    'italy': '€',
+    'netherlands': '€',
+    'australia': 'A$',
+    'singapore': 'S$',
+    'japan': '¥',
+    'china': '¥',
+    'south korea': '₩',
+    'brazil': 'R$',
+    'mexico': 'Mex$',
+    'uae': 'AED',
+    'saudi arabia': 'SAR',
+  };
+
+  return currencyMap[countryLower] || '₹'; // Default to INR if country not found
+}
+
 function matchesCollection(payment: PaymentSnapshot, collection: ExpectedCollection) {
   if (payment.expected_collection_id && payment.expected_collection_id === collection.id) {
     return true;
@@ -167,6 +202,7 @@ export default function PaymentStatusDashboard({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showArchivedSection, setShowArchivedSection] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [apartmentCountry, setApartmentCountry] = useState<string | null>(null);
   const [form, setForm] = useState<ExpectedCollectionFormState>({
     payment_type: 'maintenance',
     financial_year: getDefaultFinancialYearLabel(),
@@ -181,6 +217,8 @@ export default function PaymentStatusDashboard({
     is_active: false,
   });
 
+  const currencySymbol = useMemo(() => getCurrencySymbol(apartmentCountry), [apartmentCountry]);
+
   useEffect(() => {
     loadData();
   }, [apartmentId, accessCode]);
@@ -190,7 +228,7 @@ export default function PaymentStatusDashboard({
       setLoading(true);
       setError(null);
 
-      const [expectedRes, blockRes] = await Promise.all([
+      const [expectedRes, blockRes, apartmentRes] = await Promise.all([
         supabase
           .from('expected_collections')
           .select('*')
@@ -201,11 +239,18 @@ export default function PaymentStatusDashboard({
           .select('id, block_name, flats:flat_numbers(id, flat_number)')
           .eq('apartment_id', apartmentId)
           .order('block_name'),
+        supabase
+          .from('apartments')
+          .select('country')
+          .eq('id', apartmentId)
+          .single(),
       ]);
 
       if (expectedRes.error) throw expectedRes.error;
       if (blockRes.error) throw blockRes.error;
+      if (apartmentRes.error) throw apartmentRes.error;
 
+      setApartmentCountry(apartmentRes.data?.country || null);
       setExpectedCollections(expectedRes.data || []);
       setBlocks(
         (blockRes.data || []).map((block) => ({
@@ -1024,11 +1069,16 @@ export default function PaymentStatusDashboard({
                             </div>
                             <div className="flex items-center gap-4 text-sm text-gray-600">
                               <span>Due: {formatDate(collection.due_date)}</span>
-                              <span>₹{Number(collection.amount_due).toLocaleString()}/flat</span>
+                              <span>{currencySymbol}{Number(collection.amount_due).toLocaleString()}/flat</span>
                               {collection.daily_fine && collection.daily_fine > 0 && (
-                                <span>Fine: ₹{Number(collection.daily_fine).toLocaleString()}/day</span>
+                                <span>Fine: {currencySymbol}{Number(collection.daily_fine).toLocaleString()}/day</span>
                               )}
                             </div>
+                            {collection.notes && (
+                              <div className="mt-2 text-sm text-gray-600 italic bg-gray-50 p-2 rounded">
+                                <span className="font-semibold">Note:</span> {collection.notes}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -1113,7 +1163,7 @@ export default function PaymentStatusDashboard({
                           <div className="flex items-center justify-between text-sm">
                             <span className="font-medium text-gray-700">Collected vs Expected</span>
                             <span className="font-bold text-gray-900">
-                              ₹{stats.totalCollected.toLocaleString()} / ₹{stats.totalExpected.toLocaleString()}
+                              {currencySymbol}{stats.totalCollected.toLocaleString()} / {currencySymbol}{stats.totalExpected.toLocaleString()}
                             </span>
                           </div>
                           <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -1146,9 +1196,9 @@ export default function PaymentStatusDashboard({
                                       let tooltipText = `Flat ${flat.flat_number}\n`;
                                       tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
                                       tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                                      tooltipText += `Paid: ₹${flat.paidAmount.toLocaleString()}\n`;
-                                      tooltipText += `Expected: ₹${flat.expectedAmount.toLocaleString()}\n`;
-                                      tooltipText += `Difference: ₹${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
+                                      tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                      tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
+                                      tooltipText += `Difference: ${currencySymbol}${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
 
                                       return (
                                         <div
@@ -1220,11 +1270,16 @@ export default function PaymentStatusDashboard({
                               </div>
                               <div className="flex items-center gap-4 text-sm text-gray-600">
                                 <span>Due: {formatDate(collection.due_date)}</span>
-                                <span>₹{Number(collection.amount_due).toLocaleString()}/flat</span>
+                                <span>{currencySymbol}{Number(collection.amount_due).toLocaleString()}/flat</span>
                                 <span className="text-gray-500">
-                                  {collectionProgress}% collected (₹{stats.totalCollected.toLocaleString()})
+                                  {collectionProgress}% collected ({currencySymbol}{stats.totalCollected.toLocaleString()})
                                 </span>
                               </div>
+                              {collection.notes && (
+                                <div className="mt-2 text-sm text-gray-600 italic bg-white p-2 rounded">
+                                  <span className="font-semibold">Note:</span> {collection.notes}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <button
@@ -1305,8 +1360,8 @@ export default function PaymentStatusDashboard({
 
                                         let tooltipText = `Flat ${flat.flat_number}\n`;
                                         tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
-                                        tooltipText += `Paid: ₹${flat.paidAmount.toLocaleString()}\n`;
-                                        tooltipText += `Expected: ₹${flat.expectedAmount.toLocaleString()}\n`;
+                                        tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                        tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
 
                                         return (
                                           <div
