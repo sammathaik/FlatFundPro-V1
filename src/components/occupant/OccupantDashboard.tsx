@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  maintenance: 'Maintenance',
+  contingency: 'Contingency',
+  emergency: 'Emergency',
+};
+
 interface OccupantDashboardProps {
   occupant: any;
   onLogout: () => void;
@@ -359,7 +365,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
-                          {payment.payment_type}
+                          {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

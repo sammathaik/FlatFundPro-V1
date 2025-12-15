@@ -2,6 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Users, Edit2, Trash2, Plus, ChevronDown, ChevronUp, X, Save, Building, Mail, Phone, User, Home, Download, Search, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  maintenance: 'Maintenance',
+  contingency: 'Contingency',
+  emergency: 'Emergency',
+};
+
 interface Occupant {
   id: string;
   apartment_id: string;
@@ -517,7 +523,7 @@ export default function OccupantManagement() {
                                             ? `₹${payment.payment_amount.toLocaleString()}`
                                             : '-'}
                                         </td>
-                                        <td className="px-4 py-2">{payment.payment_type}</td>
+                                        <td className="px-4 py-2">{payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}</td>
                                         <td className="px-4 py-2">{payment.payment_quarter || '-'}</td>
                                         <td className="px-4 py-2">
                                           {payment.payment_date
