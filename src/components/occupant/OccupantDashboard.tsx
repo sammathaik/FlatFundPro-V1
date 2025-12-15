@@ -13,8 +13,10 @@ import {
   Building,
   Mail,
   Phone,
+  HelpCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import HelpCenter from './HelpCenter';
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
@@ -55,6 +57,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [allFlats, setAllFlats] = useState<any[]>([]);
   const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'help'>('dashboard');
 
   useEffect(() => {
     loadData();
@@ -249,10 +252,39 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
+
+          <div className="flex gap-2 mt-4 border-t pt-4">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Home className="w-4 h-4" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('help')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'help'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              Help Center
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'help' ? (
+          <HelpCenter />
+        ) : (
+          <>
         {allFlats.length > 1 && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Flats</h2>
@@ -477,6 +509,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
