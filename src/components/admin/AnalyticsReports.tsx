@@ -66,7 +66,7 @@ export default function AnalyticsReports() {
 
     const { data, error } = await supabase
       .from('payment_submissions')
-      .select('amount, payment_date')
+      .select('payment_amount, payment_date')
       .gte('payment_date', startDate.toISOString())
       .order('payment_date', { ascending: true });
 
@@ -77,11 +77,12 @@ export default function AnalyticsReports() {
 
     const trendMap = new Map<string, { total: number; count: number }>();
     data?.forEach((payment) => {
+      if (!payment.payment_date) return;
       const date = new Date(payment.payment_date);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const existing = trendMap.get(key) || { total: 0, count: 0 };
       trendMap.set(key, {
-        total: existing.total + (payment.amount || 0),
+        total: existing.total + (Number(payment.payment_amount) || 0),
         count: existing.count + 1,
       });
     });
@@ -112,7 +113,7 @@ export default function AnalyticsReports() {
       .select('id, apartment_name');
 
     if (apartmentError) {
-      console.error('Error loading apartments:', error);
+      console.error('Error loading apartments:', apartmentError);
       return;
     }
 
@@ -121,22 +122,28 @@ export default function AnalyticsReports() {
     for (const apartment of apartments || []) {
       const { data: payments } = await supabase
         .from('payment_submissions')
-        .select('amount')
+        .select('payment_amount')
         .eq('apartment_id', apartment.id);
 
       const { data: expected } = await supabase
         .from('expected_collections')
-        .select('amount_per_flat')
+        .select('amount_due')
         .eq('apartment_id', apartment.id)
         .eq('is_active', true);
 
-      const { count: flatCount } = await supabase
+      const { data: flats } = await supabase
         .from('flat_numbers')
-        .select('id', { count: 'exact', head: true })
-        .eq('apartment_id', apartment.id);
+        .select('id')
+        .in('block_id', (
+          await supabase
+            .from('buildings_blocks_phases')
+            .select('id')
+            .eq('apartment_id', apartment.id)
+        ).data?.map(b => b.id) || []);
 
-      const totalCollected = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-      const totalExpected = (expected || []).reduce((sum, e) => sum + (e.amount_per_flat || 0), 0) * (flatCount || 0);
+      const flatCount = flats?.length || 0;
+      const totalCollected = payments?.reduce((sum, p) => sum + (Number(p.payment_amount) || 0), 0) || 0;
+      const totalExpected = (expected || []).reduce((sum, e) => sum + (Number(e.amount_due) || 0), 0);
       const collectionRate = totalExpected > 0 ? (totalCollected / totalExpected) * 100 : 0;
 
       performance.push({
@@ -159,7 +166,7 @@ export default function AnalyticsReports() {
       .select(`
         id,
         collection_name,
-        amount_per_flat,
+        amount_due,
         is_active,
         apartment_id,
         apartments (apartment_name)
@@ -174,23 +181,30 @@ export default function AnalyticsReports() {
     const efficiency: CollectionEfficiency[] = [];
 
     for (const collection of collections || []) {
-      const { count: flatCount } = await supabase
+      const { data: flats } = await supabase
         .from('flat_numbers')
-        .select('id', { count: 'exact', head: true })
-        .eq('apartment_id', collection.apartment_id);
+        .select('id')
+        .in('block_id', (
+          await supabase
+            .from('buildings_blocks_phases')
+            .select('id')
+            .eq('apartment_id', collection.apartment_id)
+        ).data?.map(b => b.id) || []);
+
+      const flatCount = flats?.length || 0;
 
       const { data: payments } = await supabase
         .from('payment_submissions')
-        .select('amount')
+        .select('payment_amount')
         .eq('apartment_id', collection.apartment_id)
-        .ilike('collection_name', `%${collection.collection_name}%`);
+        .eq('expected_collection_id', collection.id);
 
-      const expectedAmount = (collection.amount_per_flat || 0) * (flatCount || 0);
-      const collectedAmount = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      const expectedAmount = (Number(collection.amount_due) || 0) * flatCount;
+      const collectedAmount = payments?.reduce((sum, p) => sum + (Number(p.payment_amount) || 0), 0) || 0;
       const collectionRate = expectedAmount > 0 ? (collectedAmount / expectedAmount) * 100 : 0;
 
       efficiency.push({
-        collection_name: collection.collection_name || '',
+        collection_name: collection.collection_name || 'Unnamed Collection',
         apartment_name: (collection.apartments as any)?.apartment_name || '',
         expected_amount: expectedAmount,
         collected_amount: collectedAmount,
@@ -206,23 +220,30 @@ export default function AnalyticsReports() {
   async function loadTotalStats() {
     const { data: payments } = await supabase
       .from('payment_submissions')
-      .select('amount');
+      .select('payment_amount');
 
     const { data: expected } = await supabase
       .from('expected_collections')
-      .select('amount_per_flat, apartment_id')
+      .select('amount_due, apartment_id')
       .eq('is_active', true);
 
     let totalExpected = 0;
     for (const exp of expected || []) {
-      const { count } = await supabase
+      const { data: flats } = await supabase
         .from('flat_numbers')
-        .select('id', { count: 'exact', head: true })
-        .eq('apartment_id', exp.apartment_id);
-      totalExpected += (exp.amount_per_flat || 0) * (count || 0);
+        .select('id')
+        .in('block_id', (
+          await supabase
+            .from('buildings_blocks_phases')
+            .select('id')
+            .eq('apartment_id', exp.apartment_id)
+        ).data?.map(b => b.id) || []);
+
+      const flatCount = flats?.length || 0;
+      totalExpected += (Number(exp.amount_due) || 0) * flatCount;
     }
 
-    const totalCollected = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const totalCollected = payments?.reduce((sum, p) => sum + (Number(p.payment_amount) || 0), 0) || 0;
     const collectionRate = totalExpected > 0 ? (totalCollected / totalExpected) * 100 : 0;
 
     setTotalStats({
