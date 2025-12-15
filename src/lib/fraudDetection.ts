@@ -1,92 +1,28 @@
 import { supabase } from './supabase';
 
-export interface FraudAnalysisResult {
-  fraud_risk_score: number;
-  is_flagged: boolean;
-  phash_duplicate_found: boolean;
-  phash_similarity_score: number | null;
-  duplicate_of_payment_id: string | null;
-  exif_has_editor_metadata: boolean;
-  exif_software_detected: string | null;
-  visual_consistency_score: number;
-  ela_score: number;
-  ela_manipulation_detected: boolean;
+export interface FraudIndicator {
+  type: string;
+  severity: string;
+  message: string;
+  points: number;
 }
 
 export interface FraudAnalysisRecord {
   id: string;
-  payment_submission_id: string;
-  image_url: string;
-  fraud_risk_score: number;
-  is_flagged: boolean;
+  name: string;
+  email: string;
+  payment_amount: number;
+  payment_date: string;
   status: string;
-  phash_value: string;
-  phash_duplicate_found: boolean;
-  phash_similarity_score: number | null;
-  duplicate_of_payment_id: string | null;
-  exif_data: any;
-  exif_has_editor_metadata: boolean;
-  exif_software_detected: string | null;
-  exif_modification_detected: boolean;
-  visual_consistency_score: number;
-  bank_pattern_matched: string | null;
-  ela_score: number;
-  ela_manipulation_detected: boolean;
-  analyzed_at: string;
-  created_at: string;
-}
-
-export async function analyzePaymentImage(
-  paymentSubmissionId: string,
-  imageUrl: string
-): Promise<{ success: boolean; result?: FraudAnalysisResult; error?: string }> {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-
-    if (!token) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/analyze-payment-image`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'apikey': anonKey,
-        },
-        body: JSON.stringify({
-          payment_submission_id: paymentSubmissionId,
-          image_url: imageUrl,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.error || 'Failed to analyze image',
-      };
-    }
-
-    const data = await response.json();
-    return {
-      success: true,
-      result: data.result,
-    };
-  } catch (error) {
-    console.error('Error calling fraud analysis:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
+  fraud_score: number;
+  is_fraud_flagged: boolean;
+  fraud_indicators: FraudIndicator[];
+  fraud_checked_at: string | null;
+  transaction_reference: string | null;
+  sender_upi_id: string | null;
+  apartments: {
+    apartment_name: string;
+  } | null;
 }
 
 export async function getFraudAnalysisForPayment(
@@ -94,11 +30,23 @@ export async function getFraudAnalysisForPayment(
 ): Promise<FraudAnalysisRecord | null> {
   try {
     const { data, error } = await supabase
-      .from('image_fraud_analysis')
-      .select('*')
-      .eq('payment_submission_id', paymentSubmissionId)
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .from('payment_submissions')
+      .select(`
+        id,
+        name,
+        email,
+        payment_amount,
+        payment_date,
+        status,
+        fraud_score,
+        is_fraud_flagged,
+        fraud_indicators,
+        fraud_checked_at,
+        transaction_reference,
+        sender_upi_id,
+        apartments(apartment_name)
+      `)
+      .eq('id', paymentSubmissionId)
       .maybeSingle();
 
     if (error) {
@@ -106,7 +54,7 @@ export async function getFraudAnalysisForPayment(
       return null;
     }
 
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Error fetching fraud analysis:', error);
     return null;
@@ -116,25 +64,32 @@ export async function getFraudAnalysisForPayment(
 export async function getAllFlaggedPayments(apartmentId?: string) {
   try {
     let query = supabase
-      .from('image_fraud_analysis')
+      .from('payment_submissions')
       .select(`
-        *,
-        payment_submissions!inner(
-          id,
-          name,
-          email,
-          payment_amount,
-          payment_date,
-          status,
-          apartment_id,
-          apartments(apartment_name)
-        )
+        id,
+        name,
+        email,
+        payment_amount,
+        payment_date,
+        status,
+        fraud_score,
+        is_fraud_flagged,
+        fraud_indicators,
+        fraud_checked_at,
+        transaction_reference,
+        sender_upi_id,
+        other_text,
+        bank_name,
+        payer_name,
+        narration,
+        screenshot_source,
+        apartments(apartment_name)
       `)
-      .eq('is_flagged', true)
-      .order('fraud_risk_score', { ascending: false });
+      .eq('is_fraud_flagged', true)
+      .order('fraud_score', { ascending: false });
 
     if (apartmentId) {
-      query = query.eq('payment_submissions.apartment_id', apartmentId);
+      query = query.eq('apartment_id', apartmentId);
     }
 
     const { data, error } = await query;
@@ -154,11 +109,11 @@ export async function getAllFlaggedPayments(apartmentId?: string) {
 export async function getFraudStatistics(apartmentId?: string) {
   try {
     let query = supabase
-      .from('image_fraud_analysis')
-      .select('fraud_risk_score, is_flagged, status, phash_duplicate_found, exif_has_editor_metadata, ela_manipulation_detected');
+      .from('payment_submissions')
+      .select('fraud_score, is_fraud_flagged, fraud_indicators, fraud_checked_at');
 
     if (apartmentId) {
-      query = query.eq('payment_submissions.apartment_id', apartmentId);
+      query = query.eq('apartment_id', apartmentId);
     }
 
     const { data, error } = await query;
@@ -168,24 +123,47 @@ export async function getFraudStatistics(apartmentId?: string) {
       return null;
     }
 
-    const total = data.length;
-    const flagged = data.filter(d => d.is_flagged).length;
-    const duplicates = data.filter(d => d.phash_duplicate_found).length;
-    const edited = data.filter(d => d.exif_has_editor_metadata).length;
-    const manipulated = data.filter(d => d.ela_manipulation_detected).length;
+    const checked = data.filter(d => d.fraud_checked_at !== null).length;
+    const flagged = data.filter(d => d.is_fraud_flagged).length;
 
-    const avgRiskScore = total > 0
-      ? Math.round(data.reduce((sum, d) => sum + d.fraud_risk_score, 0) / total)
+    const indicatorTypes = {
+      FUTURE_DATE: 0,
+      OLD_DATE: 0,
+      SUSPICIOUS_TRANSACTION_ID: 0,
+      SUSPICIOUS_UPI_ID: 0,
+      INVALID_UPI_FORMAT: 0,
+      SUSPICIOUS_TYPO: 0,
+      TEMPLATE_TEXT: 0,
+      SUSPICIOUS_NARRATION: 0,
+      SUSPICIOUS_BANK_NAME: 0,
+      EDITING_SOFTWARE_DETECTED: 0,
+    };
+
+    data.forEach(record => {
+      if (record.fraud_indicators && Array.isArray(record.fraud_indicators)) {
+        record.fraud_indicators.forEach((indicator: FraudIndicator) => {
+          if (indicator.type in indicatorTypes) {
+            indicatorTypes[indicator.type as keyof typeof indicatorTypes]++;
+          }
+        });
+      }
+    });
+
+    const avgRiskScore = checked > 0
+      ? Math.round(
+          data
+            .filter(d => d.fraud_checked_at !== null)
+            .reduce((sum, d) => sum + (d.fraud_score || 0), 0) / checked
+        )
       : 0;
 
     return {
-      total,
+      total: data.length,
+      checked,
       flagged,
-      duplicates,
-      edited,
-      manipulated,
       avgRiskScore,
-      flaggedPercentage: total > 0 ? Math.round((flagged / total) * 100) : 0,
+      flaggedPercentage: checked > 0 ? Math.round((flagged / checked) * 100) : 0,
+      indicatorTypes,
     };
   } catch (error) {
     console.error('Error calculating fraud statistics:', error);

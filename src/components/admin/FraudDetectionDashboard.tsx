@@ -22,31 +22,7 @@ import {
   FraudAnalysisRecord,
 } from '../../lib/fraudDetection';
 
-interface FlaggedPayment {
-  id: string;
-  payment_submission_id: string;
-  fraud_risk_score: number;
-  is_flagged: boolean;
-  phash_duplicate_found: boolean;
-  phash_similarity_score: number | null;
-  exif_has_editor_metadata: boolean;
-  exif_software_detected: string | null;
-  visual_consistency_score: number;
-  ela_score: number;
-  ela_manipulation_detected: boolean;
-  analyzed_at: string;
-  payment_submissions: {
-    id: string;
-    name: string;
-    email: string;
-    payment_amount: number;
-    payment_date: string;
-    status: string;
-    apartments: {
-      apartment_name: string;
-    };
-  };
-}
+interface FlaggedPayment extends FraudAnalysisRecord {}
 
 interface Props {
   apartmentId?: string;
@@ -81,9 +57,9 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
 
   const filteredPayments = flaggedPayments.filter(payment => {
     if (filterLevel === 'all') return true;
-    if (filterLevel === 'critical') return payment.fraud_risk_score >= 80;
-    if (filterLevel === 'high') return payment.fraud_risk_score >= 60 && payment.fraud_risk_score < 80;
-    if (filterLevel === 'medium') return payment.fraud_risk_score >= 40 && payment.fraud_risk_score < 60;
+    if (filterLevel === 'critical') return payment.fraud_score >= 80;
+    if (filterLevel === 'high') return payment.fraud_score >= 60 && payment.fraud_score < 80;
+    if (filterLevel === 'medium') return payment.fraud_score >= 40 && payment.fraud_score < 60;
     return true;
   });
 
@@ -103,7 +79,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
           <Shield className="w-8 h-8 text-red-600" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Fraud Detection Dashboard</h2>
-            <p className="text-sm text-gray-600">Phase 1: Image Fraud Detection System</p>
+            <p className="text-sm text-gray-600">Text-Based Fraud Detection System</p>
           </div>
         </div>
         <button
@@ -120,7 +96,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Analyzed</p>
+                <p className="text-sm font-medium text-gray-600">Total Payments</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{statistics.total}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -132,12 +108,12 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Flagged</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">{statistics.flagged}</p>
-                <p className="text-xs text-gray-500 mt-1">{statistics.flaggedPercentage}% of total</p>
+                <p className="text-sm font-medium text-gray-600">Checked</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{statistics.checked}</p>
+                <p className="text-xs text-gray-500 mt-1">Analyzed payments</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -145,11 +121,12 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Duplicates Found</p>
-                <p className="text-3xl font-bold text-orange-600 mt-2">{statistics.duplicates}</p>
+                <p className="text-sm font-medium text-gray-600">Flagged</p>
+                <p className="text-3xl font-bold text-red-600 mt-2">{statistics.flagged}</p>
+                <p className="text-xs text-gray-500 mt-1">{statistics.flaggedPercentage}% of checked</p>
               </div>
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Copy className="w-6 h-6 text-orange-600" />
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
@@ -168,49 +145,53 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-green-900">Detection Methods</span>
+      {statistics && statistics.indicatorTypes && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Detection Indicators</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-red-900 mb-1">Future Date</p>
+              <p className="text-2xl font-bold text-red-600">{statistics.indicatorTypes.FUTURE_DATE}</p>
             </div>
-            <div className="space-y-1 text-sm text-green-700">
-              <p>✓ Perceptual Hash (98%)</p>
-              <p>✓ EXIF Analysis (75%)</p>
-              <p>✓ Visual Check (80%)</p>
-              <p>✓ Error Level Analysis (85%)</p>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-orange-900 mb-1">Suspicious UPI</p>
+              <p className="text-2xl font-bold text-orange-600">{statistics.indicatorTypes.SUSPICIOUS_UPI_ID}</p>
             </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Copy className="w-5 h-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">Duplicate Detection</span>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-yellow-900 mb-1">Suspicious TXN</p>
+              <p className="text-2xl font-bold text-yellow-600">{statistics.indicatorTypes.SUSPICIOUS_TRANSACTION_ID}</p>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{statistics?.duplicates || 0}</p>
-            <p className="text-xs text-blue-600 mt-1">Reused screenshots blocked</p>
-          </div>
-
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Edit3 className="w-5 h-5 text-orange-600" />
-              <span className="text-sm font-medium text-orange-900">Edited Images</span>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-purple-900 mb-1">Typos</p>
+              <p className="text-2xl font-bold text-purple-600">{statistics.indicatorTypes.SUSPICIOUS_TYPO}</p>
             </div>
-            <p className="text-2xl font-bold text-orange-600">{statistics?.edited || 0}</p>
-            <p className="text-xs text-orange-600 mt-1">Photoshop/GIMP detected</p>
-          </div>
-
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <span className="text-sm font-medium text-red-900">Manipulated</span>
+            <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-pink-900 mb-1">Template Text</p>
+              <p className="text-2xl font-bold text-pink-600">{statistics.indicatorTypes.TEMPLATE_TEXT}</p>
             </div>
-            <p className="text-2xl font-bold text-red-600">{statistics?.manipulated || 0}</p>
-            <p className="text-xs text-red-600 mt-1">Forgery detected via ELA</p>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-indigo-900 mb-1">Invalid UPI</p>
+              <p className="text-2xl font-bold text-indigo-600">{statistics.indicatorTypes.INVALID_UPI_FORMAT}</p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-blue-900 mb-1">Bad Narration</p>
+              <p className="text-2xl font-bold text-blue-600">{statistics.indicatorTypes.SUSPICIOUS_NARRATION}</p>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-green-900 mb-1">Bad Bank</p>
+              <p className="text-2xl font-bold text-green-600">{statistics.indicatorTypes.SUSPICIOUS_BANK_NAME}</p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-gray-900 mb-1">Edited Image</p>
+              <p className="text-2xl font-bold text-gray-600">{statistics.indicatorTypes.EDITING_SOFTWARE_DETECTED}</p>
+            </div>
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-teal-900 mb-1">Old Date</p>
+              <p className="text-2xl font-bold text-teal-600">{statistics.indicatorTypes.OLD_DATE}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
@@ -267,47 +248,49 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{payment.payment_submissions.name}</div>
-                        <div className="text-sm text-gray-500">{payment.payment_submissions.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{payment.name}</div>
+                        <div className="text-sm text-gray-500">{payment.email}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        ₹{payment.payment_submissions.payment_amount?.toLocaleString()}
+                        ₹{payment.payment_amount?.toLocaleString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <span
                           className={`px-2 py-1 text-xs font-semibold rounded-full ${getRiskLevelBgColor(
-                            payment.fraud_risk_score
-                          )} ${getRiskLevelColor(payment.fraud_risk_score)}`}
+                            payment.fraud_score
+                          )} ${getRiskLevelColor(payment.fraud_score)}`}
                         >
-                          {payment.fraud_risk_score}
+                          {payment.fraud_score}
                         </span>
                         <span className="text-xs text-gray-600">
-                          {getRiskLevelLabel(payment.fraud_risk_score)}
+                          {getRiskLevelLabel(payment.fraud_score)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {payment.phash_duplicate_found && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-red-100 text-red-700">
-                            <Copy className="w-3 h-3 mr-1" />
-                            Duplicate
-                          </span>
-                        )}
-                        {payment.exif_has_editor_metadata && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-orange-100 text-orange-700">
-                            <Edit3 className="w-3 h-3 mr-1" />
-                            Edited
-                          </span>
-                        )}
-                        {payment.ela_manipulation_detected && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-purple-100 text-purple-700">
+                        {payment.fraud_indicators?.slice(0, 3).map((indicator, idx) => (
+                          <span
+                            key={idx}
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs ${
+                              indicator.severity === 'CRITICAL'
+                                ? 'bg-red-100 text-red-700'
+                                : indicator.severity === 'HIGH'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
                             <AlertTriangle className="w-3 h-3 mr-1" />
-                            Manipulated
+                            {indicator.type.split('_').slice(0, 2).join(' ')}
+                          </span>
+                        ))}
+                        {payment.fraud_indicators && payment.fraud_indicators.length > 3 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                            +{payment.fraud_indicators.length - 3} more
                           </span>
                         )}
                       </div>
@@ -315,7 +298,9 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500">
                         <Clock className="w-4 h-4 mr-1" />
-                        {new Date(payment.analyzed_at).toLocaleDateString()}
+                        {payment.fraud_checked_at
+                          ? new Date(payment.fraud_checked_at).toLocaleDateString()
+                          : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -354,103 +339,59 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-red-900">Overall Risk Score</p>
-                    <p className="text-4xl font-bold text-red-600 mt-1">
-                      {selectedPayment.fraud_risk_score}
-                    </p>
+                    <p className="text-sm font-medium text-red-900">Fraud Risk Score</p>
+                    <p className="text-4xl font-bold text-red-600 mt-1">{selectedPayment.fraud_score}</p>
                     <p className="text-sm text-red-700 mt-1">
-                      {getRiskLevelLabel(selectedPayment.fraud_risk_score)} Risk
+                      {getRiskLevelLabel(selectedPayment.fraud_score)} Risk
                     </p>
                   </div>
                   <AlertTriangle className="w-16 h-16 text-red-400" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                    <Copy className="w-4 h-4 mr-2 text-blue-600" />
-                    Duplicate Detection
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span
-                        className={
-                          selectedPayment.phash_duplicate_found ? 'text-red-600 font-medium' : 'text-green-600'
-                        }
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                  <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />
+                  Fraud Indicators ({selectedPayment.fraud_indicators?.length || 0})
+                </h4>
+                <div className="space-y-2">
+                  {selectedPayment.fraud_indicators && selectedPayment.fraud_indicators.length > 0 ? (
+                    selectedPayment.fraud_indicators.map((indicator, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-lg border ${
+                          indicator.severity === 'CRITICAL'
+                            ? 'bg-red-50 border-red-200'
+                            : indicator.severity === 'HIGH'
+                            ? 'bg-orange-50 border-orange-200'
+                            : 'bg-yellow-50 border-yellow-200'
+                        }`}
                       >
-                        {selectedPayment.phash_duplicate_found ? 'Duplicate Found' : 'No Duplicate'}
-                      </span>
-                    </div>
-                    {selectedPayment.phash_similarity_score && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Similarity:</span>
-                        <span className="font-medium">{selectedPayment.phash_similarity_score}%</span>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{indicator.type.replace(/_/g, ' ')}</p>
+                            <p className="text-xs text-gray-600 mt-1">{indicator.message}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-semibold ${
+                                indicator.severity === 'CRITICAL'
+                                  ? 'bg-red-100 text-red-700'
+                                  : indicator.severity === 'HIGH'
+                                  ? 'bg-orange-100 text-orange-700'
+                                  : 'bg-yellow-100 text-yellow-700'
+                              }`}
+                            >
+                              {indicator.severity}
+                            </span>
+                            <span className="text-sm font-bold text-gray-900">+{indicator.points}</span>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                    <Edit3 className="w-4 h-4 mr-2 text-orange-600" />
-                    EXIF Analysis
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Edited:</span>
-                      <span
-                        className={
-                          selectedPayment.exif_has_editor_metadata ? 'text-red-600 font-medium' : 'text-green-600'
-                        }
-                      >
-                        {selectedPayment.exif_has_editor_metadata ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                    {selectedPayment.exif_software_detected && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Software:</span>
-                        <span className="font-medium">{selectedPayment.exif_software_detected}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                    <ImageIcon className="w-4 h-4 mr-2 text-purple-600" />
-                    Visual Consistency
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Score:</span>
-                      <span className="font-medium">{selectedPayment.visual_consistency_score}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                    <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />
-                    Error Level Analysis
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">ELA Score:</span>
-                      <span className="font-medium">{selectedPayment.ela_score}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Manipulation:</span>
-                      <span
-                        className={
-                          selectedPayment.ela_manipulation_detected ? 'text-red-600 font-medium' : 'text-green-600'
-                        }
-                      >
-                        {selectedPayment.ela_manipulation_detected ? 'Detected' : 'None'}
-                      </span>
-                    </div>
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No fraud indicators detected</p>
+                  )}
                 </div>
               </div>
 
@@ -459,26 +400,44 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Name:</span>
-                    <span className="ml-2 font-medium">{selectedPayment.payment_submissions.name}</span>
+                    <span className="ml-2 font-medium">{selectedPayment.name}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Amount:</span>
-                    <span className="ml-2 font-medium">
-                      ₹{selectedPayment.payment_submissions.payment_amount?.toLocaleString()}
-                    </span>
+                    <span className="ml-2 font-medium">₹{selectedPayment.payment_amount?.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Email:</span>
-                    <span className="ml-2 font-medium">{selectedPayment.payment_submissions.email}</span>
+                    <span className="ml-2 font-medium">{selectedPayment.email}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Date:</span>
                     <span className="ml-2 font-medium">
-                      {new Date(selectedPayment.payment_submissions.payment_date).toLocaleDateString()}
+                      {new Date(selectedPayment.payment_date).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
               </div>
+
+              {selectedPayment.transaction_reference && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Extracted Payment Details</h4>
+                  <div className="space-y-2 text-sm">
+                    {selectedPayment.transaction_reference && (
+                      <div>
+                        <span className="text-gray-600">Transaction Ref:</span>
+                        <span className="ml-2 font-medium font-mono">{selectedPayment.transaction_reference}</span>
+                      </div>
+                    )}
+                    {selectedPayment.sender_upi_id && (
+                      <div>
+                        <span className="text-gray-600">UPI ID:</span>
+                        <span className="ml-2 font-medium font-mono">{selectedPayment.sender_upi_id}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-gray-200 bg-gray-50">
