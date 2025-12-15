@@ -55,13 +55,9 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
     setLoading(true);
     try {
       const [paymentsResult, infoResult] = await Promise.all([
-        supabase
-          .from('payment_submissions')
-          .select('*')
-          .eq('apartment_id', occupant.apartment_id)
-          .eq('block_id', occupant.block_id)
-          .eq('flat_id', occupant.flat_id)
-          .order('created_at', { ascending: false }),
+        supabase.rpc('get_occupant_payments_with_session', {
+          session_token: occupant.sessionToken
+        }),
         supabase
           .from('flat_numbers')
           .select(
