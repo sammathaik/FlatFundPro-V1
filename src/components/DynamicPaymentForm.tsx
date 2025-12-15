@@ -30,10 +30,20 @@ interface FormErrors {
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
 
+interface ActiveCollection {
+  id: string;
+  collection_name: string;
+  payment_type: string;
+  payment_frequency: string;
+  amount_due: number;
+  due_date: string;
+}
+
 export default function DynamicPaymentForm() {
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [blocks, setBlocks] = useState<BuildingBlockPhase[]>([]);
   const [flats, setFlats] = useState<FlatNumber[]>([]);
+  const [activeCollections, setActiveCollections] = useState<ActiveCollection[]>([]);
   const [selectedApartment, setSelectedApartment] = useState<Apartment | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -66,9 +76,11 @@ export default function DynamicPaymentForm() {
   useEffect(() => {
     if (formData.apartmentId) {
       loadBlocks(formData.apartmentId);
+      loadActiveCollections(formData.apartmentId);
     } else {
       setBlocks([]);
       setFlats([]);
+      setActiveCollections([]);
     }
   }, [formData.apartmentId]);
 
@@ -129,6 +141,23 @@ export default function DynamicPaymentForm() {
       setFlats(data || []);
     } catch (error) {
       console.error('Error loading flats:', error);
+    }
+  };
+
+  const loadActiveCollections = async (apartmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('expected_collections')
+        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date')
+        .eq('apartment_id', apartmentId)
+        .eq('is_active', true)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      setActiveCollections(data || []);
+    } catch (error) {
+      console.error('Error loading active collections:', error);
+      setActiveCollections([]);
     }
   };
 
@@ -726,21 +755,31 @@ export default function DynamicPaymentForm() {
                 <label htmlFor="payment_type" className="block text-sm font-semibold text-gray-700 mb-2">
                   What is this payment for? <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="payment_type"
-                  name="payment_type"
-                  value={formData.payment_type}
-                  onChange={handleInputChange}
-                  disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
-                    errors.payment_type ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">-- Select Type --</option>
-                  <option value="maintenance">Maintenance collection</option>
-                  <option value="contingency">Contingency fund</option>
-                  <option value="emergency">Emergency fund</option>
-                </select>
+                {activeCollections.length === 0 && formData.apartmentId ? (
+                  <div className="w-full px-4 py-3 bg-amber-50 border-2 border-amber-300 rounded-lg">
+                    <p className="text-sm text-amber-800 font-medium">
+                      No active payment collections available. Please contact your apartment admin.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    id="payment_type"
+                    name="payment_type"
+                    value={formData.payment_type}
+                    onChange={handleInputChange}
+                    disabled={submissionState === 'loading' || activeCollections.length === 0}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                      errors.payment_type ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">-- Select Payment Collection --</option>
+                    {activeCollections.map((collection) => (
+                      <option key={collection.id} value={collection.id}>
+                        {collection.collection_name} - ₹{collection.amount_due.toLocaleString()} (Due: {new Date(collection.due_date).toLocaleDateString()})
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.payment_type && (
                   <p className="mt-1 text-sm text-red-600">{errors.payment_type}</p>
                 )}

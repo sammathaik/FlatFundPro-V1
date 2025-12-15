@@ -1,4 +1,4 @@
-import PaymentStatusDashboard from './PaymentStatusDashboard';
+import CollectionManagement from './CollectionManagement';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ExpectedCollectionsAdmin() {
@@ -15,12 +15,9 @@ export default function ExpectedCollectionsAdmin() {
   }
 
   return (
-    <PaymentStatusDashboard
+    <CollectionManagement
       apartmentId={adminData.apartment_id}
       apartmentName={adminData.apartment.apartment_name}
-      allowManagement
-      publicAccessCode={adminData.apartment.public_access_code || undefined}
-      showChart={false}
     />
   );
 }
