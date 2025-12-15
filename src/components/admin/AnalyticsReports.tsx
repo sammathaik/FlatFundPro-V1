@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Download, Calendar, DollarSign, Percent, Building2, BarChart3, PieChart, Filter } from 'lucide-react';
+import { TrendingUp, TrendingDown, Download, Calendar, Coins, Percent, Building2, BarChart3, PieChart, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface PaymentTrend {
@@ -329,7 +329,7 @@ export default function AnalyticsReports() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-8 h-8 text-green-600" />
+            <Coins className="w-8 h-8 text-green-600" />
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
           <p className="text-sm text-gray-600 font-medium">Total Collected</p>
@@ -338,7 +338,7 @@ export default function AnalyticsReports() {
 
         <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-8 h-8 text-blue-600" />
+            <Coins className="w-8 h-8 text-blue-600" />
             <Calendar className="w-5 h-5 text-blue-600" />
           </div>
           <p className="text-sm text-gray-600 font-medium">Total Expected</p>

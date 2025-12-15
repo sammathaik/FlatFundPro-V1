@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, DollarSign, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, Coins, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -670,7 +670,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                     Amount Due per Flat <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="number"
                       step="0.01"
@@ -689,7 +689,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                     Daily Fine (optional)
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="number"
                       step="0.01"

@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, CheckCircle, DollarSign, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell, QrCode } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle, Coins, FileText, Shield, Users, BarChart3, Clock, TrendingUp, Mail, Phone, Sparkles, Zap, Target, Smartphone, Eye, Award, Heart, MousePointer, Download, MessageCircle, Calendar, Bell, QrCode } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import QRCodeGenerator from './QRCodeGenerator';
@@ -257,7 +257,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: DollarSign,
+                icon: Coins,
                 title: 'Payment Tracking',
                 description: 'Track all maintenance payments in real-time with automatic status updates and quarter-wise organization',
                 color: 'amber'
