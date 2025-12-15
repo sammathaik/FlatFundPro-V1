@@ -93,18 +93,6 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
       if (!data.success) {
         setError(data.message || 'Invalid OTP');
       } else {
-        const emailLower = email.toLowerCase().trim();
-        const tempPassword = `otp_verified_${data.user_id}`;
-
-        const { error: authError } = await supabase.auth.signInWithPassword({
-          email: emailLower,
-          password: tempPassword,
-        });
-
-        if (authError) {
-          console.error('Auth sign-in error:', authError);
-        }
-
         onLoginSuccess(data.occupant);
       }
     } catch (err: any) {
