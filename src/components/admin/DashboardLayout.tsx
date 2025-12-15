@@ -19,7 +19,6 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'apartments', label: 'Apartments', icon: Building2 },
     { id: 'admins', label: 'Admins', icon: Users },
-    { id: 'payments', label: 'All Payments', icon: FileText },
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
   ];
 

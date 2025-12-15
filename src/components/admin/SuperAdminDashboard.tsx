@@ -3,7 +3,6 @@ import DashboardLayout from './DashboardLayout';
 import ApartmentManagement from './ApartmentManagement';
 import AdminManagement from './AdminManagement';
 import SuperAdminOverview from './SuperAdminOverview';
-import AllPaymentsView from './AllPaymentsView';
 import LeadsManagement from './LeadsManagement';
 
 export default function SuperAdminDashboard() {
@@ -14,7 +13,6 @@ export default function SuperAdminDashboard() {
       {activeTab === 'overview' && <SuperAdminOverview />}
       {activeTab === 'apartments' && <ApartmentManagement />}
       {activeTab === 'admins' && <AdminManagement />}
-      {activeTab === 'payments' && <AllPaymentsView />}
       {activeTab === 'leads' && <LeadsManagement />}
     </DashboardLayout>
   );
