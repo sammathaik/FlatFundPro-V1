@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Home, UserCheck, DollarSign, Info } from 'lucide-react';
+import { Building2, Users, Home, UserCheck, Coins, Info, Percent } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function SuperAdminOverview() {
@@ -46,7 +46,7 @@ export default function SuperAdminOverview() {
     { label: 'Buildings/Blocks', value: stats.buildings, icon: Home, color: 'purple' },
     { label: 'Total Flats', value: stats.flats, icon: Home, color: 'indigo' },
     { label: 'Registered Occupants', value: stats.occupants, icon: UserCheck, color: 'teal' },
-    { label: 'Active Collections', value: stats.activeCollections, icon: DollarSign, color: 'amber' },
+    { label: 'Active Collections', value: stats.activeCollections, icon: Coins, color: 'amber' },
   ];
 
   return (
@@ -113,6 +113,7 @@ export default function SuperAdminOverview() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
               <div className="flex items-center gap-2 group relative">
+                <Home className="w-4 h-4 text-blue-600" />
                 <span className="text-gray-700 font-medium">Avg Flats per Building</span>
                 <Info className="w-4 h-4 text-blue-500 cursor-help" />
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
@@ -127,6 +128,7 @@ export default function SuperAdminOverview() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
               <div className="flex items-center gap-2 group relative">
+                <Percent className="w-4 h-4 text-blue-600" />
                 <span className="text-gray-700 font-medium">Occupancy Coverage</span>
                 <Info className="w-4 h-4 text-blue-500 cursor-help" />
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
@@ -142,6 +144,7 @@ export default function SuperAdminOverview() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-blue-100">
               <div className="flex items-center gap-2 group relative">
+                <Coins className="w-4 h-4 text-blue-600" />
                 <span className="text-gray-700 font-medium">Avg Collections/Apartment</span>
                 <Info className="w-4 h-4 text-blue-500 cursor-help" />
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
@@ -157,6 +160,7 @@ export default function SuperAdminOverview() {
             </div>
             <div className="flex justify-between items-center py-2">
               <div className="flex items-center gap-2 group relative">
+                <Building2 className="w-4 h-4 text-blue-600" />
                 <span className="text-gray-700 font-medium">Buildings per Apartment</span>
                 <Info className="w-4 h-4 text-blue-500 cursor-help" />
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg p-3 w-64 z-10 shadow-lg">
