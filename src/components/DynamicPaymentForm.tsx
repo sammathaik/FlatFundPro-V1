@@ -768,24 +768,6 @@ export default function DynamicPaymentForm() {
               </div>
 
               <div>
-                <label htmlFor="payment_amount" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Maintenance Payment Amount (INR)
-                </label>
-                <input
-                  type="number"
-                  id="payment_amount"
-                  name="payment_amount"
-                  value={formData.payment_amount}
-                  onChange={handleInputChange}
-                  disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="e.g., 5000"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-
-              <div>
                 <label htmlFor="payment_type" className="block text-sm font-semibold text-gray-700 mb-2">
                   What is this payment for? <span className="text-red-500">*</span>
                 </label>
@@ -817,6 +799,42 @@ export default function DynamicPaymentForm() {
                 {errors.payment_type && (
                   <p className="mt-1 text-sm text-red-600">{errors.payment_type}</p>
                 )}
+              </div>
+
+              {selectedCollectionId && (() => {
+                const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+                if (selectedCollection) {
+                  return (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                      <h3 className="text-sm font-semibold text-blue-900 mb-2">Payment Details</h3>
+                      <div className="space-y-1 text-sm text-blue-800">
+                        <p><span className="font-medium">Collection:</span> {selectedCollection.collection_name}</p>
+                        <p><span className="font-medium">Expected Amount:</span> ₹{selectedCollection.amount_due.toLocaleString()}</p>
+                        <p><span className="font-medium">Due Date:</span> {new Date(selectedCollection.due_date).toLocaleDateString()}</p>
+                        <p><span className="font-medium">Frequency:</span> {selectedCollection.payment_frequency.charAt(0).toUpperCase() + selectedCollection.payment_frequency.slice(1)}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div>
+                <label htmlFor="payment_amount" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Maintenance Payment Amount (INR)
+                </label>
+                <input
+                  type="number"
+                  id="payment_amount"
+                  name="payment_amount"
+                  value={formData.payment_amount}
+                  onChange={handleInputChange}
+                  disabled={submissionState === 'loading'}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  placeholder="e.g., 5000"
+                  step="0.01"
+                  min="0"
+                />
               </div>
 
               <div>
