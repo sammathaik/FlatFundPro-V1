@@ -45,6 +45,7 @@ export default function DynamicPaymentForm() {
   const [flats, setFlats] = useState<FlatNumber[]>([]);
   const [activeCollections, setActiveCollections] = useState<ActiveCollection[]>([]);
   const [selectedApartment, setSelectedApartment] = useState<Apartment | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [loadingData, setLoadingData] = useState(true);
 
   const [formData, setFormData] = useState<FormData>({
@@ -234,7 +235,30 @@ export default function DynamicPaymentForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Special handling for payment_type - the dropdown value is collection.id
+    // We need to extract the actual payment_type from the selected collection
+    if (name === 'payment_type') {
+      if (value) {
+        const selectedCollection = activeCollections.find(c => c.id === value);
+        if (selectedCollection) {
+          setSelectedCollectionId(value); // Track which collection is selected
+          setFormData(prev => ({
+            ...prev,
+            payment_type: selectedCollection.payment_type // Store the actual payment type (maintenance, contingency, emergency)
+          }));
+        } else {
+          setFormData(prev => ({ ...prev, [name]: value }));
+        }
+      } else {
+        // User selected the empty option - reset both
+        setSelectedCollectionId('');
+        setFormData(prev => ({ ...prev, payment_type: '' }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -442,6 +466,7 @@ export default function DynamicPaymentForm() {
       setUploadProgress(100);
       setSubmissionState('success');
 
+      setSelectedCollectionId(''); // Reset collection selection
       setFormData({
         apartmentId: formData.apartmentId,
         name: '',
@@ -765,7 +790,7 @@ export default function DynamicPaymentForm() {
                   <select
                     id="payment_type"
                     name="payment_type"
-                    value={formData.payment_type}
+                    value={selectedCollectionId}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading' || activeCollections.length === 0}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
