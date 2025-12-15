@@ -14,6 +14,7 @@ interface FormData {
   screenshot: File | null;
   payment_type: string;
   occupant_type: 'Owner' | 'Tenant' | '';
+  expected_collection_id?: string;
 }
 
 interface FormErrors {
@@ -60,6 +61,7 @@ export default function DynamicPaymentForm() {
     screenshot: null,
     payment_type: '',
     occupant_type: '',
+    expected_collection_id: undefined,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -67,7 +69,7 @@ export default function DynamicPaymentForm() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
-  const [duplicateInfo, setDuplicateInfo] = useState<{ date: string; quarter: string } | null>(null);
+  const [duplicateInfo, setDuplicateInfo] = useState<{ date: string; quarter: string; collection_name?: string } | null>(null);
   const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
 
   useEffect(() => {
@@ -245,7 +247,8 @@ export default function DynamicPaymentForm() {
           setSelectedCollectionId(value); // Track which collection is selected
           setFormData(prev => ({
             ...prev,
-            payment_type: selectedCollection.payment_type // Store the actual payment type (maintenance, contingency, emergency)
+            payment_type: selectedCollection.payment_type, // Store the actual payment type (maintenance, contingency, emergency)
+            expected_collection_id: value // Store the collection ID for duplicate checking and submission
           }));
         } else {
           setFormData(prev => ({ ...prev, [name]: value }));
@@ -253,7 +256,7 @@ export default function DynamicPaymentForm() {
       } else {
         // User selected the empty option - reset both
         setSelectedCollectionId('');
-        setFormData(prev => ({ ...prev, payment_type: '' }));
+        setFormData(prev => ({ ...prev, payment_type: '', expected_collection_id: undefined }));
       }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -300,9 +303,10 @@ export default function DynamicPaymentForm() {
   };
 
   // Check for duplicate submissions using database function
-  // Duplicate is defined as: same block_id, flat_id, and payment_quarter (regardless of payment_type)
+  // Duplicate is defined as: same block_id, flat_id, and expected_collection_id
+  // This allows users to pay for different collections (maintenance, contingency, emergency) separately
   const checkForDuplicate = async (): Promise<{ isDuplicate: boolean; existingRecord?: any }> => {
-    if (!formData.blockId || !formData.flatId) {
+    if (!formData.blockId || !formData.flatId || !selectedCollectionId) {
       return { isDuplicate: false };
     }
 
@@ -312,6 +316,7 @@ export default function DynamicPaymentForm() {
       const { data, error } = await supabase.rpc('check_payment_duplicate', {
         p_block_id: formData.blockId,
         p_flat_id: formData.flatId,
+        p_expected_collection_id: selectedCollectionId,
         p_payment_date: formData.payment_date || null,
         p_submission_date: new Date().toISOString(),
       });
@@ -326,13 +331,14 @@ export default function DynamicPaymentForm() {
       }
 
       if (data && data.length > 0 && data[0].is_duplicate) {
-        return { 
-          isDuplicate: true, 
+        return {
+          isDuplicate: true,
           existingRecord: {
             payment_date: data[0].existing_payment_date,
             created_at: data[0].existing_created_at,
             payment_quarter: data[0].existing_quarter,
             payment_type: data[0].existing_payment_type,
+            collection_name: data[0].existing_collection_name,
           }
         };
       }
@@ -406,6 +412,7 @@ export default function DynamicPaymentForm() {
         setDuplicateInfo({
           date: existingDate,
           quarter: existingRecord.payment_quarter || calculatePaymentQuarter(formData.payment_date || null),
+          collection_name: existingRecord.collection_name,
         });
         setShowDuplicateAlert(true);
         return;
@@ -450,6 +457,7 @@ export default function DynamicPaymentForm() {
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
         occupant_type: formData.occupant_type,
+        expected_collection_id: formData.expected_collection_id || undefined,
       };
       
       // Debug log to verify payment_date is being saved
@@ -479,6 +487,7 @@ export default function DynamicPaymentForm() {
         screenshot: null,
         payment_type: '',
         occupant_type: '',
+        expected_collection_id: undefined,
       });
 
       const fileInput = document.getElementById('screenshot') as HTMLInputElement;
@@ -957,7 +966,7 @@ export default function DynamicPaymentForm() {
 
                   <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
                     <p className="text-sm text-red-800 font-semibold mb-2">
-                      A similar payment submission has already been received for:
+                      A payment submission has already been received for this specific collection:
                     </p>
                     <div className="space-y-2 text-sm text-red-700">
                       <div className="flex justify-between">
@@ -968,15 +977,16 @@ export default function DynamicPaymentForm() {
                         <span className="font-medium">Flat Number:</span>
                         <span>{getSelectedFlatNumber()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">Quarter:</span>
-                        <span>{duplicateInfo?.quarter || 'N/A'}</span>
-                      </div>
-                      {duplicateInfo && (
-                        <div className="mt-3 pt-3 border-t border-red-200">
-                          <p className="text-xs text-red-700">
-                            <strong>Note:</strong> A payment submission already exists for this flat, block, and quarter combination, regardless of payment type.
-                          </p>
+                      {duplicateInfo?.collection_name && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Collection:</span>
+                          <span className="font-bold">{duplicateInfo.collection_name}</span>
+                        </div>
+                      )}
+                      {duplicateInfo?.quarter && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Quarter:</span>
+                          <span>{duplicateInfo.quarter}</span>
                         </div>
                       )}
                       {duplicateInfo?.date && (
@@ -990,7 +1000,7 @@ export default function DynamicPaymentForm() {
 
                   <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded">
                     <p className="text-sm text-amber-800">
-                      <strong>Please Note:</strong> A payment submission for this building, flat, payment type, and quarter has already been received.
+                      <strong>Important:</strong> You have already submitted a payment for this specific collection. If you need to pay for a different collection (e.g., Maintenance vs Contingency Fund), please select that collection from the form. If you believe this is an error, please contact your Admin/Secretary/Treasurer.
                     </p>
                   </div>
 
