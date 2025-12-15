@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, Info, CheckCircle, AlertCircle, Loader2, Eye, X } from 'lucide-react';
+import { Upload, Info, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase, PaymentSubmission } from '../lib/supabase';
 
 interface FormData {
@@ -39,8 +39,6 @@ export default function PaymentForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,98 +92,12 @@ export default function PaymentForm() {
     }
   };
 
-  const validateImageFile = async (file: File): Promise<void> => {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      throw new Error('Only JPG, PNG, and PDF files are allowed');
-    }
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      throw new Error('File size must be less than 10MB');
-    }
-
-    if (file.type.startsWith('image/')) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-          if (img.width < 200 || img.height < 200) {
-            URL.revokeObjectURL(url);
-            reject(new Error('Image too small. Minimum 200x200 pixels required for clarity'));
-            return;
-          }
-
-          if (img.width > 5000 || img.height > 5000) {
-            URL.revokeObjectURL(url);
-            reject(new Error('Image too large. Maximum 5000x5000 pixels'));
-            return;
-          }
-
-          URL.revokeObjectURL(url);
-          resolve();
-        };
-
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error('Invalid or corrupted image file'));
-        };
-
-        img.src = url;
-      });
-    }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-
-    if (!file) {
-      setFormData(prev => ({ ...prev, screenshot: null }));
-      setImagePreview(null);
-      return;
+    setFormData(prev => ({ ...prev, screenshot: file }));
+    if (errors.screenshot) {
+      setErrors(prev => ({ ...prev, screenshot: undefined }));
     }
-
-    setIsValidating(true);
-    setErrors(prev => ({ ...prev, screenshot: undefined }));
-
-    try {
-      await validateImageFile(file);
-
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result as string);
-          setIsValidating(false);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setImagePreview(null);
-        setIsValidating(false);
-      }
-
-      setFormData(prev => ({ ...prev, screenshot: file }));
-    } catch (error) {
-      setErrors(prev => ({
-        ...prev,
-        screenshot: error instanceof Error ? error.message : 'Invalid file'
-      }));
-      setFormData(prev => ({ ...prev, screenshot: null }));
-      setImagePreview(null);
-      setIsValidating(false);
-
-      const fileInput = document.getElementById('screenshot') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
-    }
-  };
-
-  const clearFileSelection = () => {
-    setFormData(prev => ({ ...prev, screenshot: null }));
-    setImagePreview(null);
-    setErrors(prev => ({ ...prev, screenshot: undefined }));
-
-    const fileInput = document.getElementById('screenshot') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
   };
 
   const uploadScreenshot = async (file: File): Promise<string> => {
@@ -279,7 +191,6 @@ export default function PaymentForm() {
         payment_date: '',
         screenshot: null,
       });
-      setImagePreview(null);
 
       const fileInput = document.getElementById('screenshot') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
@@ -297,7 +208,6 @@ export default function PaymentForm() {
     setSubmissionState('idle');
     setErrors({});
     setUploadProgress(0);
-    setImagePreview(null);
   };
 
   if (submissionState === 'success') {
@@ -495,7 +405,7 @@ export default function PaymentForm() {
                     id="screenshot"
                     name="screenshot"
                     onChange={handleFileChange}
-                    disabled={submissionState === 'loading' || isValidating}
+                    disabled={submissionState === 'loading'}
                     accept="image/jpeg,image/jpg,image/png,application/pdf"
                     className="hidden"
                   />
@@ -503,93 +413,38 @@ export default function PaymentForm() {
                     htmlFor="screenshot"
                     className={`flex items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-amber-500 hover:bg-amber-50 ${
                       errors.screenshot ? 'border-red-500' : 'border-gray-300'
-                    } ${submissionState === 'loading' || isValidating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${submissionState === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="text-center">
-                      {isValidating ? (
-                        <>
-                          <Loader2 className="w-10 h-10 text-amber-500 mx-auto mb-2 animate-spin" />
-                          <p className="text-sm text-gray-600">
-                            <span className="font-semibold">Validating file...</span>
-                          </p>
-                        </>
-                      ) : formData.screenshot ? (
-                        <>
-                          <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-green-600">
-                              {formData.screenshot.name}
-                            </span>
-                            <br />
-                            <span className="text-xs">
-                              ({(formData.screenshot.size / 1024 / 1024).toFixed(2)} MB)
-                            </span>
-                          </p>
-                        </>
+                      <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                      {formData.screenshot ? (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold text-amber-600">
+                            {formData.screenshot.name}
+                          </span>
+                          <br />
+                          <span className="text-xs">
+                            ({(formData.screenshot.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </p>
                       ) : (
-                        <>
-                          <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                            <br />
-                            <span className="text-xs">JPG, PNG or PDF (Max 10MB)</span>
-                          </p>
-                        </>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold">Click to upload</span> or drag and drop
+                          <br />
+                          <span className="text-xs">JPG, PNG or PDF (Max 10MB)</span>
+                        </p>
                       )}
                     </div>
                   </label>
-                  {formData.screenshot && !isValidating && (
-                    <button
-                      type="button"
-                      onClick={clearFileSelection}
-                      disabled={submissionState === 'loading'}
-                      className="absolute top-2 right-2 p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition-colors"
-                      title="Remove file"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
-
-                {imagePreview && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        <Eye className="w-4 h-4 text-gray-600 mr-2" />
-                        <p className="text-sm font-semibold text-gray-700">Preview:</p>
-                      </div>
-                      <span className="text-xs text-green-600 font-medium">Validated</span>
-                    </div>
-                    <img
-                      src={imagePreview}
-                      alt="Payment screenshot preview"
-                      className="max-w-full h-auto max-h-80 rounded-lg border-2 border-green-200 mx-auto"
-                    />
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Please verify this is the correct payment screenshot
-                    </p>
-                  </div>
-                )}
-
-                {formData.screenshot && formData.screenshot.type === 'application/pdf' && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start">
-                      <Info className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-blue-800">
-                        PDF uploaded successfully. Preview not available for PDF files.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="mt-2 flex items-start text-xs text-gray-600 bg-gray-50 p-3 rounded">
                   <Info className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" />
                   <span>
-                    <strong>Tip:</strong> Ensure your screenshot clearly shows the transaction reference (UTR/Txn ID), payment date, and amount. Images must be at least 200x200 pixels.
+                    <strong>Tip:</strong> Crop or zoom your screenshot so that the transaction details are clearly visible.
                   </span>
                 </div>
                 {errors.screenshot && (
-                  <p className="mt-2 text-sm text-red-600 font-medium">{errors.screenshot}</p>
+                  <p className="mt-1 text-sm text-red-600">{errors.screenshot}</p>
                 )}
               </div>
 
