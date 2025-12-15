@@ -68,38 +68,49 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         setAllFlats(occupant.all_flats);
       }
 
-      // Load payments for selected flat
-      const paymentsResult = await supabase
-        .from('payment_submissions')
-        .select('*')
-        .eq('flat_id', selectedFlatId)
-        .order('created_at', { ascending: false });
+      // Load payments for selected flat using RPC function
+      const paymentsResult = await supabase.rpc('get_payments_for_flat_with_session', {
+        session_token: occupant.sessionToken,
+        flat_id: selectedFlatId
+      });
 
       if (paymentsResult.data) {
         setPayments(paymentsResult.data);
       }
 
-      // Load apartment info for selected flat
-      const infoResult = await supabase
-        .from('flat_numbers')
-        .select(
-          `
-          flat_number,
-          buildings_blocks_phases!inner(
-            block_name,
-            apartments!inner(apartment_name)
-          )
-        `
-        )
-        .eq('id', selectedFlatId)
-        .single();
+      // Load apartment info for selected flat from occupant's flat list
+      const currentFlat = allFlats.find(f => f.flat_id === selectedFlatId) ||
+                          occupant.all_flats?.find((f: any) => f.flat_id === selectedFlatId);
 
-      if (infoResult.data) {
+      if (currentFlat) {
         setApartmentInfo({
-          apartment_name: (infoResult.data.buildings_blocks_phases as any).apartments.apartment_name,
-          block_name: (infoResult.data.buildings_blocks_phases as any).block_name,
-          flat_number: infoResult.data.flat_number,
+          apartment_name: currentFlat.apartment_name,
+          block_name: currentFlat.block_name,
+          flat_number: currentFlat.flat_number,
         });
+      } else {
+        // Fallback to direct query if not in flat list
+        const infoResult = await supabase
+          .from('flat_numbers')
+          .select(
+            `
+            flat_number,
+            buildings_blocks_phases!inner(
+              block_name,
+              apartments!inner(apartment_name)
+            )
+          `
+          )
+          .eq('id', selectedFlatId)
+          .single();
+
+        if (infoResult.data) {
+          setApartmentInfo({
+            apartment_name: (infoResult.data.buildings_blocks_phases as any).apartments.apartment_name,
+            block_name: (infoResult.data.buildings_blocks_phases as any).block_name,
+            flat_number: infoResult.data.flat_number,
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
