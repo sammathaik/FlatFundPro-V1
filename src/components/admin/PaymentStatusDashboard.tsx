@@ -1192,6 +1192,20 @@ export default function PaymentStatusDashboard({
                                   <div className="flex flex-wrap gap-2">
                                     {block.flats.map((flat) => {
                                       const difference = flat.expectedAmount - flat.paidAmount;
+                                      const dueDate = flat.maintenanceDueDate ? new Date(flat.maintenanceDueDate) : null;
+                                      const paymentDate = flat.paymentDate ? new Date(flat.paymentDate) : null;
+                                      const dailyFine = Number(collection.daily_fine || 0);
+
+                                      // Calculate days late and fine
+                                      let daysLate = 0;
+                                      let fineAmount = 0;
+                                      if (dueDate && paymentDate) {
+                                        dueDate.setHours(0, 0, 0, 0);
+                                        paymentDate.setHours(0, 0, 0, 0);
+                                        const timeDiff = paymentDate.getTime() - dueDate.getTime();
+                                        daysLate = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+                                        fineAmount = daysLate * dailyFine;
+                                      }
 
                                       let tooltipText = `Flat ${flat.flat_number}\n`;
                                       tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
@@ -1199,6 +1213,30 @@ export default function PaymentStatusDashboard({
                                       tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
                                       tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
                                       tooltipText += `Difference: ${currencySymbol}${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
+
+                                      // Add due date
+                                      if (dueDate) {
+                                        tooltipText += `Due Date: ${dueDate.toLocaleDateString()}\n`;
+                                      }
+
+                                      // Add payment date and late fee info
+                                      if (paymentDate) {
+                                        tooltipText += `Payment Date: ${paymentDate.toLocaleDateString()}\n`;
+                                        if (daysLate > 0 && dailyFine > 0) {
+                                          tooltipText += `Days Late: ${daysLate}\n`;
+                                          tooltipText += `Late Fine: ${currencySymbol}${fineAmount.toLocaleString()}\n`;
+                                        } else if (daysLate === 0) {
+                                          tooltipText += `✓ Paid On Time\n`;
+                                        }
+                                      }
+
+                                      // Add admin approval status
+                                      if (flat.paymentStatus) {
+                                        const statusLabel = flat.paymentStatus === 'Approved' ? '✓ Approved' :
+                                                          flat.paymentStatus === 'Reviewed' ? '⚠ Reviewed' :
+                                                          '⏳ Received';
+                                        tooltipText += `Admin Status: ${statusLabel}\n`;
+                                      }
 
                                       return (
                                         <div
@@ -1357,11 +1395,51 @@ export default function PaymentStatusDashboard({
                                     <div className="flex flex-wrap gap-2">
                                       {block.flats.map((flat) => {
                                         const difference = flat.expectedAmount - flat.paidAmount;
+                                        const dueDate = flat.maintenanceDueDate ? new Date(flat.maintenanceDueDate) : null;
+                                        const paymentDate = flat.paymentDate ? new Date(flat.paymentDate) : null;
+                                        const dailyFine = Number(collection.daily_fine || 0);
+
+                                        // Calculate days late and fine
+                                        let daysLate = 0;
+                                        let fineAmount = 0;
+                                        if (dueDate && paymentDate) {
+                                          dueDate.setHours(0, 0, 0, 0);
+                                          paymentDate.setHours(0, 0, 0, 0);
+                                          const timeDiff = paymentDate.getTime() - dueDate.getTime();
+                                          daysLate = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+                                          fineAmount = daysLate * dailyFine;
+                                        }
 
                                         let tooltipText = `Flat ${flat.flat_number}\n`;
                                         tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
+                                        tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
                                         tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
                                         tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
+                                        tooltipText += `Difference: ${currencySymbol}${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
+
+                                        // Add due date
+                                        if (dueDate) {
+                                          tooltipText += `Due Date: ${dueDate.toLocaleDateString()}\n`;
+                                        }
+
+                                        // Add payment date and late fee info
+                                        if (paymentDate) {
+                                          tooltipText += `Payment Date: ${paymentDate.toLocaleDateString()}\n`;
+                                          if (daysLate > 0 && dailyFine > 0) {
+                                            tooltipText += `Days Late: ${daysLate}\n`;
+                                            tooltipText += `Late Fine: ${currencySymbol}${fineAmount.toLocaleString()}\n`;
+                                          } else if (daysLate === 0) {
+                                            tooltipText += `✓ Paid On Time\n`;
+                                          }
+                                        }
+
+                                        // Add admin approval status
+                                        if (flat.paymentStatus) {
+                                          const statusLabel = flat.paymentStatus === 'Approved' ? '✓ Approved' :
+                                                            flat.paymentStatus === 'Reviewed' ? '⚠ Reviewed' :
+                                                            '⏳ Received';
+                                          tooltipText += `Admin Status: ${statusLabel}\n`;
+                                        }
 
                                         return (
                                           <div
