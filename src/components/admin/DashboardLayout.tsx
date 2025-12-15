@@ -26,6 +26,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
   const adminTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
+    { id: 'occupants', label: 'Occupants', icon: Users },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
     { id: 'payment-setup', label: 'Payment Setup', icon: FileText },
     { id: 'payment-status', label: 'Payment Status', icon: BarChart3 },
