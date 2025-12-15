@@ -93,7 +93,11 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
       if (!data.success) {
         setError(data.message || 'Invalid OTP');
       } else {
-        onLoginSuccess(data.occupant);
+        // Pass both occupant data and session token
+        onLoginSuccess({
+          ...data.occupant,
+          sessionToken: data.session_token
+        });
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
