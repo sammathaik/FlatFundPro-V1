@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 
@@ -20,6 +20,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'apartments', label: 'Apartments', icon: Building2 },
     { id: 'admins', label: 'Admins', icon: Users },
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
+    { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
     { id: 'settings', label: 'System Settings', icon: Settings },
@@ -33,6 +34,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
     { id: 'payment-setup', label: 'Payment Setup', icon: FileText },
     { id: 'payment-status', label: 'Payment Status', icon: BarChart3 },
+    { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
 

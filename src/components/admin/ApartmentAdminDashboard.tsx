@@ -7,9 +7,12 @@ import AdminPaymentStatusTab from './AdminPaymentStatusTab';
 import ExpectedCollectionsAdmin from './ExpectedCollectionsAdmin';
 import OccupantManagement from './OccupantManagement';
 import FAQManagement from './FAQManagement';
+import { FraudDetectionDashboard } from './FraudDetectionDashboard';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApartmentAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const { adminData } = useAuth();
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab} isSuperAdmin={false}>
@@ -19,6 +22,7 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
+      {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
       {activeTab === 'faq' && <FAQManagement />}
     </DashboardLayout>
   );

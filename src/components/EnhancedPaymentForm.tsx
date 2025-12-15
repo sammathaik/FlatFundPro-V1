@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Upload, Info, CheckCircle, AlertCircle, Loader2, Sparkles, ImageIcon } from 'lucide-react';
 import { supabase, PaymentSubmission } from '../lib/supabase';
+import { analyzePaymentImage } from '../lib/fraudDetection';
 
 interface FormData {
   name: string;
@@ -240,13 +241,21 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         occupant_type: formData.occupant_type,
       };
 
-      const { error: dbError } = await supabase
+      const { data: insertedPayment, error: dbError } = await supabase
         .from('payment_submissions')
-        .insert([submissionData]);
+        .insert([submissionData])
+        .select()
+        .single();
 
-      if (dbError) {
+      if (dbError || !insertedPayment) {
         throw new Error('Failed to save submission');
       }
+
+      setUploadProgress(70);
+
+      analyzePaymentImage(insertedPayment.id, screenshotUrl).catch(error => {
+        console.error('Fraud analysis failed (non-blocking):', error);
+      });
 
       setUploadProgress(90);
 
