@@ -37,6 +37,14 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-6">
             <button
+              onClick={() => onNavigate('/occupant')}
+              className="text-white hover:text-blue-300 font-medium text-base transition-colors border-2 border-blue-400 hover:border-blue-300 px-8 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 shadow-lg"
+            >
+              Occupant Portal - View Your Payments →
+            </button>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-6">
+            <button
               onClick={() => onNavigate('/marketing')}
               className="text-white hover:text-amber-300 font-medium text-sm transition-colors border border-white hover:border-amber-300 px-6 py-3 rounded-lg"
             >

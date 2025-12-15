@@ -8,6 +8,8 @@ import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import QRCodePrintPage from './components/QRCodePrintPage';
+import OccupantLoginPage from './components/occupant/OccupantLoginPage';
+import OccupantDashboard from './components/occupant/OccupantDashboard';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
@@ -16,6 +18,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 function App() {
   const { user, userRole, loading } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [occupant, setOccupant] = useState<any>(null);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -182,6 +185,38 @@ function App() {
 
   if (currentPath === '/login') {
     return <LoginPage portalType="admin" onBack={() => navigate('/')} />;
+  }
+
+  if (currentPath === '/occupant') {
+    if (!occupant) {
+      return (
+        <OccupantLoginPage
+          onLoginSuccess={(occupantData) => {
+            setOccupant(occupantData);
+            navigate('/occupant/dashboard');
+          }}
+          onBack={() => navigate('/')}
+        />
+      );
+    }
+    navigate('/occupant/dashboard');
+    return null;
+  }
+
+  if (currentPath === '/occupant/dashboard') {
+    if (!occupant) {
+      navigate('/occupant');
+      return null;
+    }
+    return (
+      <OccupantDashboard
+        occupant={occupant}
+        onLogout={() => {
+          setOccupant(null);
+          navigate('/');
+        }}
+      />
+    );
   }
 
   return <PublicLandingPage onNavigate={navigate} />;
