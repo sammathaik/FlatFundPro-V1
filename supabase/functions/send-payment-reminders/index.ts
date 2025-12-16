@@ -165,6 +165,8 @@ Deno.serve(async (req: Request) => {
     let sentCount = 0;
     let failedCount = 0;
 
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     for (const flat of flats) {
       try {
         const dueDate = new Date(flat.due_date);
@@ -350,6 +352,8 @@ Deno.serve(async (req: Request) => {
           error: emailError instanceof Error ? emailError.message : 'Unknown error' 
         });
       }
+
+      await delay(600);
     }
 
     return new Response(
