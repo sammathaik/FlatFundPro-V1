@@ -483,26 +483,32 @@ export default function OccupantManagement() {
           </div>
         ) : (
           blockGroups.map((group) => (
-            <div key={group.block_id} className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div key={group.block_id} className="bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-amber-500">
               <button
                 onClick={() => toggleBlock(group.block_id)}
-                className="w-full px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-all flex items-center justify-between"
+                className="w-full px-6 py-4 bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 hover:from-amber-200 hover:via-orange-200 hover:to-yellow-200 transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <Building className="w-5 h-5 text-amber-700" />
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <Building className="w-5 h-5 text-orange-600" />
+                  </div>
                   <div className="text-left">
-                    <h3 className="text-base font-bold text-gray-800">
-                      {group.apartment_name} - {group.block_name}
+                    <h3 className="text-base font-semibold">
+                      <span className="text-orange-700">{group.apartment_name}</span>
+                      <span className="text-gray-500 mx-2">•</span>
+                      <span className="text-amber-700">{group.block_name}</span>
                     </h3>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      {group.block_type} • {group.occupants.length} {group.occupants.length === 1 ? 'flat' : 'flats'}
+                    <p className="text-xs font-medium mt-0.5">
+                      <span className="text-teal-700">{group.block_type}</span>
+                      <span className="text-gray-400 mx-1.5">•</span>
+                      <span className="text-blue-700">{group.occupants.length} {group.occupants.length === 1 ? 'flat' : 'flats'}</span>
                     </p>
                   </div>
                 </div>
                 {expandedBlocks.has(group.block_id) ? (
-                  <ChevronUp className="w-5 h-5 text-amber-700" />
+                  <ChevronUp className="w-5 h-5 text-orange-600" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-amber-700" />
+                  <ChevronDown className="w-5 h-5 text-orange-600" />
                 )}
               </button>
 
@@ -534,14 +540,18 @@ export default function OccupantManagement() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {group.occupants.map((occupant) => (
                         <>
-                          <tr key={occupant.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={occupant.id} className="hover:bg-amber-50 transition-colors">
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
-                                <Home className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm font-bold text-gray-900">{occupant.flat_number}</span>
+                                <div className="p-1.5 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
+                                  <Home className="w-4 h-4 text-blue-700" />
+                                </div>
+                                <span className="text-sm font-bold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md">
+                                  {occupant.flat_number}
+                                </span>
                                 <button
                                   onClick={() => toggleFlat(occupant.flat_id)}
-                                  className="text-amber-600 hover:text-amber-800 ml-1 transition-colors"
+                                  className="text-blue-600 hover:text-blue-800 ml-1 transition-colors p-1 hover:bg-blue-100 rounded"
                                   title="View payment history"
                                 >
                                   {expandedFlats.has(occupant.flat_id) ? (
@@ -554,24 +564,30 @@ export default function OccupantManagement() {
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm text-gray-900">
-                                  {occupant.occupant_name || <span className="text-gray-400 italic">Not specified</span>}
+                                <div className="p-1 bg-gradient-to-br from-green-100 to-emerald-100 rounded">
+                                  <User className="w-3.5 h-3.5 text-green-700" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-800">
+                                  {occupant.occupant_name || <span className="text-gray-400 italic font-normal">Not specified</span>}
                                 </span>
                               </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm font-mono text-gray-700">
+                                <div className="p-1 bg-gradient-to-br from-violet-100 to-purple-100 rounded">
+                                  <Phone className="w-3.5 h-3.5 text-violet-700" />
+                                </div>
+                                <span className="text-sm font-mono font-medium text-violet-700 bg-violet-50 px-2 py-0.5 rounded">
                                   {maskMobile(occupant.mobile)}
                                 </span>
                               </div>
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <span className="text-sm text-gray-900 truncate max-w-xs" title={occupant.email}>
+                                <div className="p-1 bg-gradient-to-br from-rose-100 to-pink-100 rounded flex-shrink-0">
+                                  <Mail className="w-3.5 h-3.5 text-rose-700" />
+                                </div>
+                                <span className="text-sm text-gray-700 truncate max-w-xs" title={occupant.email}>
                                   {occupant.email}
                                 </span>
                               </div>
@@ -699,6 +715,18 @@ export default function OccupantManagement() {
             </div>
 
             <div className="space-y-4">
+              {!editModal.isNew && editModal.occupant.occupant_name && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name (from latest payment)
+                  </label>
+                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                    {editModal.occupant.occupant_name}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">This name is automatically populated from the most recent payment submission</p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Apartment <span className="text-red-500">*</span>
