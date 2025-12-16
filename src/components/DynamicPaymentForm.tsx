@@ -38,6 +38,7 @@ interface ActiveCollection {
   payment_frequency: string;
   amount_due: number;
   due_date: string;
+  daily_fine?: number;
 }
 
 export default function DynamicPaymentForm() {
@@ -95,6 +96,33 @@ export default function DynamicPaymentForm() {
     }
   }, [formData.blockId]);
 
+  useEffect(() => {
+    if (formData.flatId && formData.apartmentId) {
+      loadFlatDetails(formData.apartmentId, formData.flatId);
+    }
+  }, [formData.flatId, formData.apartmentId]);
+
+  useEffect(() => {
+    if (formData.flatId && formData.email && activeCollections.length > 0 && !selectedCollectionId) {
+      const mostRecentCollection = activeCollections[0];
+      setSelectedCollectionId(mostRecentCollection.id);
+
+      const calculatedAmount = calculateAmountWithFine(
+        mostRecentCollection.amount_due,
+        mostRecentCollection.due_date,
+        mostRecentCollection.daily_fine || 0,
+        formData.payment_date || new Date().toISOString().split('T')[0]
+      );
+
+      setFormData(prev => ({
+        ...prev,
+        payment_type: mostRecentCollection.payment_type,
+        expected_collection_id: mostRecentCollection.id,
+        payment_amount: calculatedAmount.toString(),
+      }));
+    }
+  }, [formData.flatId, formData.email, activeCollections]);
+
   const loadApartments = async () => {
     try {
       const { data, error } = await supabase
@@ -151,7 +179,7 @@ export default function DynamicPaymentForm() {
     try {
       const { data, error } = await supabase
         .from('expected_collections')
-        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date')
+        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date, daily_fine')
         .eq('apartment_id', apartmentId)
         .eq('is_active', true)
         .order('due_date', { ascending: true });
@@ -162,6 +190,62 @@ export default function DynamicPaymentForm() {
       console.error('Error loading active collections:', error);
       setActiveCollections([]);
     }
+  };
+
+  const loadFlatDetails = async (apartmentId: string, flatId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('flat_email_mappings')
+        .select('email, occupant_type, mobile')
+        .eq('apartment_id', apartmentId)
+        .eq('flat_id', flatId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading flat details:', error);
+        return;
+      }
+
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          email: data.email || '',
+          occupant_type: data.occupant_type || '',
+          contact_number: data.mobile || '',
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          email: '',
+          occupant_type: '',
+          contact_number: '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error in loadFlatDetails:', error);
+    }
+  };
+
+  const calculateAmountWithFine = (
+    baseAmount: number,
+    dueDate: string,
+    dailyFine: number,
+    paymentDate: string
+  ): number => {
+    const due = new Date(dueDate);
+    const payment = new Date(paymentDate);
+
+    due.setHours(0, 0, 0, 0);
+    payment.setHours(0, 0, 0, 0);
+
+    if (payment <= due) {
+      return baseAmount;
+    }
+
+    const daysOverdue = Math.floor((payment.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+    const fineAmount = daysOverdue * dailyFine;
+
+    return baseAmount + fineAmount;
   };
 
   const validateEmail = (email: string): boolean => {
@@ -238,25 +322,55 @@ export default function DynamicPaymentForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    // Special handling for payment_type - the dropdown value is collection.id
-    // We need to extract the actual payment_type from the selected collection
     if (name === 'payment_type') {
       if (value) {
         const selectedCollection = activeCollections.find(c => c.id === value);
         if (selectedCollection) {
-          setSelectedCollectionId(value); // Track which collection is selected
+          setSelectedCollectionId(value);
+
+          const calculatedAmount = calculateAmountWithFine(
+            selectedCollection.amount_due,
+            selectedCollection.due_date,
+            selectedCollection.daily_fine || 0,
+            formData.payment_date || new Date().toISOString().split('T')[0]
+          );
+
           setFormData(prev => ({
             ...prev,
-            payment_type: selectedCollection.payment_type, // Store the actual payment type (maintenance, contingency, emergency)
-            expected_collection_id: value // Store the collection ID for duplicate checking and submission
+            payment_type: selectedCollection.payment_type,
+            expected_collection_id: value,
+            payment_amount: calculatedAmount.toString(),
           }));
         } else {
           setFormData(prev => ({ ...prev, [name]: value }));
         }
       } else {
-        // User selected the empty option - reset both
         setSelectedCollectionId('');
-        setFormData(prev => ({ ...prev, payment_type: '', expected_collection_id: undefined }));
+        setFormData(prev => ({
+          ...prev,
+          payment_type: '',
+          expected_collection_id: undefined,
+          payment_amount: '',
+        }));
+      }
+    } else if (name === 'payment_date') {
+      setFormData(prev => ({ ...prev, [name]: value }));
+
+      if (selectedCollectionId && value) {
+        const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+        if (selectedCollection) {
+          const calculatedAmount = calculateAmountWithFine(
+            selectedCollection.amount_due,
+            selectedCollection.due_date,
+            selectedCollection.daily_fine || 0,
+            value
+          );
+
+          setFormData(prev => ({
+            ...prev,
+            payment_amount: calculatedAmount.toString(),
+          }));
+        }
       }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -804,13 +918,39 @@ export default function DynamicPaymentForm() {
               {selectedCollectionId && (() => {
                 const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
                 if (selectedCollection) {
+                  const paymentDate = formData.payment_date || new Date().toISOString().split('T')[0];
+                  const dueDate = new Date(selectedCollection.due_date);
+                  const payment = new Date(paymentDate);
+                  dueDate.setHours(0, 0, 0, 0);
+                  payment.setHours(0, 0, 0, 0);
+
+                  const isOverdue = payment > dueDate;
+                  const daysOverdue = isOverdue
+                    ? Math.floor((payment.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+                    : 0;
+                  const fineAmount = daysOverdue * (selectedCollection.daily_fine || 0);
+
                   return (
                     <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                       <h3 className="text-sm font-semibold text-blue-900 mb-2">Payment Details</h3>
                       <div className="space-y-1 text-sm text-blue-800">
                         <p><span className="font-medium">Collection:</span> {selectedCollection.collection_name}</p>
-                        <p><span className="font-medium">Expected Amount:</span> ₹{selectedCollection.amount_due.toLocaleString()}</p>
+                        <p><span className="font-medium">Base Amount:</span> ₹{selectedCollection.amount_due.toLocaleString()}</p>
                         <p><span className="font-medium">Due Date:</span> {new Date(selectedCollection.due_date).toLocaleDateString()}</p>
+                        {isOverdue && selectedCollection.daily_fine && selectedCollection.daily_fine > 0 && (
+                          <>
+                            <p className="text-red-600">
+                              <span className="font-medium">Days Overdue:</span> {daysOverdue} days
+                            </p>
+                            <p className="text-red-600">
+                              <span className="font-medium">Late Fee:</span> ₹{fineAmount.toLocaleString()}
+                              ({daysOverdue} days × ₹{selectedCollection.daily_fine.toLocaleString()}/day)
+                            </p>
+                            <p className="font-bold text-blue-900 pt-2 border-t border-blue-200">
+                              <span className="font-medium">Total Amount:</span> ₹{(selectedCollection.amount_due + fineAmount).toLocaleString()}
+                            </p>
+                          </>
+                        )}
                         <p><span className="font-medium">Frequency:</span> {selectedCollection.payment_frequency.charAt(0).toUpperCase() + selectedCollection.payment_frequency.slice(1)}</p>
                       </div>
                     </div>
@@ -821,7 +961,7 @@ export default function DynamicPaymentForm() {
 
               <div>
                 <label htmlFor="payment_amount" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Maintenance Payment Amount (INR)
+                  Payment Amount (INR) {selectedCollectionId && <span className="text-xs text-gray-500">(Auto-calculated, editable)</span>}
                 </label>
                 <input
                   type="number"
@@ -835,6 +975,11 @@ export default function DynamicPaymentForm() {
                   step="0.01"
                   min="0"
                 />
+                {selectedCollectionId && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Amount is calculated based on due date and late fees (if applicable). You can edit if needed.
+                  </p>
+                )}
               </div>
 
               <div>
