@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bell, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
 import { supabase, ExpectedCollection } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
