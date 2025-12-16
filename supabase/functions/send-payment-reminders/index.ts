@@ -299,8 +299,7 @@ Deno.serve(async (req: Request) => {
             'Authorization': `Bearer ${resendApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            from: 'FlatFund Pro <noreply@flatfundpro.com>',
+          body: JSON.stringify({            from: 'FlatFund Pro <onboarding@resend.dev>',
             to: [flat.email],
             subject: `[${urgencyClass}] Payment Reminder - ${flat.collection_name} - Flat ${flat.flat_number}`,
             html: emailHtml,

@@ -1,8 +1,12 @@
 # Email Reminder System - Fix Summary
 
-## Problem Identified
+## Problems Identified & Fixed
 
+### 1. Blank Screen Issue (FIXED)
 The email reminder button was showing a blank screen when clicked due to a **missing import**.
+
+### 2. Domain Verification Error (FIXED)
+The edge function was using `noreply@flatfundpro.com` which is not a verified domain in Resend, causing 403 errors.
 
 ### Root Cause
 
@@ -28,9 +32,25 @@ import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ChevronUp, Eye, Lo
 import { AlertTriangle, BarChart3, Bell, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
 ```
 
-### 2. Verified Resend API Key
+### 2. Fixed Domain Verification Error
 
-The edge function now has a fallback Resend API key for testing:
+**File:** `supabase/functions/send-payment-reminders/index.ts`
+
+**Before:**
+```typescript
+from: 'FlatFund Pro <noreply@flatfundpro.com>',
+```
+
+**After:**
+```typescript
+from: 'FlatFund Pro <onboarding@resend.dev>',
+```
+
+**Why:** Resend requires domain verification for custom domains. The `onboarding@resend.dev` address is a verified test domain provided by Resend that works immediately without verification.
+
+### 3. Verified Resend API Key
+
+The edge function has a fallback Resend API key for testing:
 ```typescript
 const resendApiKey = Deno.env.get('RESEND_API_KEY') || 're_5QPkg65p_HiceUXsHJyo7nd41mTwbuaWJ';
 ```
