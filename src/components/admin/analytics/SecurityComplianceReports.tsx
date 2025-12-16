@@ -44,11 +44,7 @@ export default function SecurityComplianceReports({ buildingId }: Props) {
       setLoading(true);
       const { data, error } = await supabase
         .from('audit_logs')
-        .select(`
-          *,
-          admins!inner(email, building_id)
-        `)
-        .eq('admins.building_id', buildingId)
+        .select('*')
         .gte('created_at', dateRange.startDate)
         .lte('created_at', dateRange.endDate + 'T23:59:59')
         .order('created_at', { ascending: false })
@@ -59,12 +55,12 @@ export default function SecurityComplianceReports({ buildingId }: Props) {
       const formattedLogs = (data || []).map((log: any) => ({
         id: log.id,
         action: log.action,
-        entity_type: log.entity_type,
-        entity_id: log.entity_id,
-        old_values: log.old_values,
-        new_values: log.new_values,
-        admin_id: log.admin_id,
-        admin_email: log.admins?.email || 'Unknown',
+        entity_type: log.table_name || 'unknown',
+        entity_id: log.record_id,
+        old_values: log.details,
+        new_values: log.details,
+        admin_id: log.user_id,
+        admin_email: log.user_email || 'System',
         created_at: log.created_at
       }));
 

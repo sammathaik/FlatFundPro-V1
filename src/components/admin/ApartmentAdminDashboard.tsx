@@ -15,6 +15,8 @@ export default function ApartmentAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const { adminData } = useAuth();
 
+  console.log('Admin Data:', adminData);
+
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab} isSuperAdmin={false}>
       {activeTab === 'overview' && <ApartmentAdminOverview />}
@@ -23,7 +25,16 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
-      {activeTab === 'analytics' && adminData?.building_id && <AnalyticsReports buildingId={adminData.building_id} />}
+      {activeTab === 'analytics' && (
+        adminData?.apartment_id ? (
+          <AnalyticsReports buildingId={adminData.apartment_id} />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <p className="text-lg font-semibold mb-2">Analytics Not Available</p>
+            <p className="text-sm">No apartment access found. Please ensure you have proper access.</p>
+          </div>
+        )
+      )}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
       {activeTab === 'faq' && <FAQManagement />}
     </DashboardLayout>

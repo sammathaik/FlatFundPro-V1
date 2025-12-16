@@ -31,11 +31,16 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
   const loadExecutiveSummary = async () => {
     try {
       setLoading(true);
+      console.log('Loading executive summary for building:', buildingId);
       const { data, error } = await supabase.rpc('get_executive_summary', {
         p_building_id: buildingId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from RPC:', error);
+        throw error;
+      }
+      console.log('Executive summary data:', data);
       setSummary(data);
     } catch (error) {
       console.error('Error loading executive summary:', error);
@@ -52,7 +57,20 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
     );
   }
 
-  if (!summary) return null;
+  if (!summary) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <AlertTriangle className="w-12 h-12 mb-4" />
+        <p>Unable to load executive summary</p>
+        <button
+          onClick={loadExecutiveSummary}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const collectionChange = summary.currentMonthCollection - summary.lastMonthCollection;
   const collectionChangePercent = summary.lastMonthCollection > 0
