@@ -19,6 +19,7 @@ interface Occupant {
   flat_number: string;
   email: string;
   mobile: string | null;
+  name: string | null;
   occupant_name: string | null;
   occupant_type: 'Owner' | 'Tenant';
   created_at: string;
@@ -106,6 +107,7 @@ export default function OccupantManagement() {
           flat_id,
           email,
           mobile,
+          name,
           occupant_type,
           created_at,
           updated_at,
@@ -143,6 +145,7 @@ export default function OccupantManagement() {
         flat_number: item.flat_numbers.flat_number,
         email: item.email,
         mobile: item.mobile,
+        name: item.name,
         occupant_name: nameByFlatId[item.flat_id] || null,
         occupant_type: item.occupant_type,
         created_at: item.created_at,
@@ -235,6 +238,7 @@ export default function OccupantManagement() {
         flat_number: '',
         email: '',
         mobile: null,
+        name: null,
         occupant_name: null,
         occupant_type: 'Owner',
         created_at: '',
@@ -262,6 +266,7 @@ export default function OccupantManagement() {
             flat_id: occupant.flat_id,
             email: occupant.email.toLowerCase().trim(),
             mobile: occupant.mobile?.trim() || null,
+            name: occupant.name?.trim() || null,
             occupant_type: occupant.occupant_type,
           });
 
@@ -272,6 +277,7 @@ export default function OccupantManagement() {
           .update({
             email: occupant.email.toLowerCase().trim(),
             mobile: occupant.mobile?.trim() || null,
+            name: occupant.name?.trim() || null,
             occupant_type: occupant.occupant_type,
           })
           .eq('id', occupant.id);
@@ -314,6 +320,7 @@ export default function OccupantManagement() {
         occupant.block_name.toLowerCase().includes(searchLower) ||
         occupant.flat_number.toLowerCase().includes(searchLower) ||
         occupant.email.toLowerCase().includes(searchLower) ||
+        occupant.name?.toLowerCase().includes(searchLower) ||
         occupant.occupant_name?.toLowerCase().includes(searchLower) ||
         occupant.mobile?.toLowerCase().includes(searchLower) ||
         occupant.occupant_type.toLowerCase().includes(searchLower)
@@ -352,7 +359,7 @@ export default function OccupantManagement() {
       occupant.block_name,
       occupant.block_type,
       occupant.flat_number,
-      occupant.occupant_name || 'Not specified',
+      occupant.name || occupant.occupant_name || 'Not specified',
       occupant.mobile || 'Not provided',
       occupant.email,
       occupant.occupant_type,
@@ -382,7 +389,7 @@ export default function OccupantManagement() {
       occupant.block_name,
       occupant.block_type,
       occupant.flat_number,
-      occupant.occupant_name || 'Not specified',
+      occupant.name || occupant.occupant_name || 'Not specified',
       occupant.mobile || 'Not provided',
       occupant.email,
       occupant.occupant_type,
@@ -568,7 +575,7 @@ export default function OccupantManagement() {
                                   <User className="w-3.5 h-3.5 text-green-700" />
                                 </div>
                                 <span className="text-sm font-medium text-gray-800">
-                                  {occupant.occupant_name || <span className="text-gray-400 italic font-normal">Not specified</span>}
+                                  {occupant.name || occupant.occupant_name || <span className="text-gray-400 italic font-normal">Not specified</span>}
                                 </span>
                               </div>
                             </td>
@@ -715,17 +722,28 @@ export default function OccupantManagement() {
             </div>
 
             <div className="space-y-4">
-              {!editModal.isNew && editModal.occupant.occupant_name && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name (from latest payment)
-                  </label>
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-                    {editModal.occupant.occupant_name}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">This name is automatically populated from the most recent payment submission</p>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editModal.occupant.name || ''}
+                  onChange={(e) =>
+                    setEditModal({
+                      ...editModal,
+                      occupant: { ...editModal.occupant, name: e.target.value },
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="Enter occupant name"
+                />
+                {!editModal.isNew && editModal.occupant.occupant_name && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Latest payment name: <span className="font-medium">{editModal.occupant.occupant_name}</span>
+                  </p>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
