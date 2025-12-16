@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, TrendingUp, DollarSign, AlertCircle, Info } from 'lucide-react';
+import { Download, TrendingUp, AlertCircle, Info, Coins, TrendingDown } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { formatCurrency, formatPercentage, exportToCSV, exportToExcel, exportToPDF } from '../../../lib/exportUtils';
 
@@ -145,55 +145,119 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
       </div>
 
       <div id="collection-performance-report" className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">Total Expected</div>
-              <DollarSign className="w-5 h-5 text-gray-400" />
+        {/* Key Metrics with Tooltips */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Expected */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-6 border border-blue-200">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="text-sm font-medium text-blue-900 mb-1">Total Expected</div>
+                <div className="text-xs text-blue-700 leading-tight">
+                  Sum of all expected collections for selected period
+                </div>
+              </div>
+              <Coins className="w-6 h-6 text-blue-600 flex-shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-3xl font-bold text-blue-900">
               {formatCurrency(data.totalExpected)}
             </div>
+            <div className="mt-2 text-xs text-blue-700 bg-blue-200 bg-opacity-50 rounded px-2 py-1">
+              Based on expected_collections table
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">Total Collected</div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
+          {/* Total Collected */}
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow-md p-6 border border-green-200">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="text-sm font-medium text-green-900 mb-1">Total Collected</div>
+                <div className="text-xs text-green-700 leading-tight">
+                  Sum of all verified payments received
+                </div>
+              </div>
+              <TrendingUp className="w-6 h-6 text-green-600 flex-shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-3xl font-bold text-green-900">
               {formatCurrency(data.totalCollected)}
             </div>
+            <div className="mt-2 text-xs text-green-700 bg-green-200 bg-opacity-50 rounded px-2 py-1">
+              Only verified payments counted
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">Outstanding</div>
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+          {/* Outstanding */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-6 border border-orange-200">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="text-sm font-medium text-orange-900 mb-1">Outstanding</div>
+                <div className="text-xs text-orange-700 leading-tight">
+                  Expected amount minus collected amount
+                </div>
+              </div>
+              <TrendingDown className="w-6 h-6 text-orange-600 flex-shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-3xl font-bold text-orange-900">
               {formatCurrency(data.totalOutstanding)}
             </div>
+            <div className="mt-2 text-xs text-orange-700 bg-orange-200 bg-opacity-50 rounded px-2 py-1">
+              Pending collections to receive
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">Collection Rate</div>
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+          {/* Collection Rate */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-md p-6 border border-purple-200">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="text-sm font-medium text-purple-900 mb-1">Collection Rate</div>
+                <div className="text-xs text-purple-700 leading-tight">
+                  Percentage of expected amount collected
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                {data.collectionRate >= 90 ? (
+                  <TrendingUp className="w-6 h-6 text-purple-600" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 text-purple-600" />
+                )}
+              </div>
             </div>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-purple-900">
               {formatPercentage(data.collectionRate)}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <div className={`text-xs font-medium px-2 py-1 rounded ${
+                data.collectionRate >= 90 ? 'bg-green-200 text-green-800' :
+                data.collectionRate >= 75 ? 'bg-yellow-200 text-yellow-800' :
+                'bg-red-200 text-red-800'
+              }`}>
+                {data.collectionRate >= 90 ? 'Excellent' :
+                 data.collectionRate >= 75 ? 'Good' : 'Needs Attention'}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Collection Trends</h3>
+        <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Monthly Collection Trends</h3>
+            <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <Info className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-gray-700">
+                <p className="font-medium mb-1">Understanding this report:</p>
+                <ul className="text-gray-600 space-y-1 list-disc list-inside">
+                  <li><span className="font-semibold">Expected:</span> Total amount due from all flats in that month (from expected_collections)</li>
+                  <li><span className="font-semibold">Collected:</span> Total verified payments received in that month</li>
+                  <li><span className="font-semibold">Rate:</span> Collection efficiency = (Collected / Expected) × 100</li>
+                  <li><span className="font-semibold">Status:</span> Excellent (90%+), Good (75-89%), Poor (below 75%)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
           {data.monthlyTrends && data.monthlyTrends.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
+                  <tr className="border-b-2 border-gray-300 bg-gray-50">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Month</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Expected</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Collected</th>
@@ -203,20 +267,20 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
                 </thead>
                 <tbody>
                   {data.monthlyTrends.map((trend, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">{trend.month}</td>
-                      <td className="py-3 px-4 text-right">{formatCurrency(trend.expected)}</td>
-                      <td className="py-3 px-4 text-right text-green-600 font-medium">
+                    <tr key={index} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
+                      <td className="py-3 px-4 font-medium text-gray-900">{trend.month}</td>
+                      <td className="py-3 px-4 text-right text-gray-700">{formatCurrency(trend.expected)}</td>
+                      <td className="py-3 px-4 text-right text-green-700 font-semibold">
                         {formatCurrency(trend.collected)}
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold">
+                      <td className="py-3 px-4 text-right font-bold text-gray-900">
                         {formatPercentage(trend.rate)}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          trend.rate >= 90 ? 'bg-green-100 text-green-800' :
-                          trend.rate >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          trend.rate >= 90 ? 'bg-green-100 text-green-800 border border-green-300' :
+                          trend.rate >= 75 ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                          'bg-red-100 text-red-800 border border-red-300'
                         }`}>
                           {trend.rate >= 90 ? 'Excellent' :
                            trend.rate >= 75 ? 'Good' : 'Poor'}
@@ -232,15 +296,16 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Payment Method Distribution */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method Distribution</h3>
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-900">
                   <p className="font-medium mb-1">What is this?</p>
-                  <p className="text-blue-800">
+                  <p className="text-blue-800 leading-relaxed">
                     Shows breakdown of payment methods (UPI, Bank Transfer, Check, Cash, etc.) from the
                     <span className="font-semibold"> payment_source</span> field. This data is auto-populated
                     when payments are imported via automation or entered by admins. Manual occupant submissions
@@ -250,28 +315,31 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
               </div>
             </div>
             {data.paymentMethodDistribution && data.paymentMethodDistribution.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {data.paymentMethodDistribution.map((method, index) => {
                   const total = data.paymentMethodDistribution.reduce((sum, m) => sum + m.amount, 0);
                   const percentage = total > 0 ? (method.amount / total) * 100 : 0;
                   const displayMethod = method.method || 'Not Specified';
                   return (
-                    <div key={index}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700 capitalize">
+                    <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-900 capitalize">
                           {displayMethod}
                         </span>
-                        <span className="text-sm text-gray-600">
-                          {formatCurrency(method.amount)} ({method.count})
+                        <span className="text-sm font-medium text-gray-700">
+                          {formatCurrency(method.amount)} <span className="text-gray-500">({method.count})</span>
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-300 rounded-full h-3 shadow-inner">
                         <div
-                          className={`h-2 rounded-full ${
-                            displayMethod === 'Not Specified' ? 'bg-gray-400' : 'bg-blue-600'
+                          className={`h-3 rounded-full transition-all duration-300 ${
+                            displayMethod === 'Not Specified' ? 'bg-gray-500' : 'bg-blue-600'
                           }`}
                           style={{ width: `${percentage}%` }}
                         />
+                      </div>
+                      <div className="mt-1 text-xs text-gray-600 text-right">
+                        {percentage.toFixed(1)}% of total
                       </div>
                     </div>
                   );
@@ -282,34 +350,57 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
             )}
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Defaulters</h3>
+          {/* Top Defaulters */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Top Defaulters</h3>
+              <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <Info className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-orange-900">
+                  <p className="font-medium mb-1">What is this?</p>
+                  <p className="text-orange-800 leading-relaxed">
+                    Lists flats with the highest outstanding amounts (Expected - Collected) for the selected period.
+                    Shows payment count and last payment date to help identify follow-up priorities.
+                  </p>
+                </div>
+              </div>
+            </div>
             {data.topDefaulters && data.topDefaulters.length > 0 ? (
               <div className="space-y-3">
                 {data.topDefaulters.map((defaulter, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <div className="font-semibold text-gray-900">{defaulter.flatNumber}</div>
-                      <div className="text-sm text-gray-600">
-                        {defaulter.paymentsCount} payment{defaulter.paymentsCount !== 1 ? 's' : ''}
-                        {defaulter.lastPaymentDate && (
-                          <> • Last: {new Date(defaulter.lastPaymentDate).toLocaleDateString()}</>
-                        )}
+                  <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-white ${
+                        index === 0 ? 'bg-red-600' : index === 1 ? 'bg-red-500' : 'bg-red-400'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900">{defaulter.flatNumber}</div>
+                        <div className="text-xs text-gray-600">
+                          {defaulter.paymentsCount} payment{defaulter.paymentsCount !== 1 ? 's' : ''}
+                          {defaulter.lastPaymentDate && (
+                            <> • Last: {new Date(defaulter.lastPaymentDate).toLocaleDateString()}</>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-red-600">
+                      <div className="font-bold text-red-700 text-lg">
                         {formatCurrency(defaulter.outstandingAmount)}
                       </div>
-                      <div className="text-xs text-gray-600">Outstanding</div>
+                      <div className="text-xs text-gray-600 font-medium">Outstanding</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <AlertCircle className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                <p className="text-gray-500">No outstanding payments!</p>
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
+                  <TrendingUp className="w-8 h-8 text-green-600" />
+                </div>
+                <p className="text-lg font-semibold text-green-700">Excellent!</p>
+                <p className="text-gray-600 mt-1">No outstanding payments in this period</p>
               </div>
             )}
           </div>
