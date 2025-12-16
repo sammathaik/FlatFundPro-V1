@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, Coins, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, Coins, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -61,6 +61,9 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sendingReminders, setSendingReminders] = useState<string | null>(null);
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [selectedCollectionForReminder, setSelectedCollectionForReminder] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CollectionFormData>({
     payment_type: 'maintenance',
@@ -122,57 +125,65 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
     }
   }
 
-  async function sendReminder(collection: Collection) {
-    if (!collection.is_active) {
+  function openReminderConfirm(collectionId: string) {
+    const collection = collections.find(c => c.id === collectionId);
+    if (collection && !collection.is_active) {
       setErrorMessage('Cannot send reminder for inactive collection');
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
-
-    try {
-      // Get all flats that haven't paid for this collection
-      const { data: flats, error: flatsError } = await supabase
-        .from('flat_numbers')
-        .select('id, flat_number, block_id')
-        .eq('block_id', await getBlockIds(apartmentId));
-
-      if (flatsError) throw flatsError;
-
-      // Get all payments for this collection
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payment_submissions')
-        .select('flat_id, payment_amount, status')
-        .eq('apartment_id', apartmentId)
-        .eq('expected_collection_id', collection.id);
-
-      if (paymentsError) throw paymentsError;
-
-      // Filter flats that haven't paid in full
-      const paidFlatIds = new Set(
-        (payments || [])
-          .filter(p => p.status === 'Approved' && p.payment_amount >= collection.amount_due)
-          .map(p => p.flat_id)
-      );
-
-      const unpaidCount = (flats || []).length - paidFlatIds.size;
-
-      setSuccessMessage(
-        `Reminder would be sent to ${unpaidCount} flat${unpaidCount !== 1 ? 's' : ''} for ${collection.collection_name}`
-      );
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (error) {
-      console.error('Error sending reminder:', error);
-      setErrorMessage('Failed to send reminder');
-      setTimeout(() => setErrorMessage(null), 3000);
-    }
+    setSelectedCollectionForReminder(collectionId);
+    setShowReminderConfirm(true);
   }
 
-  async function getBlockIds(aptId: string): Promise<string[]> {
-    const { data } = await supabase
-      .from('buildings_blocks_phases')
-      .select('id')
-      .eq('apartment_id', aptId);
-    return (data || []).map(b => b.id);
+  function closeReminderConfirm() {
+    setShowReminderConfirm(false);
+    setSelectedCollectionForReminder(null);
+  }
+
+  async function handleSendReminders() {
+    if (!selectedCollectionForReminder) return;
+
+    closeReminderConfirm();
+    setSendingReminders(selectedCollectionForReminder);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-payment-reminders`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apartment_id: apartmentId,
+          expected_collection_id: selectedCollectionForReminder,
+          reminder_type: 'manual',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send reminders');
+      }
+
+      setSuccessMessage(result.message || `Reminders sent successfully! Sent: ${result.sent}, Failed: ${result.failed}`);
+      setTimeout(() => setSuccessMessage(null), 8000);
+    } catch (error) {
+      console.error('Error sending reminders:', error);
+      const message = error instanceof Error ? error.message : 'Failed to send reminders';
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(null), 8000);
+    } finally {
+      setSendingReminders(null);
+    }
   }
 
   function openForm(collection?: Collection) {
@@ -533,11 +544,16 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 <div className="flex items-center gap-2 ml-4">
                   {collection.is_active && (
                     <button
-                      onClick={() => sendReminder(collection)}
-                      className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      onClick={() => openReminderConfirm(collection.id)}
+                      disabled={sendingReminders === collection.id}
+                      className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Send Reminder"
                     >
-                      <Bell className="w-5 h-5" />
+                      {sendingReminders === collection.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Bell className="w-5 h-5" />
+                      )}
                     </button>
                   )}
                   <button
@@ -751,6 +767,40 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reminder Confirmation Modal */}
+      {showReminderConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <Bell className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Send Payment Reminders</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                This will send email reminders to all occupants who haven't submitted their payment confirmation for this collection. Do you want to continue?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={closeReminderConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendReminders}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  <Bell className="w-4 h-4" />
+                  Send Reminders
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

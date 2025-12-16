@@ -272,6 +272,16 @@ Deno.serve(async (req: Request) => {
               <p style="margin: 20px 0; font-size: 16px; color: #333333; line-height: 1.6;">
                 Please submit your payment confirmation as soon as possible through the FlatFund Pro platform.
               </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${Deno.env.get('SITE_URL') || 'https://flatfundpro.netlify.app'}/"
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  Submit Payment Now
+                </a>
+              </div>
+              <p style="margin: 20px 0; font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
+                Or copy and paste this link in your browser:<br/>
+                <span style="color: #3b82f6; word-break: break-all;">${Deno.env.get('SITE_URL') || 'https://flatfundpro.netlify.app'}/</span>
+              </p>
               <p style="margin: 20px 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
                 <strong>Note:</strong> If you have already submitted your payment, please disregard this reminder. Your submission may be pending verification.
               </p>
@@ -301,7 +311,8 @@ Deno.serve(async (req: Request) => {
             'Authorization': `Bearer ${resendApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({            from: 'FlatFund Pro <onboarding@resend.dev>',
+          body: JSON.stringify({
+            from: 'FlatFund Pro <onboarding@resend.dev>',
             to: [flat.email],
             subject: `[${urgencyClass}] Payment Reminder - ${flat.collection_name} - Flat ${flat.flat_number}`,
             html: emailHtml,
