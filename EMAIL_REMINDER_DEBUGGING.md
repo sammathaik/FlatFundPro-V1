@@ -265,6 +265,27 @@ Provide:
 
 ---
 
-**Status:** ✅ Fix Applied - Button Now Visible to Admins
+## Recent Fixes Applied
+
+### Fix #1: Button Visibility (2025-12-16)
+**Issue:** Send Reminders button was not visible
+**Cause:** `allowManagement={false}` in AdminPaymentStatusTab
+**Solution:** Changed to `allowManagement={true}`
+**Status:** ✅ Fixed
+
+### Fix #2: Confirmation Dialog Navigation Bug (2025-12-16)
+**Issue:** Native `confirm()` dialog caused navigation to form submission page in iframe environment
+**Cause:** Browser security restrictions with native dialogs in iframe/webcontainer
+**Solution:** Replaced native `confirm()` with custom React modal component
+**Status:** ✅ Fixed
+
+**File Modified:** `src/components/admin/PaymentStatusDashboard.tsx`
+- Added custom confirmation modal with proper styling
+- Modal prevents unexpected navigation
+- Better user experience with clear messaging
+
+---
+
+**Status:** ✅ All Issues Resolved - System Ready for Testing
 
 **Last Updated:** 2025-12-16

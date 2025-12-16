@@ -205,6 +205,8 @@ export default function PaymentStatusDashboard({
   const [apartmentCountry, setApartmentCountry] = useState<string | null>(null);
   const [sendingReminders, setSendingReminders] = useState<string | null>(null);
   const [reminderMessage, setReminderMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [selectedCollectionForReminder, setSelectedCollectionForReminder] = useState<string | null>(null);
   const [form, setForm] = useState<ExpectedCollectionFormState>({
     payment_type: 'maintenance',
     financial_year: getDefaultFinancialYearLabel(),
@@ -764,12 +766,21 @@ export default function PaymentStatusDashboard({
     setExpandedCollections(newExpanded);
   }
 
-  async function handleSendReminders(collectionId: string) {
-    if (!confirm('Send payment reminders to all flats that have not submitted payment confirmation? This will send emails immediately.')) {
-      return;
-    }
+  function openReminderConfirm(collectionId: string) {
+    setSelectedCollectionForReminder(collectionId);
+    setShowReminderConfirm(true);
+  }
 
-    setSendingReminders(collectionId);
+  function closeReminderConfirm() {
+    setShowReminderConfirm(false);
+    setSelectedCollectionForReminder(null);
+  }
+
+  async function handleSendReminders() {
+    if (!selectedCollectionForReminder) return;
+
+    closeReminderConfirm();
+    setSendingReminders(selectedCollectionForReminder);
     setReminderMessage(null);
 
     try {
@@ -788,7 +799,7 @@ export default function PaymentStatusDashboard({
         },
         body: JSON.stringify({
           apartment_id: apartmentId,
-          expected_collection_id: collectionId,
+          expected_collection_id: selectedCollectionForReminder,
           reminder_type: 'manual',
         }),
       });
@@ -1154,7 +1165,7 @@ export default function PaymentStatusDashboard({
                           <div className="flex items-center gap-2">
                             {allowManagement && (
                               <button
-                                onClick={() => handleSendReminders(collection.id)}
+                                onClick={() => openReminderConfirm(collection.id)}
                                 disabled={sendingReminders === collection.id}
                                 className="inline-flex items-center gap-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                                 title="Send email reminders to flats without payment confirmation"
@@ -1548,6 +1559,48 @@ export default function PaymentStatusDashboard({
             </div>
           )}
         </>
+      )}
+
+      {showReminderConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Bell className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Send Payment Reminders</h3>
+                  <p className="text-sm text-gray-600">Confirm email notification</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-800">
+                  This will send email reminders to all flats that have <strong>not submitted payment confirmation</strong> for this collection.
+                </p>
+                <p className="text-sm text-gray-700 mt-2">
+                  Emails will be sent immediately and cannot be undone.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={closeReminderConfirm}
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendReminders}
+                  className="flex-1 px-4 py-2.5 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+                >
+                  Send Reminders
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
