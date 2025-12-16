@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, PlusCircle, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
 import { supabase, ExpectedCollection } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -203,6 +203,8 @@ export default function PaymentStatusDashboard({
   const [showArchivedSection, setShowArchivedSection] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [apartmentCountry, setApartmentCountry] = useState<string | null>(null);
+  const [sendingReminders, setSendingReminders] = useState<string | null>(null);
+  const [reminderMessage, setReminderMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [form, setForm] = useState<ExpectedCollectionFormState>({
     payment_type: 'maintenance',
     financial_year: getDefaultFinancialYearLabel(),
@@ -762,6 +764,60 @@ export default function PaymentStatusDashboard({
     setExpandedCollections(newExpanded);
   }
 
+  async function handleSendReminders(collectionId: string) {
+    if (!confirm('Send payment reminders to all flats that have not submitted payment confirmation? This will send emails immediately.')) {
+      return;
+    }
+
+    setSendingReminders(collectionId);
+    setReminderMessage(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-payment-reminders`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apartment_id: apartmentId,
+          expected_collection_id: collectionId,
+          reminder_type: 'manual',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send reminders');
+      }
+
+      setReminderMessage({
+        type: 'success',
+        text: result.message || `Reminders sent successfully! Sent: ${result.sent}, Failed: ${result.failed}`,
+      });
+
+      setTimeout(() => setReminderMessage(null), 8000);
+    } catch (err) {
+      console.error('Error sending reminders:', err);
+      const message = err instanceof Error ? err.message : 'Unable to send reminders';
+      setReminderMessage({
+        type: 'error',
+        text: message,
+      });
+      setTimeout(() => setReminderMessage(null), 8000);
+    } finally {
+      setSendingReminders(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -1030,6 +1086,21 @@ export default function PaymentStatusDashboard({
 
       {showChart && (
         <>
+          {reminderMessage && (
+            <div className={`rounded-lg px-4 py-3 text-sm flex items-center gap-2 ${
+              reminderMessage.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-900'
+                : 'bg-red-50 border border-red-200 text-red-900'
+            }`}>
+              {reminderMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <AlertTriangle className="w-4 h-4" />
+              )}
+              {reminderMessage.text}
+            </div>
+          )}
+
           {activeCollections.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -1081,6 +1152,17 @@ export default function PaymentStatusDashboard({
                             )}
                           </div>
                           <div className="flex items-center gap-2">
+                            {allowManagement && (
+                              <button
+                                onClick={() => handleSendReminders(collection.id)}
+                                disabled={sendingReminders === collection.id}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                title="Send email reminders to flats without payment confirmation"
+                              >
+                                <Mail className="w-4 h-4" />
+                                {sendingReminders === collection.id ? 'Sending...' : 'Send Reminders'}
+                              </button>
+                            )}
                             <button
                               onClick={() => toggleCollectionExpansion(collection.id)}
                               className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50"
