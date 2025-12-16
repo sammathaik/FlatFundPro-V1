@@ -16,7 +16,7 @@ export default function AdminPaymentStatusTab() {
     <PaymentStatusDashboard
       apartmentId={adminData.apartment_id}
       apartmentName={adminData.apartment.apartment_name}
-      allowManagement={false}
+      allowManagement={true}
       publicAccessCode={adminData.apartment.public_access_code || undefined}
       showChart
     />
