@@ -8,6 +8,7 @@ import ExpectedCollectionsAdmin from './ExpectedCollectionsAdmin';
 import OccupantManagement from './OccupantManagement';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
+import AnalyticsReports from './AnalyticsReports';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApartmentAdminDashboard() {
@@ -22,6 +23,7 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
+      {activeTab === 'analytics' && adminData?.building_id && <AnalyticsReports buildingId={adminData.building_id} />}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
       {activeTab === 'faq' && <FAQManagement />}
     </DashboardLayout>
