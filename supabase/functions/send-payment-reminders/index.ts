@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
     const apartmentName = apartment?.apartment_name || 'Your Apartment';
     const reminderType = body.reminder_type || 'manual';
 
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY') || 're_5QPkg65p_HiceUXsHJyo7nd41mTwbuaWJ';
 
     if (!resendApiKey) {
       return new Response(
