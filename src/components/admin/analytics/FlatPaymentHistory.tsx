@@ -41,11 +41,16 @@ export default function FlatPaymentHistory({ buildingId }: Props) {
   const loadFlatPaymentHistory = async () => {
     try {
       setLoading(true);
+      console.log('Loading flat payment history for apartment:', buildingId);
       const { data: result, error } = await supabase.rpc('get_flat_payment_history', {
-        p_building_id: buildingId
+        p_apartment_id: buildingId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from RPC:', error);
+        throw error;
+      }
+      console.log('Flat payment history result:', result);
       setData(result || []);
     } catch (error) {
       console.error('Error loading flat payment history:', error);

@@ -31,9 +31,9 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
   const loadExecutiveSummary = async () => {
     try {
       setLoading(true);
-      console.log('Loading executive summary for building:', buildingId);
+      console.log('Loading executive summary for apartment:', buildingId);
       const { data, error } = await supabase.rpc('get_executive_summary', {
-        p_building_id: buildingId
+        p_apartment_id: buildingId
       });
 
       if (error) {

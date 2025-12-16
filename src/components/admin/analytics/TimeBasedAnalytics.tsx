@@ -46,7 +46,7 @@ export default function TimeBasedAnalytics({ buildingId }: Props) {
     try {
       setLoading(true);
       const { data: result, error } = await supabase.rpc('get_time_based_analytics', {
-        p_building_id: buildingId,
+        p_apartment_id: buildingId,
         p_start_date: dateRange.startDate,
         p_end_date: dateRange.endDate
       });
