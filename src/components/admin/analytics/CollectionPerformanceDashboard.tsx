@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, TrendingUp, DollarSign, AlertCircle } from 'lucide-react';
+import { Download, TrendingUp, DollarSign, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { formatCurrency, formatPercentage, exportToCSV, exportToExcel, exportToPDF } from '../../../lib/exportUtils';
 
@@ -234,17 +234,32 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method Distribution</h3>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method Distribution</h3>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-medium mb-1">What is this?</p>
+                  <p className="text-blue-800">
+                    Shows breakdown of payment methods (UPI, Bank Transfer, Check, Cash, etc.) from the
+                    <span className="font-semibold"> payment_source</span> field. This data is auto-populated
+                    when payments are imported via automation or entered by admins. Manual occupant submissions
+                    without this field will show as "Not Specified".
+                  </p>
+                </div>
+              </div>
+            </div>
             {data.paymentMethodDistribution && data.paymentMethodDistribution.length > 0 ? (
               <div className="space-y-3">
                 {data.paymentMethodDistribution.map((method, index) => {
                   const total = data.paymentMethodDistribution.reduce((sum, m) => sum + m.amount, 0);
                   const percentage = total > 0 ? (method.amount / total) * 100 : 0;
+                  const displayMethod = method.method || 'Not Specified';
                   return (
                     <div key={index}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700 capitalize">
-                          {method.method || 'Unknown'}
+                          {displayMethod}
                         </span>
                         <span className="text-sm text-gray-600">
                           {formatCurrency(method.amount)} ({method.count})
@@ -252,7 +267,9 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className={`h-2 rounded-full ${
+                            displayMethod === 'Not Specified' ? 'bg-gray-400' : 'bg-blue-600'
+                          }`}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
