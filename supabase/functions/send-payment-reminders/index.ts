@@ -35,7 +35,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -47,7 +46,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -58,7 +56,6 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    // Get the current user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       return new Response(
@@ -70,7 +67,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Parse request body
     const body: SendReminderRequest = await req.json();
 
     if (!body.apartment_id || !body.expected_collection_id) {
@@ -83,7 +79,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Verify user is admin or super admin for this apartment
     const { data: isAdmin } = await supabaseClient
       .from('admins')
       .select('id')
@@ -109,7 +104,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get flats without payment using the RPC function
     const { data: flatsData, error: flatsError } = await supabaseClient.rpc(
       'get_flats_without_payment',
       {
@@ -146,7 +140,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get apartment details for email customization
     const { data: apartment } = await supabaseClient
       .from('apartments')
       .select('apartment_name')
@@ -156,15 +149,24 @@ Deno.serve(async (req: Request) => {
     const apartmentName = apartment?.apartment_name || 'Your Apartment';
     const reminderType = body.reminder_type || 'manual';
 
-    // Send emails using Resend
-    const resendApiKey = Deno.env.get('RESEND_API_KEY') || 're_5QPkg65p_HiceUXsHJyo7nd41mTwbuaWJ';
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+
+    if (!resendApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'RESEND_API_KEY environment variable is not configured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const results = [];
     let sentCount = 0;
     let failedCount = 0;
 
     for (const flat of flats) {
       try {
-        // Determine reminder urgency based on due date
         const dueDate = new Date(flat.due_date);
         const today = new Date();
         const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -186,7 +188,6 @@ Deno.serve(async (req: Request) => {
           urgencyMessage = `Payment is due on ${dueDate.toLocaleDateString()}.`;
         }
 
-        // Create email HTML
         const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -200,15 +201,12 @@ Deno.serve(async (req: Request) => {
     <tr>
       <td align="center" style="padding: 40px 0;">
         <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px;">
-          <!-- Header -->
           <tr>
             <td style="padding: 30px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">FlatFund Pro</h1>
               <p style="margin: 8px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.9;">Payment Reminder</p>
             </td>
           </tr>
-          
-          <!-- Urgency Banner -->
           <tr>
             <td style="padding: 20px 40px; background-color: ${urgencyClass === 'OVERDUE' ? '#dc2626' : urgencyClass === 'URGENT' ? '#f59e0b' : '#3b82f6'}; color: #ffffff;">
               <p style="margin: 0; font-size: 16px; font-weight: 600; text-align: center;">
@@ -216,19 +214,14 @@ Deno.serve(async (req: Request) => {
               </p>
             </td>
           </tr>
-          
-          <!-- Content -->
           <tr>
             <td style="padding: 40px;">
               <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333; line-height: 1.6;">
                 Dear <strong>${flat.occupant_type}</strong> of Flat <strong>${flat.flat_number}</strong>,
               </p>
-              
               <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333; line-height: 1.6;">
                 This is a reminder that we have not received your payment confirmation for the following collection:
               </p>
-              
-              <!-- Payment Details Card -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f9fafb; border-radius: 8px; margin: 20px 0;">
                 <tr>
                   <td style="padding: 24px;">
@@ -274,18 +267,14 @@ Deno.serve(async (req: Request) => {
                   </td>
                 </tr>
               </table>
-              
               <p style="margin: 20px 0; font-size: 16px; color: #333333; line-height: 1.6;">
                 Please submit your payment confirmation as soon as possible through the FlatFund Pro platform.
               </p>
-              
               <p style="margin: 20px 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
                 <strong>Note:</strong> If you have already submitted your payment, please disregard this reminder. Your submission may be pending verification.
               </p>
             </td>
           </tr>
-          
-          <!-- Footer -->
           <tr>
             <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; text-align: center;">
@@ -304,7 +293,6 @@ Deno.serve(async (req: Request) => {
 </html>
         `;
 
-        // Send email via Resend
         const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -322,7 +310,6 @@ Deno.serve(async (req: Request) => {
         const resendData = await resendResponse.json();
 
         if (resendResponse.ok) {
-          // Log successful email send
           await supabaseClient
             .from('email_reminders')
             .insert({
@@ -338,7 +325,6 @@ Deno.serve(async (req: Request) => {
           sentCount++;
           results.push({ flat_number: flat.flat_number, email: flat.email, status: 'sent' });
         } else {
-          // Log failed email send
           await supabaseClient
             .from('email_reminders')
             .insert({

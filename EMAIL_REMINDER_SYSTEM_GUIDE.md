@@ -66,7 +66,7 @@ Reminders are sent to:
 ### Step 1: Prerequisites
 
 Ensure you have:
-1. ✅ Resend API key configured: `re_5QPkg65p_HiceUXsHJyo7nd41mTwbuaWJ` (already configured)
+1. ✅ Resend API key configured as environment variable `RESEND_API_KEY` in Supabase Edge Function secrets
 2. ✅ Active collection created with due date
 3. ✅ Flats with email addresses mapped in `flat_email_mappings`
 4. ✅ Some flats without approved payments
