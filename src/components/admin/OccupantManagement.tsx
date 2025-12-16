@@ -18,9 +18,19 @@ interface Occupant {
   flat_id: string;
   flat_number: string;
   email: string;
+  mobile: string | null;
+  occupant_name: string | null;
   occupant_type: 'Owner' | 'Tenant';
   created_at: string;
   updated_at: string;
+}
+
+interface BlockGroup {
+  block_id: string;
+  block_name: string;
+  block_type: string;
+  apartment_name: string;
+  occupants: Occupant[];
 }
 
 interface Payment {
@@ -43,6 +53,7 @@ export default function OccupantManagement() {
   const [occupants, setOccupants] = useState<Occupant[]>([]);
   const [payments, setPayments] = useState<Record<string, Payment[]>>({});
   const [expandedFlats, setExpandedFlats] = useState<Set<string>>(new Set());
+  const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState<EditModalData | null>(null);
   const [apartments, setApartments] = useState<any[]>([]);
@@ -94,6 +105,7 @@ export default function OccupantManagement() {
           block_id,
           flat_id,
           email,
+          mobile,
           occupant_type,
           created_at,
           updated_at,
@@ -105,6 +117,21 @@ export default function OccupantManagement() {
 
       if (error) throw error;
 
+      const flatIds = (data || []).map((item: any) => item.flat_id);
+
+      const { data: latestPayments } = await supabase
+        .from('payment_submissions')
+        .select('flat_id, name, created_at')
+        .in('flat_id', flatIds)
+        .order('created_at', { ascending: false });
+
+      const nameByFlatId: Record<string, string> = {};
+      latestPayments?.forEach((payment: any) => {
+        if (!nameByFlatId[payment.flat_id]) {
+          nameByFlatId[payment.flat_id] = payment.name;
+        }
+      });
+
       const formattedOccupants: Occupant[] = (data || []).map((item: any) => ({
         id: item.id,
         apartment_id: item.apartment_id,
@@ -115,6 +142,8 @@ export default function OccupantManagement() {
         flat_id: item.flat_id,
         flat_number: item.flat_numbers.flat_number,
         email: item.email,
+        mobile: item.mobile,
+        occupant_name: nameByFlatId[item.flat_id] || null,
         occupant_type: item.occupant_type,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -170,6 +199,23 @@ export default function OccupantManagement() {
     setExpandedFlats(newExpanded);
   };
 
+  const toggleBlock = (blockId: string) => {
+    const newExpanded = new Set(expandedBlocks);
+    if (newExpanded.has(blockId)) {
+      newExpanded.delete(blockId);
+    } else {
+      newExpanded.add(blockId);
+    }
+    setExpandedBlocks(newExpanded);
+  };
+
+  const maskMobile = (mobile: string | null): string => {
+    if (!mobile || mobile.length < 4) return 'Not provided';
+    const lastFour = mobile.slice(-4);
+    const maskedPart = 'X'.repeat(mobile.length - 4);
+    return maskedPart + lastFour;
+  };
+
   const handleEdit = (occupant: Occupant) => {
     setEditModal({ occupant, isNew: false });
     loadBlocks(occupant.apartment_id);
@@ -188,6 +234,8 @@ export default function OccupantManagement() {
         flat_id: '',
         flat_number: '',
         email: '',
+        mobile: null,
+        occupant_name: null,
         occupant_type: 'Owner',
         created_at: '',
         updated_at: '',
@@ -213,6 +261,7 @@ export default function OccupantManagement() {
             block_id: occupant.block_id,
             flat_id: occupant.flat_id,
             email: occupant.email.toLowerCase().trim(),
+            mobile: occupant.mobile?.trim() || null,
             occupant_type: occupant.occupant_type,
           });
 
@@ -222,6 +271,7 @@ export default function OccupantManagement() {
           .from('flat_email_mappings')
           .update({
             email: occupant.email.toLowerCase().trim(),
+            mobile: occupant.mobile?.trim() || null,
             occupant_type: occupant.occupant_type,
           })
           .eq('id', occupant.id);
@@ -264,17 +314,46 @@ export default function OccupantManagement() {
         occupant.block_name.toLowerCase().includes(searchLower) ||
         occupant.flat_number.toLowerCase().includes(searchLower) ||
         occupant.email.toLowerCase().includes(searchLower) ||
+        occupant.occupant_name?.toLowerCase().includes(searchLower) ||
+        occupant.mobile?.toLowerCase().includes(searchLower) ||
         occupant.occupant_type.toLowerCase().includes(searchLower)
     );
   }, [occupants, searchTerm]);
 
+  const blockGroups = useMemo(() => {
+    const groups: Record<string, BlockGroup> = {};
+
+    filteredOccupants.forEach((occupant) => {
+      const key = `${occupant.apartment_id}-${occupant.block_id}`;
+      if (!groups[key]) {
+        groups[key] = {
+          block_id: occupant.block_id,
+          block_name: occupant.block_name,
+          block_type: occupant.block_type,
+          apartment_name: occupant.apartment_name,
+          occupants: [],
+        };
+      }
+      groups[key].occupants.push(occupant);
+    });
+
+    return Object.values(groups).sort((a, b) => {
+      if (a.apartment_name !== b.apartment_name) {
+        return a.apartment_name.localeCompare(b.apartment_name);
+      }
+      return a.block_name.localeCompare(b.block_name);
+    });
+  }, [filteredOccupants]);
+
   const exportToCSV = () => {
-    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Email Address', 'Occupant Type', 'Created At'];
+    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Name', 'Mobile', 'Email Address', 'Occupant Type', 'Created At'];
     const rows = filteredOccupants.map((occupant) => [
       occupant.apartment_name,
       occupant.block_name,
       occupant.block_type,
       occupant.flat_number,
+      occupant.occupant_name || 'Not specified',
+      occupant.mobile || 'Not provided',
       occupant.email,
       occupant.occupant_type,
       new Date(occupant.created_at).toLocaleDateString(),
@@ -297,12 +376,14 @@ export default function OccupantManagement() {
   };
 
   const exportToExcel = () => {
-    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Email Address', 'Occupant Type', 'Created At'];
+    const headers = ['Apartment', 'Building/Block', 'Type', 'Flat Number', 'Name', 'Mobile', 'Email Address', 'Occupant Type', 'Created At'];
     const rows = filteredOccupants.map((occupant) => [
       occupant.apartment_name,
       occupant.block_name,
       occupant.block_type,
       occupant.flat_number,
+      occupant.occupant_name || 'Not specified',
+      occupant.mobile || 'Not provided',
       occupant.email,
       occupant.occupant_type,
       new Date(occupant.created_at).toLocaleDateString(),
@@ -379,7 +460,7 @@ export default function OccupantManagement() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by apartment, building, flat number, email, or type..."
+            placeholder="Search by apartment, building, flat number, name, email, mobile, or type..."
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
           {searchTerm && (
@@ -393,175 +474,213 @@ export default function OccupantManagement() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-amber-50 to-orange-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Apartment
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Building/Block
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Flat Number
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Email Address
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOccupants.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm
-                      ? 'No occupants match your search criteria.'
-                      : 'No occupants found. Add the first occupant to get started.'}
-                  </td>
-                </tr>
-              ) : (
-                filteredOccupants.map((occupant) => (
-                  <>
-                    <tr key={occupant.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Building className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {occupant.apartment_name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {occupant.block_name}
-                          <span className="text-xs text-gray-500 ml-2">({occupant.block_type})</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Home className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900">{occupant.flat_number}</span>
-                          <button
-                            onClick={() => toggleFlat(occupant.flat_id)}
-                            className="text-amber-600 hover:text-amber-700 ml-2"
-                          >
-                            {expandedFlats.has(occupant.flat_id) ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-900">{occupant.email}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          occupant.occupant_type === 'Owner'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {occupant.occupant_type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(occupant)}
-                            className="text-amber-600 hover:text-amber-700 transition-colors p-2 hover:bg-amber-50 rounded"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(occupant.id)}
-                            className="text-red-600 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedFlats.has(occupant.flat_id) && (
+      <div className="space-y-4">
+        {blockGroups.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center text-gray-500">
+            {searchTerm
+              ? 'No occupants match your search criteria.'
+              : 'No occupants found. Add the first occupant to get started.'}
+          </div>
+        ) : (
+          blockGroups.map((group) => (
+            <div key={group.block_id} className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <button
+                onClick={() => toggleBlock(group.block_id)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Building className="w-5 h-5 text-amber-700" />
+                  <div className="text-left">
+                    <h3 className="text-base font-bold text-gray-800">
+                      {group.apartment_name} - {group.block_name}
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {group.block_type} • {group.occupants.length} {group.occupants.length === 1 ? 'flat' : 'flats'}
+                    </p>
+                  </div>
+                </div>
+                {expandedBlocks.has(group.block_id) ? (
+                  <ChevronUp className="w-5 h-5 text-amber-700" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-amber-700" />
+                )}
+              </button>
+
+              {expandedBlocks.has(group.block_id) && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 bg-gray-50">
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                              Payment History for {occupant.flat_number}
-                            </h4>
-                            {payments[occupant.flat_id]?.length > 0 ? (
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                  <thead className="bg-gray-100">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Amount</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Type</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Quarter</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Payment Date</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Status</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Submitted</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {payments[occupant.flat_id].map((payment) => (
-                                      <tr key={payment.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2">{payment.name}</td>
-                                        <td className="px-4 py-2">
-                                          {payment.payment_amount
-                                            ? `₹${payment.payment_amount.toLocaleString()}`
-                                            : '-'}
-                                        </td>
-                                        <td className="px-4 py-2">{payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}</td>
-                                        <td className="px-4 py-2">{payment.payment_quarter || '-'}</td>
-                                        <td className="px-4 py-2">
-                                          {payment.payment_date
-                                            ? new Date(payment.payment_date).toLocaleDateString()
-                                            : '-'}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                            payment.status === 'verified'
-                                              ? 'bg-green-100 text-green-800'
-                                              : payment.status === 'rejected'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-yellow-100 text-yellow-800'
-                                          }`}>
-                                            {payment.status || 'pending'}
-                                          </span>
-                                        </td>
-                                        <td className="px-4 py-2 text-xs text-gray-500">
-                                          {new Date(payment.created_at).toLocaleDateString()}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">No payment history found</p>
-                            )}
-                          </div>
-                        </td>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Flat #
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Mobile
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    )}
-                  </>
-                ))
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {group.occupants.map((occupant) => (
+                        <>
+                          <tr key={occupant.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <Home className="w-4 h-4 text-gray-400" />
+                                <span className="text-sm font-bold text-gray-900">{occupant.flat_number}</span>
+                                <button
+                                  onClick={() => toggleFlat(occupant.flat_id)}
+                                  className="text-amber-600 hover:text-amber-800 ml-1 transition-colors"
+                                  title="View payment history"
+                                >
+                                  {expandedFlats.has(occupant.flat_id) ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <span className="text-sm text-gray-900">
+                                  {occupant.occupant_name || <span className="text-gray-400 italic">Not specified</span>}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-gray-400" />
+                                <span className="text-sm font-mono text-gray-700">
+                                  {maskMobile(occupant.mobile)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-sm text-gray-900 truncate max-w-xs" title={occupant.email}>
+                                  {occupant.email}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                occupant.occupant_type === 'Owner'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {occupant.occupant_type}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleEdit(occupant)}
+                                  className="text-amber-600 hover:text-amber-800 transition-colors p-1.5 hover:bg-amber-50 rounded"
+                                  title="Edit occupant"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirm(occupant.id)}
+                                  className="text-red-600 hover:text-red-800 transition-colors p-1.5 hover:bg-red-50 rounded"
+                                  title="Delete occupant"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {expandedFlats.has(occupant.flat_id) && (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-l-4 border-blue-400">
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-bold text-blue-900 flex items-center gap-2 mb-3">
+                                    <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                                    Payment History for Flat {occupant.flat_number}
+                                  </h4>
+                                  {payments[occupant.flat_id]?.length > 0 ? (
+                                    <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-blue-200">
+                                      <table className="min-w-full divide-y divide-blue-100 text-sm">
+                                        <thead className="bg-blue-100">
+                                          <tr>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Name</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Amount</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Type</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Quarter</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Payment Date</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Status</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-blue-900">Submitted</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-100">
+                                          {payments[occupant.flat_id].map((payment) => (
+                                            <tr key={payment.id} className="hover:bg-blue-50 transition-colors">
+                                              <td className="px-3 py-2 text-gray-800">{payment.name}</td>
+                                              <td className="px-3 py-2 font-semibold text-gray-900">
+                                                {payment.payment_amount
+                                                  ? `₹${payment.payment_amount.toLocaleString()}`
+                                                  : '-'}
+                                              </td>
+                                              <td className="px-3 py-2 text-gray-700">
+                                                {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                                              </td>
+                                              <td className="px-3 py-2 text-gray-700">{payment.payment_quarter || '-'}</td>
+                                              <td className="px-3 py-2 text-gray-700">
+                                                {payment.payment_date
+                                                  ? new Date(payment.payment_date).toLocaleDateString()
+                                                  : '-'}
+                                              </td>
+                                              <td className="px-3 py-2">
+                                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                  payment.status === 'verified'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : payment.status === 'rejected'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
+                                                }`}>
+                                                  {payment.status || 'pending'}
+                                                </span>
+                                              </td>
+                                              <td className="px-3 py-2 text-xs text-gray-500">
+                                                {new Date(payment.created_at).toLocaleDateString()}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-white rounded-lg p-4 text-center border border-blue-200">
+                                      <p className="text-sm text-blue-700 italic">No payment history found for this flat</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          ))
+        )}
       </div>
 
       {editModal && (
@@ -677,6 +796,24 @@ export default function OccupantManagement() {
                   }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="user@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  value={editModal.occupant.mobile || ''}
+                  onChange={(e) =>
+                    setEditModal({
+                      ...editModal,
+                      occupant: { ...editModal.occupant, mobile: e.target.value },
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="+91 XXXXXXXXXX"
                 />
               </div>
 
