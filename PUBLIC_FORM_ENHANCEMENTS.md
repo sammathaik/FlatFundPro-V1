@@ -87,6 +87,22 @@ If no flat_email_mappings record exists:
 - User changes date to Dec 15, 2025 (before due date)
 - Form recalculates → **Total updates to ₹5000** (late fee removed)
 
+### 6. Enhanced Confirmation Dialog
+Before final submission, users see a comprehensive review screen showing:
+
+**Flat Details Section:**
+- Apartment name
+- Building/Block/Phase
+- Flat number
+- Occupant name
+
+**Payment Details Section:**
+- Collection name (what they're paying for)
+- Payment amount with proper formatting
+- Transaction date in readable format
+
+This two-section layout provides a final verification checkpoint to prevent submission errors.
+
 ## Benefits
 
 1. **Faster Submission**: Reduces time needed to fill out the form
@@ -94,3 +110,4 @@ If no flat_email_mappings record exists:
 3. **Better Compliance**: Clear display of late fees encourages on-time payment
 4. **Improved Transparency**: Users understand exactly what they owe and why
 5. **Consistent Data**: Email and contact info remain consistent across submissions
+6. **Final Verification**: Enhanced confirmation dialog prevents submission mistakes
