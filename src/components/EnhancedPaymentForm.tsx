@@ -257,6 +257,23 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         console.error('Fraud analysis failed (non-blocking):', error);
       });
 
+      setUploadProgress(80);
+
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-payment-proof`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          payment_submission_id: insertedPayment.id,
+          file_url: screenshotUrl,
+          file_type: formData.screenshot!.type,
+        }),
+      }).catch(error => {
+        console.error('Payment validation failed (non-blocking):', error);
+      });
+
       setUploadProgress(90);
 
       await sendToWebhook(submissionData);

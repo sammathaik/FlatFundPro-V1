@@ -577,13 +577,32 @@ export default function DynamicPaymentForm() {
       // Debug log to verify payment_date is being saved
       console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
 
-      const { error: dbError } = await supabase
+      const { data: insertedPayment, error: dbError } = await supabase
         .from('payment_submissions')
-        .insert([submissionData]);
+        .insert([submissionData])
+        .select()
+        .single();
 
-      if (dbError) {
+      if (dbError || !insertedPayment) {
         throw new Error('Failed to save submission');
       }
+
+      setUploadProgress(80);
+
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-payment-proof`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          payment_submission_id: insertedPayment.id,
+          file_url: screenshotUrl,
+          file_type: formData.screenshot!.type,
+        }),
+      }).catch(error => {
+        console.error('Payment validation failed (non-blocking):', error);
+      });
 
       setUploadProgress(100);
       setSubmissionState('success');
