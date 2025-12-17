@@ -91,6 +91,7 @@ Deno.serve(async (req: Request) => {
         validation_confidence_score: 0,
         validation_reason: 'No text could be extracted from the file. Please upload a clear payment screenshot.',
         ocr_text: '',
+        validation_performed_at: new Date().toISOString(),
       });
 
       return new Response(
