@@ -40,9 +40,6 @@ function App() {
   }
 
   if (currentPath === '/ocr-test') {
-    if (!user) {
-      return <LoginPage portalType="admin" onBack={() => navigate('/')} />;
-    }
     return <OCRTestingPage />;
   }
 
