@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-import { createWorker } from 'npm:tesseract.js@5.0.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -119,22 +118,11 @@ Deno.serve(async (req: Request) => {
       googleVisionError = 'Google Vision API key not configured';
     }
 
-    console.log('Testing Tesseract OCR...');
+    console.log('Tesseract OCR skipped (not supported in edge functions)');
     const tesseractStartTime = Date.now();
     let tesseractText = '';
     let tesseractConfidence = 0;
-    let tesseractError = null;
-
-    try {
-      const tesseractResult = await extractTextWithTesseract(imageBuffer);
-      tesseractText = tesseractResult.text;
-      tesseractConfidence = tesseractResult.confidence;
-      const tesseractTime = Date.now() - tesseractStartTime;
-      console.log(`Tesseract completed in ${tesseractTime}ms`);
-    } catch (error) {
-      tesseractError = error.message;
-      console.error('Tesseract error:', error);
-    }
+    let tesseractError = 'Tesseract.js is not supported in Deno Edge Functions (requires Web Workers)';
 
     const bestText = googleVisionText.length > tesseractText.length ? googleVisionText : tesseractText;
     const signals = detectPaymentSignals(bestText);
@@ -319,17 +307,6 @@ async function extractTextWithGoogleVision(
   return {
     text: '',
     confidence: 0,
-  };
-}
-
-async function extractTextWithTesseract(imageBuffer: Uint8Array): Promise<{ text: string; confidence: number }> {
-  const worker = await createWorker('eng');
-  const { data } = await worker.recognize(imageBuffer);
-  await worker.terminate();
-
-  return {
-    text: data.text || '',
-    confidence: Math.round(data.confidence || 0)
   };
 }
 
