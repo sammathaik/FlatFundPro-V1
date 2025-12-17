@@ -13,6 +13,7 @@ import OccupantDashboard from './components/occupant/OccupantDashboard';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
+import OCRTestingPage from './components/admin/OCRTestingPage';
 import { isSupabaseConfigured } from './lib/supabase';
 
 function App() {
@@ -36,6 +37,13 @@ function App() {
 
   if (currentPath === '/diagnostic') {
     return <DiagnosticPage />;
+  }
+
+  if (currentPath === '/ocr-test') {
+    if (!user) {
+      return <LoginPage portalType="admin" onBack={() => navigate('/')} />;
+    }
+    return <OCRTestingPage />;
   }
 
   if (!isSupabaseConfigured) {
