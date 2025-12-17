@@ -577,46 +577,13 @@ export default function DynamicPaymentForm() {
       // Debug log to verify payment_date is being saved
       console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
 
-      const { data: paymentId, error: dbError } = await supabase
-        .rpc('insert_payment_submission', {
-          p_apartment_id: submissionData.apartment_id,
-          p_name: submissionData.name,
-          p_block_id: submissionData.block_id,
-          p_flat_id: submissionData.flat_id,
-          p_email: submissionData.email,
-          p_screenshot_url: submissionData.screenshot_url,
-          p_screenshot_filename: submissionData.screenshot_filename,
-          p_contact_number: submissionData.contact_number || null,
-          p_payment_amount: submissionData.payment_amount || null,
-          p_payment_date: submissionData.payment_date || null,
-          p_payment_type: submissionData.payment_type || null,
-          p_occupant_type: submissionData.occupant_type || null,
-          p_expected_collection_id: submissionData.expected_collection_id || null,
-        });
+      const { error: dbError } = await supabase
+        .from('payment_submissions')
+        .insert([submissionData]);
 
-      if (dbError || !paymentId) {
-        console.error('Payment submission error:', dbError);
-        throw new Error(dbError?.message || 'Failed to save submission');
+      if (dbError) {
+        throw new Error('Failed to save submission');
       }
-
-      const insertedPayment = { id: paymentId };
-
-      setUploadProgress(80);
-
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-payment-proof`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          payment_submission_id: insertedPayment.id,
-          file_url: screenshotUrl,
-          file_type: formData.screenshot!.type,
-        }),
-      }).catch(error => {
-        console.error('Payment validation failed (non-blocking):', error);
-      });
 
       setUploadProgress(100);
       setSubmissionState('success');

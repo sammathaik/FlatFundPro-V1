@@ -4,7 +4,6 @@ import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, C
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
-import PaymentValidationDetails from '../PaymentValidationDetails';
 
 interface PaymentWithDetails {
   id: string;
@@ -35,19 +34,6 @@ interface PaymentWithDetails {
   narration?: string | null;
   screenshot_source?: string | null;
   other_text?: string | null;
-  validation_status?: string;
-  validation_confidence_score?: number;
-  validation_reason?: string;
-  extracted_amount?: number;
-  extracted_date?: string;
-  extracted_transaction_ref?: string;
-  payment_platform?: string;
-  validation_performed_at?: string;
-  ai_classification?: {
-    classification?: string;
-    confidence?: number;
-    reason?: string;
-  };
 }
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -471,33 +457,17 @@ export default function PaymentManagement() {
                     {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          payment.status === 'Approved'
-                            ? 'bg-green-100 text-green-800'
-                            : payment.status === 'Reviewed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {payment.status}
-                      </span>
-                      {payment.validation_status && payment.validation_status !== 'PENDING' && (
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${
-                            payment.validation_status === 'AUTO_APPROVED'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : payment.validation_status === 'MANUAL_REVIEW'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {payment.validation_status === 'AUTO_APPROVED' ? '✓ Auto' :
-                           payment.validation_status === 'MANUAL_REVIEW' ? '⚠ Review' : '✗ Invalid'}
-                        </span>
-                      )}
-                    </div>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        payment.status === 'Approved'
+                          ? 'bg-green-100 text-green-800'
+                          : payment.status === 'Reviewed'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {payment.status}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
@@ -667,12 +637,6 @@ export default function PaymentManagement() {
                                 <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{payment.other_text}</p>
                               </div>
                             )}
-                          </div>
-                        )}
-                        {payment.validation_status && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
-                            <h5 className="text-xs font-semibold text-gray-500 uppercase mb-3">Automated Validation</h5>
-                            <PaymentValidationDetails payment={payment} />
                           </div>
                         )}
                         {payment.screenshot_url && (

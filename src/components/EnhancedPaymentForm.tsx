@@ -228,54 +228,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
       setUploadProgress(60);
 
-      const { data: paymentId, error: dbError } = await supabase
-        .rpc('insert_payment_submission', {
-          p_apartment_id: apartmentId,
-          p_name: formData.name.trim(),
-          p_block_id: blockData.id,
-          p_flat_id: flatData.id,
-          p_email: formData.email.trim(),
-          p_screenshot_url: screenshotUrl,
-          p_screenshot_filename: formData.screenshot!.name,
-          p_contact_number: formData.contact_number.trim() || null,
-          p_payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
-          p_payment_date: formData.payment_date || null,
-          p_occupant_type: formData.occupant_type || null,
-        });
-
-      if (dbError || !paymentId) {
-        console.error('Payment submission error:', dbError);
-        throw new Error(dbError?.message || 'Failed to save submission');
-      }
-
-      const insertedPayment = { id: paymentId };
-
-      setUploadProgress(70);
-
-      analyzePaymentImage(insertedPayment.id, screenshotUrl).catch(error => {
-        console.error('Fraud analysis failed (non-blocking):', error);
-      });
-
-      setUploadProgress(80);
-
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-payment-proof`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          payment_submission_id: insertedPayment.id,
-          file_url: screenshotUrl,
-          file_type: formData.screenshot!.type,
-        }),
-      }).catch(error => {
-        console.error('Payment validation failed (non-blocking):', error);
-      });
-
-      setUploadProgress(90);
-
-      await sendToWebhook({
+      const submissionData: PaymentSubmission = {
         name: formData.name.trim(),
         building_block_phase: formData.building_block_phase.trim(),
         flat_number: formData.flat_number.trim(),
@@ -286,10 +239,27 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
         occupant_type: formData.occupant_type,
-        apartment_id: apartmentId,
-        block_id: blockData.id,
-        flat_id: flatData.id,
+      };
+
+      const { data: insertedPayment, error: dbError } = await supabase
+        .from('payment_submissions')
+        .insert([submissionData])
+        .select()
+        .single();
+
+      if (dbError || !insertedPayment) {
+        throw new Error('Failed to save submission');
+      }
+
+      setUploadProgress(70);
+
+      analyzePaymentImage(insertedPayment.id, screenshotUrl).catch(error => {
+        console.error('Fraud analysis failed (non-blocking):', error);
       });
+
+      setUploadProgress(90);
+
+      await sendToWebhook(submissionData);
 
       setUploadProgress(100);
       setSubmissionState('success');
