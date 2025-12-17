@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Edit2, Trash2, Plus, ChevronDown, ChevronUp, X, Save, Building, Mail, Phone, User, Home, Download, Search, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -546,8 +546,8 @@ export default function OccupantManagement() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {group.occupants.map((occupant) => (
-                        <>
-                          <tr key={occupant.id} className="hover:bg-amber-50 transition-colors">
+                        <React.Fragment key={occupant.id}>
+                          <tr className="hover:bg-amber-50 transition-colors">
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
@@ -695,7 +695,7 @@ export default function OccupantManagement() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>

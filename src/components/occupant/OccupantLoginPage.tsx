@@ -17,6 +17,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
   const [sentOtp, setSentOtp] = useState('');
   const [availableFlats, setAvailableFlats] = useState<any[]>([]);
   const [selectedFlatId, setSelectedFlatId] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,6 +167,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
   const handleResendOtp = async () => {
     setError('');
+    setSuccessMessage('');
     setLoading(true);
 
     try {
@@ -185,7 +187,9 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
           setMobile(data.mobile);
         }
         setError('');
-        alert('OTP resent successfully!');
+        setSuccessMessage('OTP resent successfully!');
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(''), 5000);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
@@ -347,6 +351,12 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                   />
                 </div>
               </div>
+
+              {successMessage && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                  {successMessage}
+                </div>
+              )}
 
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
