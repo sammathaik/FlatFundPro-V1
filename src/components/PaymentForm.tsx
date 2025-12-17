@@ -74,9 +74,9 @@ export default function PaymentForm() {
         newErrors.screenshot = 'Only JPG, PNG, and PDF files are allowed';
       }
 
-      const maxSize = 10 * 1024 * 1024;
+      const maxSize = 5 * 1024 * 1024;
       if (formData.screenshot.size > maxSize) {
-        newErrors.screenshot = 'File size must be less than 10MB';
+        newErrors.screenshot = 'File size must be less than 5MB';
       }
     }
 
@@ -137,6 +137,35 @@ export default function PaymentForm() {
     }
   };
 
+  const triggerValidation = async (paymentId: string, fileUrl: string, fileType: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-payment-proof`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            payment_submission_id: paymentId,
+            file_url: fileUrl,
+            file_type: fileType,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Validation failed:', await response.text());
+      }
+    } catch (error) {
+      console.error('Validation trigger error:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -166,17 +195,23 @@ export default function PaymentForm() {
         screenshot_filename: formData.screenshot!.name,
       };
 
-      const { error: dbError } = await supabase
+      const { data: insertedData, error: dbError } = await supabase
         .from('payment_submissions')
-        .insert([submissionData]);
+        .insert([submissionData])
+        .select()
+        .single();
 
       if (dbError) {
         throw new Error('Failed to save submission');
       }
 
-      setUploadProgress(90);
+      setUploadProgress(70);
 
       await sendToWebhook(submissionData);
+
+      setUploadProgress(80);
+
+      await triggerValidation(insertedData.id, screenshotUrl, formData.screenshot!.type);
 
       setUploadProgress(100);
       setSubmissionState('success');
@@ -222,9 +257,14 @@ export default function PaymentForm() {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Submission Successful!
           </h2>
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            Thank you! Your payment proof has been received. The committee will review and confirm within 2 business days.
+          <p className="text-gray-600 mb-4 leading-relaxed">
+            Thank you! Your payment proof has been received and is being validated automatically.
           </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+            <p className="text-sm text-blue-800">
+              Our system is analyzing your payment proof. You will receive an email notification once validation is complete.
+            </p>
+          </div>
           <button
             onClick={resetForm}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
@@ -431,7 +471,7 @@ export default function PaymentForm() {
                         <p className="text-sm text-gray-600">
                           <span className="font-semibold">Click to upload</span> or drag and drop
                           <br />
-                          <span className="text-xs">JPG, PNG or PDF (Max 10MB)</span>
+                          <span className="text-xs">JPG, PNG or PDF (Max 5MB)</span>
                         </p>
                       )}
                     </div>
