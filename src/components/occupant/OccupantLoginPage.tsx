@@ -149,6 +149,13 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
     }
   };
 
+  const maskMobileNumber = (mobileNum: string): string => {
+    if (!mobileNum || mobileNum.length < 4) return '****';
+    const lastFour = mobileNum.slice(-4);
+    const masked = '*'.repeat(mobileNum.length - 4) + lastFour;
+    return masked;
+  };
+
   const handleResendOtp = async () => {
     setError('');
     setLoading(true);
@@ -307,7 +314,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
             <form onSubmit={handleOtpSubmit} className="space-y-6">
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4">
                 <p className="text-sm">
-                  An OTP has been sent to your mobile number. Please enter it below to continue.
+                  An OTP has been sent to your mobile number{mobile ? ` ${maskMobileNumber(mobile)}` : ''}. Please enter it below to continue.
                 </p>
               </div>
 
