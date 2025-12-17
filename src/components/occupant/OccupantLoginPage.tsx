@@ -38,6 +38,10 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
         }
       } else {
         setSentOtp(data.otp);
+        // Store the mobile number if it was returned from the database
+        if (data.mobile) {
+          setMobile(data.mobile);
+        }
         setStep('otp');
       }
     } catch (err: any) {
@@ -70,6 +74,10 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
         setError(data.message || 'Failed to send OTP');
       } else {
         setSentOtp(data.otp);
+        // Mobile is already in state from user input, but ensure it's set from response
+        if (data.mobile) {
+          setMobile(data.mobile);
+        }
         setStep('otp');
       }
     } catch (err: any) {
@@ -172,6 +180,10 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
         setError(data.message || 'Failed to resend OTP');
       } else {
         setSentOtp(data.otp);
+        // Ensure mobile is set from response
+        if (data.mobile) {
+          setMobile(data.mobile);
+        }
         setError('');
         alert('OTP resent successfully!');
       }
