@@ -9,6 +9,7 @@ import OccupantManagement from './OccupantManagement';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import AnalyticsReports from './AnalyticsReports';
+import OCRTestingPage from './OCRTestingPage';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApartmentAdminDashboard() {
@@ -36,6 +37,7 @@ export default function ApartmentAdminDashboard() {
         )
       )}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
+      {activeTab === 'ocr-testing' && <OCRTestingPage />}
       {activeTab === 'faq' && <FAQManagement />}
     </DashboardLayout>
   );

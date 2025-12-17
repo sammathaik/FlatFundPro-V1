@@ -9,6 +9,7 @@ import SystemSettings from './SystemSettings';
 import AuditLogs from './AuditLogs';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
+import OCRTestingPage from './OCRTestingPage';
 
 export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,6 +21,7 @@ export default function SuperAdminDashboard() {
       {activeTab === 'admins' && <AdminManagement />}
       {activeTab === 'leads' && <LeadsManagement />}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard />}
+      {activeTab === 'ocr-testing' && <OCRTestingPage />}
       {activeTab === 'analytics' && <AnalyticsReports />}
       {activeTab === 'faq' && <FAQManagement />}
       {activeTab === 'settings' && <SystemSettings />}
