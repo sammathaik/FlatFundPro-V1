@@ -577,15 +577,29 @@ export default function DynamicPaymentForm() {
       // Debug log to verify payment_date is being saved
       console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
 
-      const { data: insertedPayment, error: dbError } = await supabase
-        .from('payment_submissions')
-        .insert([submissionData])
-        .select()
-        .single();
+      const { data: paymentId, error: dbError } = await supabase
+        .rpc('insert_payment_submission', {
+          p_apartment_id: submissionData.apartment_id,
+          p_name: submissionData.name,
+          p_block_id: submissionData.block_id,
+          p_flat_id: submissionData.flat_id,
+          p_email: submissionData.email,
+          p_screenshot_url: submissionData.screenshot_url,
+          p_screenshot_filename: submissionData.screenshot_filename,
+          p_contact_number: submissionData.contact_number || null,
+          p_payment_amount: submissionData.payment_amount || null,
+          p_payment_date: submissionData.payment_date || null,
+          p_payment_type: submissionData.payment_type || null,
+          p_occupant_type: submissionData.occupant_type || null,
+          p_expected_collection_id: submissionData.expected_collection_id || null,
+        });
 
-      if (dbError || !insertedPayment) {
-        throw new Error('Failed to save submission');
+      if (dbError || !paymentId) {
+        console.error('Payment submission error:', dbError);
+        throw new Error(dbError?.message || 'Failed to save submission');
       }
+
+      const insertedPayment = { id: paymentId };
 
       setUploadProgress(80);
 

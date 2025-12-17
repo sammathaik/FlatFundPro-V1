@@ -228,28 +228,27 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
       setUploadProgress(60);
 
-      const submissionData: PaymentSubmission = {
-        name: formData.name.trim(),
-        building_block_phase: formData.building_block_phase.trim(),
-        flat_number: formData.flat_number.trim(),
-        email: formData.email.trim(),
-        contact_number: formData.contact_number.trim() || undefined,
-        payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : undefined,
-        payment_date: formData.payment_date || undefined,
-        screenshot_url: screenshotUrl,
-        screenshot_filename: formData.screenshot!.name,
-        occupant_type: formData.occupant_type,
-      };
+      const { data: paymentId, error: dbError } = await supabase
+        .rpc('insert_payment_submission', {
+          p_apartment_id: apartmentId,
+          p_name: formData.name.trim(),
+          p_block_id: blockData.id,
+          p_flat_id: flatData.id,
+          p_email: formData.email.trim(),
+          p_screenshot_url: screenshotUrl,
+          p_screenshot_filename: formData.screenshot!.name,
+          p_contact_number: formData.contact_number.trim() || null,
+          p_payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
+          p_payment_date: formData.payment_date || null,
+          p_occupant_type: formData.occupant_type || null,
+        });
 
-      const { data: insertedPayment, error: dbError } = await supabase
-        .from('payment_submissions')
-        .insert([submissionData])
-        .select()
-        .single();
-
-      if (dbError || !insertedPayment) {
-        throw new Error('Failed to save submission');
+      if (dbError || !paymentId) {
+        console.error('Payment submission error:', dbError);
+        throw new Error(dbError?.message || 'Failed to save submission');
       }
+
+      const insertedPayment = { id: paymentId };
 
       setUploadProgress(70);
 
@@ -276,7 +275,21 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
       setUploadProgress(90);
 
-      await sendToWebhook(submissionData);
+      await sendToWebhook({
+        name: formData.name.trim(),
+        building_block_phase: formData.building_block_phase.trim(),
+        flat_number: formData.flat_number.trim(),
+        email: formData.email.trim(),
+        contact_number: formData.contact_number.trim() || undefined,
+        payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : undefined,
+        payment_date: formData.payment_date || undefined,
+        screenshot_url: screenshotUrl,
+        screenshot_filename: formData.screenshot!.name,
+        occupant_type: formData.occupant_type,
+        apartment_id: apartmentId,
+        block_id: blockData.id,
+        flat_id: flatData.id,
+      });
 
       setUploadProgress(100);
       setSubmissionState('success');
