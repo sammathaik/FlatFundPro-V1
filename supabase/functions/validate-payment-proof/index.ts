@@ -79,6 +79,7 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const googleVisionApiKey = Deno.env.get('GOOGLE_VISION_API_KEY');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestData: ValidationRequest = await req.json();
@@ -94,7 +95,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const ocrResult = await extractTextFromFile(file_url, file_type);
+    const ocrResult = await extractTextFromFile(file_url, file_type, googleVisionApiKey);
 
     console.log('OCR Result:', {
       quality: ocrResult.quality,
@@ -198,7 +199,11 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function extractTextFromFile(fileUrl: string, fileType: string): Promise<OCRResult> {
+async function extractTextFromFile(
+  fileUrl: string,
+  fileType: string,
+  googleVisionApiKey?: string
+): Promise<OCRResult> {
   const attempts: Array<{
     method: string;
     success: boolean;
@@ -215,73 +220,81 @@ async function extractTextFromFile(fileUrl: string, fileType: string): Promise<O
     const buffer = await response.arrayBuffer();
     const imageBuffer = new Uint8Array(buffer);
 
-    console.log('OCR Attempt 1: Direct extraction');
-    let result = await extractTextWithOCR(imageBuffer);
+    if (googleVisionApiKey) {
+      console.log('OCR Attempt 1: Google Vision API');
+      const visionResult = await extractTextWithGoogleVision(imageBuffer, googleVisionApiKey);
+      attempts.push({
+        method: 'google_vision',
+        success: visionResult.text.length > 20,
+        textLength: visionResult.text.length,
+        confidence: visionResult.confidence
+      });
+
+      if (visionResult.text.length > 50 && visionResult.confidence > 70) {
+        return {
+          text: visionResult.text,
+          confidence: visionResult.confidence,
+          quality: 'HIGH',
+          attempts
+        };
+      }
+
+      if (visionResult.text.length > 20) {
+        const quality = visionResult.confidence > 60 ? 'HIGH' :
+                       visionResult.confidence > 40 ? 'MEDIUM' : 'LOW';
+        return {
+          text: visionResult.text,
+          confidence: visionResult.confidence,
+          quality,
+          attempts
+        };
+      }
+    }
+
+    console.log('OCR Attempt 2: Tesseract (fallback)');
+    const tesseractResult = await extractTextWithTesseract(imageBuffer);
     attempts.push({
-      method: 'direct',
-      success: result.text.length > 20,
-      textLength: result.text.length,
-      confidence: result.confidence
+      method: 'tesseract',
+      success: tesseractResult.text.length > 20,
+      textLength: tesseractResult.text.length,
+      confidence: tesseractResult.confidence
     });
 
-    if (result.text.length > 50 && result.confidence > 70) {
+    if (tesseractResult.text.length > 50 && tesseractResult.confidence > 70) {
       return {
-        text: result.text,
-        confidence: result.confidence,
+        text: tesseractResult.text,
+        confidence: tesseractResult.confidence,
         quality: 'HIGH',
         attempts
       };
     }
 
-    console.log('OCR Attempt 2: Grayscale + contrast');
-    const enhancedBuffer = await preprocessImage(imageBuffer, 'enhance');
-    result = await extractTextWithOCR(enhancedBuffer);
-    attempts.push({
-      method: 'grayscale_contrast',
-      success: result.text.length > 20,
-      textLength: result.text.length,
-      confidence: result.confidence
-    });
-
-    if (result.text.length > 50 && result.confidence > 70) {
-      return {
-        text: result.text,
-        confidence: result.confidence,
-        quality: 'HIGH',
-        attempts
-      };
-    }
-
-    console.log('OCR Attempt 3: Color inversion for dark theme');
-    const invertedBuffer = await preprocessImage(imageBuffer, 'invert');
-    const invertResult = await extractTextWithOCR(invertedBuffer);
-    attempts.push({
-      method: 'color_invert',
-      success: invertResult.text.length > 20,
-      textLength: invertResult.text.length,
-      confidence: invertResult.confidence
-    });
-
-    const bestResult = [result, invertResult].reduce((best, current) => {
-      const bestScore = best.text.length * (best.confidence / 100);
-      const currentScore = current.text.length * (current.confidence / 100);
-      return currentScore > bestScore ? current : best;
-    });
+    const bestResult = attempts.length > 1 ?
+      (attempts[0].textLength > attempts[1].textLength ? attempts[0] : attempts[1]) :
+      attempts[0];
 
     let quality: 'HIGH' | 'MEDIUM' | 'LOW' | 'FAILED';
-    if (bestResult.text.length === 0) {
+    if (bestResult.textLength === 0) {
       quality = 'FAILED';
-    } else if (bestResult.text.length > 50 && bestResult.confidence > 60) {
+    } else if (bestResult.textLength > 50 && bestResult.confidence > 60) {
       quality = 'HIGH';
-    } else if (bestResult.text.length > 20 && bestResult.confidence > 40) {
+    } else if (bestResult.textLength > 20 && bestResult.confidence > 40) {
       quality = 'MEDIUM';
     } else {
       quality = 'LOW';
     }
 
+    const bestText = attempts.reduce((best, current) => {
+      const bestScore = best.textLength * (best.confidence / 100);
+      const currentScore = current.textLength * (current.confidence / 100);
+      return currentScore > bestScore ? current : best;
+    }, attempts[0]);
+
     return {
-      text: bestResult.text,
-      confidence: bestResult.confidence,
+      text: bestText.method === 'google_vision' ?
+        (await extractTextWithGoogleVision(imageBuffer, googleVisionApiKey!)).text :
+        tesseractResult.text,
+      confidence: bestText.confidence,
       quality,
       attempts
     };
@@ -296,17 +309,92 @@ async function extractTextFromFile(fileUrl: string, fileType: string): Promise<O
   }
 }
 
-async function preprocessImage(imageBuffer: Uint8Array, mode: 'enhance' | 'invert'): Promise<Uint8Array> {
+async function extractTextWithGoogleVision(
+  imageBuffer: Uint8Array,
+  apiKey: string
+): Promise<{ text: string; confidence: number }> {
   try {
-    console.log(`Preprocessing mode: ${mode} (placeholder - returning original)`);
-    return imageBuffer;
+    const base64Image = btoa(String.fromCharCode(...imageBuffer));
+
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              image: {
+                content: base64Image,
+              },
+              features: [
+                {
+                  type: 'TEXT_DETECTION',
+                  maxResults: 1,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Google Vision API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.responses && data.responses[0] && data.responses[0].textAnnotations) {
+      const fullText = data.responses[0].textAnnotations[0]?.description || '';
+
+      let avgConfidence = 90;
+
+      if (data.responses[0].fullTextAnnotation) {
+        const pages = data.responses[0].fullTextAnnotation.pages || [];
+        const allConfidences: number[] = [];
+
+        pages.forEach((page: any) => {
+          page.blocks?.forEach((block: any) => {
+            block.paragraphs?.forEach((paragraph: any) => {
+              paragraph.words?.forEach((word: any) => {
+                if (word.confidence) {
+                  allConfidences.push(word.confidence * 100);
+                }
+              });
+            });
+          });
+        });
+
+        if (allConfidences.length > 0) {
+          avgConfidence = Math.round(
+            allConfidences.reduce((sum, conf) => sum + conf, 0) / allConfidences.length
+          );
+        }
+      }
+
+      return {
+        text: fullText,
+        confidence: avgConfidence,
+      };
+    }
+
+    return {
+      text: '',
+      confidence: 0,
+    };
   } catch (error) {
-    console.error('Preprocessing error:', error);
-    return imageBuffer;
+    console.error('Google Vision OCR error:', error);
+    return {
+      text: '',
+      confidence: 0,
+    };
   }
 }
 
-async function extractTextWithOCR(imageBuffer: Uint8Array): Promise<{ text: string; confidence: number }> {
+async function extractTextWithTesseract(imageBuffer: Uint8Array): Promise<{ text: string; confidence: number }> {
   try {
     const worker = await createWorker('eng');
     const { data } = await worker.recognize(imageBuffer);
@@ -319,7 +407,7 @@ async function extractTextWithOCR(imageBuffer: Uint8Array): Promise<{ text: stri
       confidence: Math.round(avgConfidence)
     };
   } catch (error) {
-    console.error('OCR error:', error);
+    console.error('Tesseract OCR error:', error);
     return {
       text: '',
       confidence: 0
