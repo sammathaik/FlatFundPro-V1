@@ -34,6 +34,18 @@ interface AIClassification {
   reason: string;
 }
 
+interface OCRResult {
+  text: string;
+  confidence: number;
+  quality: 'HIGH' | 'MEDIUM' | 'LOW' | 'FAILED';
+  attempts: Array<{
+    method: string;
+    success: boolean;
+    textLength: number;
+    confidence: number;
+  }>;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === 'OPTIONS') {
@@ -82,54 +94,59 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Step 1: Extract text from file
-    const extractedText = await extractTextFromFile(file_url, file_type);
-    
-    if (!extractedText || extractedText.trim().length === 0) {
-      await updateValidationStatus(supabase, payment_submission_id, {
-        validation_status: 'REJECTED',
-        validation_confidence_score: 0,
-        validation_reason: 'No text could be extracted from the file. Please upload a clear payment screenshot.',
-        ocr_text: '',
-        validation_performed_at: new Date().toISOString(),
-      });
+    const ocrResult = await extractTextFromFile(file_url, file_type);
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          validation_status: 'REJECTED',
-          message: 'No text could be extracted'
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    console.log('OCR Result:', {
+      quality: ocrResult.quality,
+      confidence: ocrResult.confidence,
+      textLength: ocrResult.text.length,
+      attempts: ocrResult.attempts.length
+    });
 
-    // Step 2: Detect payment signals (rule-based)
-    const signals = detectPaymentSignals(extractedText);
+    const signals = detectPaymentSignals(ocrResult.text);
 
-    // Step 3: AI Classification (if OpenAI key is available)
     let aiClassification: AIClassification | null = null;
     if (openaiApiKey) {
-      aiClassification = await classifyWithAI(extractedText, openaiApiKey);
+      if (ocrResult.quality === 'FAILED' || ocrResult.quality === 'LOW') {
+        aiClassification = await classifyWithAIVision(file_url, openaiApiKey);
+      } else {
+        aiClassification = await classifyWithAI(ocrResult.text, openaiApiKey);
+      }
     }
 
-    // Step 4: Calculate confidence score
-    const confidenceResult = calculateConfidenceScore(signals, aiClassification);
+    const confidenceResult = calculateConfidenceScore(
+      signals,
+      aiClassification,
+      ocrResult.quality,
+      ocrResult.confidence
+    );
 
-    // Step 5: Determine validation status
     let validationStatus = 'MANUAL_REVIEW';
-    if (confidenceResult.score >= 70) {
+    let requiresManualReview = false;
+    let manualReviewReason = '';
+
+    if (ocrResult.quality === 'FAILED' && !aiClassification) {
+      validationStatus = 'MANUAL_REVIEW';
+      requiresManualReview = true;
+      manualReviewReason = 'OCR extraction failed completely. AI vision analysis not available.';
+    } else if (confidenceResult.score >= 70) {
       validationStatus = 'AUTO_APPROVED';
-    } else if (confidenceResult.score < 40) {
+      requiresManualReview = false;
+    } else if (confidenceResult.score >= 40) {
+      validationStatus = 'MANUAL_REVIEW';
+      requiresManualReview = true;
+      manualReviewReason = `Moderate confidence (${confidenceResult.score}%). ${confidenceResult.reason}`;
+    } else {
       validationStatus = 'REJECTED';
+      requiresManualReview = true;
+      manualReviewReason = `Low confidence (${confidenceResult.score}%). ${confidenceResult.reason}`;
     }
 
-    // Step 6: Update database
     await updateValidationStatus(supabase, payment_submission_id, {
-      ocr_text: extractedText,
+      ocr_text: ocrResult.text,
+      ocr_quality: ocrResult.quality,
+      ocr_confidence_score: ocrResult.confidence,
+      ocr_attempts: ocrResult.attempts,
       extracted_amount: signals.extractedAmount,
       extracted_date: signals.extractedDate,
       extracted_transaction_ref: signals.extractedTransactionRef,
@@ -138,6 +155,8 @@ Deno.serve(async (req: Request) => {
       validation_status: validationStatus,
       validation_confidence_score: confidenceResult.score,
       validation_reason: confidenceResult.reason,
+      requires_manual_review: requiresManualReview,
+      manual_review_reason: manualReviewReason,
       ai_classification: aiClassification,
       validation_performed_at: new Date().toISOString(),
     });
@@ -147,6 +166,9 @@ Deno.serve(async (req: Request) => {
         success: true,
         validation_status: validationStatus,
         confidence_score: confidenceResult.score,
+        ocr_quality: ocrResult.quality,
+        ocr_confidence: ocrResult.confidence,
+        requires_manual_review: requiresManualReview,
         reason: confidenceResult.reason,
         extracted_data: {
           amount: signals.extractedAmount,
@@ -176,8 +198,14 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// Extract text from image or PDF
-async function extractTextFromFile(fileUrl: string, fileType: string): Promise<string> {
+async function extractTextFromFile(fileUrl: string, fileType: string): Promise<OCRResult> {
+  const attempts: Array<{
+    method: string;
+    success: boolean;
+    textLength: number;
+    confidence: number;
+  }> = [];
+
   try {
     const response = await fetch(fileUrl);
     if (!response.ok) {
@@ -185,40 +213,124 @@ async function extractTextFromFile(fileUrl: string, fileType: string): Promise<s
     }
 
     const buffer = await response.arrayBuffer();
+    const imageBuffer = new Uint8Array(buffer);
 
-    if (fileType === 'application/pdf') {
-      // For PDF: Try to extract text directly
-      // For now, we'll use OCR on PDFs too (Tesseract can handle PDF)
-      return await extractTextWithOCR(new Uint8Array(buffer));
-    } else {
-      // For images: Use OCR
-      return await extractTextWithOCR(new Uint8Array(buffer));
+    console.log('OCR Attempt 1: Direct extraction');
+    let result = await extractTextWithOCR(imageBuffer);
+    attempts.push({
+      method: 'direct',
+      success: result.text.length > 20,
+      textLength: result.text.length,
+      confidence: result.confidence
+    });
+
+    if (result.text.length > 50 && result.confidence > 70) {
+      return {
+        text: result.text,
+        confidence: result.confidence,
+        quality: 'HIGH',
+        attempts
+      };
     }
+
+    console.log('OCR Attempt 2: Grayscale + contrast');
+    const enhancedBuffer = await preprocessImage(imageBuffer, 'enhance');
+    result = await extractTextWithOCR(enhancedBuffer);
+    attempts.push({
+      method: 'grayscale_contrast',
+      success: result.text.length > 20,
+      textLength: result.text.length,
+      confidence: result.confidence
+    });
+
+    if (result.text.length > 50 && result.confidence > 70) {
+      return {
+        text: result.text,
+        confidence: result.confidence,
+        quality: 'HIGH',
+        attempts
+      };
+    }
+
+    console.log('OCR Attempt 3: Color inversion for dark theme');
+    const invertedBuffer = await preprocessImage(imageBuffer, 'invert');
+    const invertResult = await extractTextWithOCR(invertedBuffer);
+    attempts.push({
+      method: 'color_invert',
+      success: invertResult.text.length > 20,
+      textLength: invertResult.text.length,
+      confidence: invertResult.confidence
+    });
+
+    const bestResult = [result, invertResult].reduce((best, current) => {
+      const bestScore = best.text.length * (best.confidence / 100);
+      const currentScore = current.text.length * (current.confidence / 100);
+      return currentScore > bestScore ? current : best;
+    });
+
+    let quality: 'HIGH' | 'MEDIUM' | 'LOW' | 'FAILED';
+    if (bestResult.text.length === 0) {
+      quality = 'FAILED';
+    } else if (bestResult.text.length > 50 && bestResult.confidence > 60) {
+      quality = 'HIGH';
+    } else if (bestResult.text.length > 20 && bestResult.confidence > 40) {
+      quality = 'MEDIUM';
+    } else {
+      quality = 'LOW';
+    }
+
+    return {
+      text: bestResult.text,
+      confidence: bestResult.confidence,
+      quality,
+      attempts
+    };
   } catch (error) {
     console.error('Text extraction error:', error);
-    return '';
+    return {
+      text: '',
+      confidence: 0,
+      quality: 'FAILED',
+      attempts
+    };
   }
 }
 
-// OCR using Tesseract.js
-async function extractTextWithOCR(imageBuffer: Uint8Array): Promise<string> {
+async function preprocessImage(imageBuffer: Uint8Array, mode: 'enhance' | 'invert'): Promise<Uint8Array> {
+  try {
+    console.log(`Preprocessing mode: ${mode} (placeholder - returning original)`);
+    return imageBuffer;
+  } catch (error) {
+    console.error('Preprocessing error:', error);
+    return imageBuffer;
+  }
+}
+
+async function extractTextWithOCR(imageBuffer: Uint8Array): Promise<{ text: string; confidence: number }> {
   try {
     const worker = await createWorker('eng');
     const { data } = await worker.recognize(imageBuffer);
     await worker.terminate();
-    return data.text;
+
+    const avgConfidence = data.confidence || 0;
+
+    return {
+      text: data.text || '',
+      confidence: Math.round(avgConfidence)
+    };
   } catch (error) {
     console.error('OCR error:', error);
-    return '';
+    return {
+      text: '',
+      confidence: 0
+    };
   }
 }
 
-// Detect payment signals using pattern matching
 function detectPaymentSignals(text: string): PaymentSignals {
   const textUpper = text.toUpperCase();
   const textLower = text.toLowerCase();
 
-  // Amount detection (INR or ₹)
   const amountPatterns = [
     /₹\s*([\d,]+\.?\d*)/,
     /INR\s*([\d,]+\.?\d*)/i,
@@ -237,7 +349,6 @@ function detectPaymentSignals(text: string): PaymentSignals {
     }
   }
 
-  // Transaction reference detection (UTR/Txn ID)
   const transactionPatterns = [
     /(?:UTR|UPI|TXN|TRANSACTION)[\s#:]*([A-Z0-9]{10,20})/i,
     /(?:REF|REFERENCE)[\s#:]*([A-Z0-9]{10,20})/i,
@@ -254,7 +365,6 @@ function detectPaymentSignals(text: string): PaymentSignals {
     }
   }
 
-  // Date detection
   const datePatterns = [
     /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/,
     /\d{4}-\d{2}-\d{2}/,
@@ -271,18 +381,15 @@ function detectPaymentSignals(text: string): PaymentSignals {
     }
   }
 
-  // Status keywords
   const statusKeywords = ['PAID', 'PAYMENT SUCCESSFUL', 'COMPLETED', 'SUCCESS', 'CREDITED'];
   const hasStatusKeyword = statusKeywords.some(keyword => textUpper.includes(keyword));
 
-  // Payment rail keywords
   const paymentKeywords = [
-    'UPI', 'IMPS', 'NEFT', 'RTGS', 'BHIM', 'GOOGLE PAY', 'GPAY', 
+    'UPI', 'IMPS', 'NEFT', 'RTGS', 'BHIM', 'GOOGLE PAY', 'GPAY',
     'PHONEPE', 'PAYTM', 'PAYMENT'
   ];
   const hasPaymentKeyword = paymentKeywords.some(keyword => textUpper.includes(keyword));
 
-  // Bank names
   const bankNames = [
     'SBI', 'STATE BANK', 'HDFC', 'ICICI', 'AXIS', 'KOTAK', 'YES BANK',
     'IDFC', 'BANK OF BARODA', 'BOB', 'PNB', 'PUNJAB NATIONAL', 'CANARA',
@@ -290,7 +397,6 @@ function detectPaymentSignals(text: string): PaymentSignals {
   ];
   const hasBankName = bankNames.some(bank => textUpper.includes(bank));
 
-  // Detect payment type
   let paymentType: string | null = null;
   if (textUpper.includes('UPI')) paymentType = 'UPI';
   else if (textUpper.includes('NEFT')) paymentType = 'NEFT';
@@ -298,7 +404,6 @@ function detectPaymentSignals(text: string): PaymentSignals {
   else if (textUpper.includes('RTGS')) paymentType = 'RTGS';
   else if (textUpper.includes('BANK TRANSFER')) paymentType = 'BANK_TRANSFER';
 
-  // Detect platform
   let platform: string | null = null;
   if (textLower.includes('mygate')) platform = 'MyGate';
   else if (textLower.includes('nobroker')) platform = 'NoBroker';
@@ -324,7 +429,68 @@ function detectPaymentSignals(text: string): PaymentSignals {
   };
 }
 
-// AI Classification using OpenAI
+async function classifyWithAIVision(
+  imageUrl: string,
+  apiKey: string
+): Promise<AIClassification> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at analyzing payment receipt screenshots. Look at the image and determine if it is a valid payment receipt. Extract any visible payment details like amount, date, transaction ID, payer name, and bank/platform.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Analyze this payment screenshot and respond with JSON: {"classification": "Valid payment receipt" or "Invalid/Unclear", "confidence": 0-100, "reason": "explanation", "extracted_data": {"amount": number or null, "has_transaction_id": boolean, "payment_platform": string or null}}'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0].message.content);
+
+    return {
+      classification: result.classification || 'Unknown',
+      confidence: result.confidence || 0,
+      reason: result.reason || 'Vision analysis performed',
+    };
+  } catch (error) {
+    console.error('AI vision classification error:', error);
+    return {
+      classification: 'Error',
+      confidence: 0,
+      reason: 'AI vision analysis failed',
+    };
+  }
+}
+
 async function classifyWithAI(
   text: string,
   apiKey: string
@@ -359,7 +525,7 @@ async function classifyWithAI(
 
     const data = await response.json();
     const result = JSON.parse(data.choices[0].message.content);
-    
+
     return {
       classification: result.classification || 'Unknown',
       confidence: result.confidence || 0,
@@ -375,67 +541,72 @@ async function classifyWithAI(
   }
 }
 
-// Calculate confidence score
 function calculateConfidenceScore(
   signals: PaymentSignals,
-  aiClassification: AIClassification | null
+  aiClassification: AIClassification | null,
+  ocrQuality: string,
+  ocrConfidence: number
 ): { score: number; reason: string } {
   let score = 0;
   const reasons: string[] = [];
 
-  // Amount found → +20
+  if (ocrQuality === 'HIGH') {
+    score += 10;
+    reasons.push(`OCR quality: HIGH (${ocrConfidence}%)`);
+  } else if (ocrQuality === 'MEDIUM') {
+    score += 5;
+    reasons.push(`OCR quality: MEDIUM (${ocrConfidence}%)`);
+  } else if (ocrQuality === 'LOW') {
+    reasons.push(`OCR quality: LOW (${ocrConfidence}%)`);
+  } else {
+    reasons.push('OCR failed - relying on AI vision analysis');
+  }
+
   if (signals.hasAmount) {
     score += 20;
-    reasons.push(`Amount detected: ₹${signals.extractedAmount}`);
+    reasons.push(`Amount: ₹${signals.extractedAmount}`);
   } else {
     reasons.push('No amount detected (-20)');
   }
 
-  // Date found → +15
   if (signals.hasDate) {
     score += 15;
-    reasons.push(`Date detected: ${signals.extractedDate}`);
+    reasons.push(`Date: ${signals.extractedDate}`);
   } else {
-    reasons.push('No date detected (-15)');
+    reasons.push('No date (-15)');
   }
 
-  // Transaction reference found → +30
   if (signals.hasTransactionRef) {
     score += 30;
-    reasons.push(`Transaction reference found: ${signals.extractedTransactionRef}`);
+    reasons.push(`Transaction ref: ${signals.extractedTransactionRef}`);
   } else {
     reasons.push('No transaction reference (-30)');
   }
 
-  // Bank/UPI keyword found → +15
   if (signals.hasPaymentKeyword || signals.hasBankName) {
     score += 15;
     reasons.push('Payment keywords detected');
   }
 
-  // AI confidence > 80 → +20
   if (aiClassification && aiClassification.confidence > 80) {
     score += 20;
-    reasons.push(`AI high confidence (${aiClassification.confidence}%): ${aiClassification.classification}`);
+    reasons.push(`AI confidence: ${aiClassification.confidence}% - ${aiClassification.classification}`);
   } else if (aiClassification && aiClassification.confidence > 60) {
     score += 10;
-    reasons.push(`AI medium confidence (${aiClassification.confidence}%)`);
+    reasons.push(`AI confidence: ${aiClassification.confidence}%`);
   }
 
-  // Penalty: Missing both amount and transaction ref
-  if (!signals.hasAmount && !signals.hasTransactionRef) {
-    score -= 30;
-    reasons.push('Critical: Missing both amount and transaction reference (-30)');
+  if (!signals.hasAmount && !signals.hasTransactionRef && ocrQuality !== 'HIGH') {
+    score -= 20;
+    reasons.push('Critical data missing and low OCR quality (-20)');
   }
 
-  // Cap score between 0 and 100
   score = Math.max(0, Math.min(100, score));
 
   const reason = reasons.join('. ');
   return { score, reason };
 }
 
-// Update validation status in database
 async function updateValidationStatus(
   supabase: any,
   paymentId: string,
