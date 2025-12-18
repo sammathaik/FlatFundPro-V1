@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Download, Loader2, X, Check, MapPin } from 'lucide-react';
+import { Plus, Edit2, Trash2, Download, Loader2, X, Check, MapPin, Info } from 'lucide-react';
 import { supabase, Apartment, CollectionMode } from '../../lib/supabase';
 import { exportToCSV, logAudit, formatDateTime, getCountryFlag } from '../../lib/utils';
 
@@ -7,6 +7,8 @@ export default function ApartmentManagement() {
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [helpContent, setHelpContent] = useState<{title: string; content: string} | null>(null);
   const [editingApartment, setEditingApartment] = useState<Apartment | null>(null);
   const [formData, setFormData] = useState({
     apartment_name: '',
@@ -122,6 +124,24 @@ export default function ApartmentManagement() {
   function handleExport() {
     exportToCSV(apartments, 'apartments');
     logAudit('export', 'apartments', undefined, { count: apartments.length });
+  }
+
+  async function loadHelpContent() {
+    try {
+      const { data, error } = await supabase
+        .from('helpful_tips')
+        .select('title, content')
+        .eq('title', 'Apartment-Level Maintenance Collection Policy')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setHelpContent(data);
+        setShowHelpModal(true);
+      }
+    } catch (error) {
+      console.error('Error loading help content:', error);
+    }
   }
 
   if (loading) {
@@ -317,9 +337,19 @@ export default function ApartmentManagement() {
               </div>
 
               <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Maintenance Collection Mode (Apartment Policy)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Maintenance Collection Mode (Apartment Policy)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={loadHelpContent}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                    Policy Guide
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500 mb-3">
                   This mode defines how maintenance will be calculated within this apartment.
                 </p>
@@ -395,6 +425,93 @@ export default function ApartmentManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showHelpModal && helpContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-white">{helpContent.title}</h2>
+              </div>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="prose prose-sm max-w-none">
+                {helpContent.content.split('\n\n').map((paragraph, index) => {
+                  if (paragraph.startsWith('## ')) {
+                    return (
+                      <h2 key={index} className="text-xl font-bold text-gray-900 mt-6 mb-3 first:mt-0">
+                        {paragraph.replace('## ', '')}
+                      </h2>
+                    );
+                  } else if (paragraph.startsWith('### ')) {
+                    return (
+                      <h3 key={index} className="text-lg font-semibold text-gray-800 mt-5 mb-2">
+                        {paragraph.replace('### ', '')}
+                      </h3>
+                    );
+                  } else if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
+                    return (
+                      <p key={index} className="font-semibold text-gray-900 mb-2">
+                        {paragraph.replace(/\*\*/g, '')}
+                      </p>
+                    );
+                  } else if (paragraph.startsWith('*') && paragraph.endsWith('*')) {
+                    return (
+                      <p key={index} className="italic text-gray-700 bg-blue-50 border-l-4 border-blue-500 p-4 my-4 rounded-r-lg">
+                        {paragraph.replace(/^\*|\*$/g, '')}
+                      </p>
+                    );
+                  } else if (paragraph.startsWith('- ')) {
+                    const items = paragraph.split('\n').filter(line => line.trim());
+                    return (
+                      <ul key={index} className="list-disc list-inside space-y-2 mb-4 text-gray-700">
+                        {items.map((item, i) => (
+                          <li key={i} className="ml-4">
+                            {item.replace('- ', '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('<strong>').map((part, j) => {
+                              if (j === 0) return part;
+                              const [bold, rest] = part.split('</strong>');
+                              return <span key={j}><strong>{bold}</strong>{rest}</span>;
+                            })}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  } else {
+                    return (
+                      <p key={index} className="text-gray-700 mb-3 leading-relaxed">
+                        {paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('<strong>').map((part, i) => {
+                          if (i === 0) return part;
+                          const [bold, rest] = part.split('</strong>');
+                          return <span key={i}><strong className="font-semibold text-gray-900">{bold}</strong>{rest}</span>;
+                        })}
+                      </p>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+              >
+                Got it, thanks!
+              </button>
+            </div>
           </div>
         </div>
       )}
