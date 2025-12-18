@@ -864,7 +864,7 @@ export default function PaymentStatusDashboard({
           <BarChart3 className="w-6 h-6 text-blue-600" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {showChart ? 'Payment Status' : 'Payment Setup'} · {apartmentName}
+              {showChart ? 'Payment Status' : 'Fund Collection Setup'} · {apartmentName}
             </h2>
             <p className="text-gray-600">
               {showChart

@@ -32,7 +32,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
     { id: 'occupants', label: 'Occupants', icon: Users },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
-    { id: 'payment-setup', label: 'Payment Setup', icon: FileText },
+    { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
     { id: 'payment-status', label: 'Payment Status', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
