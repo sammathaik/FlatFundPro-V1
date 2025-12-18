@@ -14,7 +14,9 @@ interface Collection {
   due_date: string;
   start_date?: string;
   end_date?: string;
-  amount_due: number;
+  amount_due?: number;
+  rate_per_sqft?: number;
+  flat_type_rates?: Record<string, number>;
   daily_fine: number;
   is_active: boolean;
   notes?: string;
@@ -31,6 +33,8 @@ interface CollectionFormData {
   start_date: string;
   end_date: string;
   amount_due: string;
+  rate_per_sqft: string;
+  flat_type_rates: Record<string, string>;
   daily_fine: string;
   notes: string;
 }
@@ -48,6 +52,8 @@ const FREQUENCY_LABELS: Record<string, string> = {
   'yearly': 'Annual Collection',
 };
 
+const FLAT_TYPES = ['Studio', '1BHK', '2BHK', '3BHK', '4BHK', '5BHK', 'Penthouse', 'Duplex'];
+
 interface CollectionManagementProps {
   apartmentId: string;
   apartmentName: string;
@@ -64,6 +70,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   const [sendingReminders, setSendingReminders] = useState<string | null>(null);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [selectedCollectionForReminder, setSelectedCollectionForReminder] = useState<string | null>(null);
+  const [apartmentMode, setApartmentMode] = useState<'A' | 'B' | 'C'>('A');
 
   const [formData, setFormData] = useState<CollectionFormData>({
     payment_type: 'maintenance',
@@ -75,13 +82,33 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
     start_date: '',
     end_date: '',
     amount_due: '',
+    rate_per_sqft: '',
+    flat_type_rates: FLAT_TYPES.reduce((acc, type) => ({ ...acc, [type]: '' }), {}),
     daily_fine: '0',
     notes: '',
   });
 
   useEffect(() => {
+    loadApartmentDetails();
     loadCollections();
   }, [apartmentId]);
+
+  async function loadApartmentDetails() {
+    try {
+      const { data, error } = await supabase
+        .from('apartments')
+        .select('default_collection_mode')
+        .eq('id', apartmentId)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setApartmentMode(data.default_collection_mode as 'A' | 'B' | 'C');
+      }
+    } catch (error) {
+      console.error('Error loading apartment details:', error);
+    }
+  }
 
   async function loadCollections() {
     try {
@@ -198,7 +225,11 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
         due_date: collection.due_date,
         start_date: collection.start_date || '',
         end_date: collection.end_date || '',
-        amount_due: collection.amount_due.toString(),
+        amount_due: collection.amount_due?.toString() || '',
+        rate_per_sqft: collection.rate_per_sqft?.toString() || '',
+        flat_type_rates: collection.flat_type_rates
+          ? Object.fromEntries(Object.entries(collection.flat_type_rates).map(([k, v]) => [k, v.toString()]))
+          : FLAT_TYPES.reduce((acc, type) => ({ ...acc, [type]: '' }), {}),
         daily_fine: collection.daily_fine.toString(),
         notes: collection.notes || '',
       });
@@ -214,6 +245,8 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
         start_date: '',
         end_date: '',
         amount_due: '',
+        rate_per_sqft: '',
+        flat_type_rates: FLAT_TYPES.reduce((acc, type) => ({ ...acc, [type]: '' }), {}),
         daily_fine: '0',
         notes: '',
       });
@@ -229,16 +262,38 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.collection_name || !formData.amount_due || !formData.due_date) {
+    // Validation based on apartment mode
+    if (!formData.collection_name || !formData.due_date) {
       setErrorMessage('Please fill in all required fields');
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
 
+    if (apartmentMode === 'A' && !formData.amount_due) {
+      setErrorMessage('Amount Due per Flat is required for Mode A');
+      setTimeout(() => setErrorMessage(null), 3000);
+      return;
+    }
+
+    if (apartmentMode === 'B' && !formData.rate_per_sqft) {
+      setErrorMessage('Rate per Square Foot is required for Mode B');
+      setTimeout(() => setErrorMessage(null), 3000);
+      return;
+    }
+
+    if (apartmentMode === 'C') {
+      const hasAllRates = FLAT_TYPES.every(type => formData.flat_type_rates[type] && parseFloat(formData.flat_type_rates[type]) > 0);
+      if (!hasAllRates) {
+        setErrorMessage('Please enter rates for all flat types for Mode C');
+        setTimeout(() => setErrorMessage(null), 3000);
+        return;
+      }
+    }
+
     try {
       setSaving(true);
 
-      const collectionData = {
+      const collectionData: any = {
         apartment_id: apartmentId,
         payment_type: formData.payment_type,
         payment_frequency: formData.payment_frequency,
@@ -248,11 +303,22 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
         due_date: formData.due_date,
         start_date: formData.start_date || formData.due_date,
         end_date: formData.end_date || null,
-        amount_due: parseFloat(formData.amount_due),
         daily_fine: parseFloat(formData.daily_fine),
         is_active: false,
         notes: formData.notes || null,
       };
+
+      // Add pricing based on apartment mode
+      if (apartmentMode === 'A') {
+        collectionData.amount_due = parseFloat(formData.amount_due);
+      } else if (apartmentMode === 'B') {
+        collectionData.rate_per_sqft = parseFloat(formData.rate_per_sqft);
+      } else if (apartmentMode === 'C') {
+        collectionData.flat_type_rates = Object.fromEntries(
+          Object.entries(formData.flat_type_rates)
+            .map(([k, v]) => [k, parseFloat(v)])
+        );
+      }
 
       if (editingId) {
         const { error } = await supabase
@@ -508,10 +574,22 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                       </p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Amount Due:</span>
-                      <p className="font-medium text-gray-900">
-                        ₹{collection.amount_due.toLocaleString()}
-                      </p>
+                      <span className="text-gray-500">Pricing:</span>
+                      {collection.amount_due && (
+                        <p className="font-medium text-gray-900">
+                          ₹{collection.amount_due.toLocaleString()} per flat
+                        </p>
+                      )}
+                      {collection.rate_per_sqft && (
+                        <p className="font-medium text-gray-900">
+                          ₹{collection.rate_per_sqft}/sq.ft
+                        </p>
+                      )}
+                      {collection.flat_type_rates && (
+                        <p className="font-medium text-gray-900">
+                          Type-Based Rates
+                        </p>
+                      )}
                     </div>
                     <div>
                       <span className="text-gray-500">Due Date:</span>
@@ -680,44 +758,165 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Amount Due per Flat <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.amount_due}
-                      onChange={(e) => setFormData({ ...formData, amount_due: e.target.value })}
-                      placeholder="5000"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Daily Fine (optional)
-                  </label>
-                  <div className="relative">
-                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.daily_fine}
-                      onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
-                      placeholder="0"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                    />
+              {/* Apartment Collection Mode Info */}
+              <div className="border-t border-gray-200 pt-4 pb-2">
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                  <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      Apartment Collection Policy: Mode {apartmentMode}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      {apartmentMode === 'A' && 'Equal/Flat Rate - All flats pay the same amount'}
+                      {apartmentMode === 'B' && 'Area-Based - Payment calculated based on built-up area'}
+                      {apartmentMode === 'C' && 'Type-Based - Payment based on flat type (1BHK, 2BHK, etc.)'}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Mode A: Flat Rate */}
+              {apartmentMode === 'A' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Amount Due per Flat <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.amount_due}
+                        onChange={(e) => setFormData({ ...formData, amount_due: e.target.value })}
+                        placeholder="5000"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">Fixed amount charged to all flats</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Daily Fine (optional)
+                    </label>
+                    <div className="relative">
+                      <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.daily_fine}
+                        onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
+                        placeholder="0"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode B: Area-Based */}
+              {apartmentMode === 'B' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Rate per Square Foot <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.rate_per_sqft}
+                        onChange={(e) => setFormData({ ...formData, rate_per_sqft: e.target.value })}
+                        placeholder="5.00"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">Amount multiplied by flat's built-up area</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Daily Fine (optional)
+                    </label>
+                    <div className="relative">
+                      <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.daily_fine}
+                        onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
+                        placeholder="0"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode C: Type-Based */}
+              {apartmentMode === 'C' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Flat Type Rates <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    {FLAT_TYPES.map((flatType) => (
+                      <div key={flatType}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {flatType}
+                        </label>
+                        <div className="relative">
+                          <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.flat_type_rates[flatType]}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                flat_type_rates: {
+                                  ...formData.flat_type_rates,
+                                  [flatType]: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="0"
+                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 text-sm"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">Enter amount for each flat type</p>
+                  <div className="mt-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Daily Fine (optional)
+                    </label>
+                    <div className="relative max-w-xs">
+                      <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.daily_fine}
+                        onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
+                        placeholder="0"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">

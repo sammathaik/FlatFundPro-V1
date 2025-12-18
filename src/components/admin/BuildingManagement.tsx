@@ -419,7 +419,7 @@ export default function BuildingManagement() {
                   )}
                   {flat.owner_name && (
                     <div className="text-gray-600 truncate" title={flat.owner_name}>
-                      Owner: {flat.owner_name}
+                      Resident: {flat.owner_name}
                     </div>
                   )}
                   {flat.occupant_type && (
@@ -623,7 +623,7 @@ export default function BuildingManagement() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Owner Name
+                  Resident Name
                 </label>
                 <input
                   type="text"

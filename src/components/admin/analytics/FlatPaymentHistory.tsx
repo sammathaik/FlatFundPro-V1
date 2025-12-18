@@ -103,7 +103,7 @@ export default function FlatPaymentHistory({ buildingId }: Props) {
     if (!filteredData.length) return;
     const exportData = filteredData.map(flat => ({
       'Flat Number': flat.flatNumber,
-      'Owner Name': flat.ownerName,
+      'Resident Name': flat.ownerName,
       'Type': flat.occupantType,
       'Total Expected': flat.totalExpected,
       'Total Paid': flat.totalPaid,
@@ -121,7 +121,7 @@ export default function FlatPaymentHistory({ buildingId }: Props) {
     if (!filteredData.length) return;
     const exportData = filteredData.map(flat => ({
       'Flat Number': flat.flatNumber,
-      'Owner Name': flat.ownerName,
+      'Resident Name': flat.ownerName,
       'Type': flat.occupantType,
       'Total Expected': flat.totalExpected,
       'Total Paid': flat.totalPaid,

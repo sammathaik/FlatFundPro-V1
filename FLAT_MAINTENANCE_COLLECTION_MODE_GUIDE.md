@@ -60,7 +60,7 @@ flat_number text NOT NULL
 -- Mode-specific optional fields (no mode selection field!)
 built_up_area NUMERIC(10, 2)              -- Required when apartment uses Mode B
 flat_type TEXT                             -- Required when apartment uses Mode C
-owner_name TEXT                            -- Optional: Owner information
+owner_name TEXT                            -- Optional: Resident information
 occupant_type TEXT ('owner' | 'tenant')   -- Optional: Occupancy type
 updated_at TIMESTAMPTZ DEFAULT now()      -- Automatic timestamp
 ```
@@ -100,7 +100,7 @@ This view provides easy access to flats with their inherited collection mode.
 ✓ Flat Number
 ✓ Building/Block
 ℹ️ Policy: Mode A - Equal/Flat Rate
-✓ Owner Name (optional)
+✓ Resident Name (optional)
 ✓ Occupant Type (optional)
 ```
 
@@ -110,7 +110,7 @@ This view provides easy access to flats with their inherited collection mode.
 ✓ Building/Block
 ℹ️ Policy: Mode B - Area-Based
 ✓ Built-up Area (sq. ft.) - REQUIRED in blue box
-✓ Owner Name (optional)
+✓ Resident Name (optional)
 ✓ Occupant Type (optional)
 ```
 
@@ -120,7 +120,7 @@ This view provides easy access to flats with their inherited collection mode.
 ✓ Building/Block
 ℹ️ Policy: Mode C - Type-Based
 ✓ Flat Type dropdown - REQUIRED in green box
-✓ Owner Name (optional)
+✓ Resident Name (optional)
 ✓ Occupant Type (optional)
 ```
 
@@ -130,7 +130,7 @@ Each flat card displays:
 - Mode-specific details (conditionally shown):
   - Mode B: Built-up area (e.g., "1,200 sq.ft")
   - Mode C: Flat type (e.g., "Type: 2BHK")
-- Owner name (if provided, e.g., "Owner: Rajesh Kumar")
+- Resident name (if provided, e.g., "Resident: Rajesh Kumar")
 - Occupant type (if provided, e.g., "Tenant")
 
 **Note**: No mode badge is shown on flat cards since all flats use the same mode.
@@ -252,7 +252,7 @@ Analytics should:
 6. **If Apartment is Mode A**: No additional fields required
 7. **If Apartment is Mode B**: Enter built-up area (required)
 8. **If Apartment is Mode C**: Select flat type (required)
-9. Optionally: Enter owner name and occupant type
+9. Optionally: Enter resident name and occupant type
 10. Save flat configuration
 
 ### Editing Existing Flats
