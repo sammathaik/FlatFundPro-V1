@@ -582,7 +582,8 @@ export default function DynamicPaymentForm() {
         .insert([submissionData]);
 
       if (dbError) {
-        throw new Error('Failed to save submission');
+        console.error('Database error:', dbError);
+        throw new Error(`Failed to save submission: ${dbError.message}`);
       }
 
       setUploadProgress(100);
