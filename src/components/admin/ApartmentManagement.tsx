@@ -15,7 +15,7 @@ export default function ApartmentManagement() {
     city: '',
     country: '',
     status: 'active' as 'active' | 'inactive',
-    collection_mode: 'A' as CollectionMode
+    default_collection_mode: 'A' as CollectionMode
   });
   const [error, setError] = useState('');
 
@@ -53,7 +53,7 @@ export default function ApartmentManagement() {
       city: apartment.city || '',
       country: apartment.country || '',
       status: apartment.status,
-      collection_mode: apartment.collection_mode || 'A'
+      default_collection_mode: apartment.default_collection_mode || 'A'
     });
     setError('');
     setShowModal(true);
@@ -72,7 +72,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
-            collection_mode: formData.collection_mode,
+            default_collection_mode: formData.default_collection_mode,
           })
           .eq('id', editingApartment.id);
 
@@ -86,7 +86,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
-            collection_mode: formData.collection_mode,
+            default_collection_mode: formData.default_collection_mode,
           }])
           .select()
           .single();
@@ -360,8 +360,8 @@ export default function ApartmentManagement() {
                       type="radio"
                       name="collection_mode"
                       value="A"
-                      checked={formData.collection_mode === 'A'}
-                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      checked={formData.default_collection_mode === 'A'}
+                      onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
                       className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
@@ -375,8 +375,8 @@ export default function ApartmentManagement() {
                       type="radio"
                       name="collection_mode"
                       value="B"
-                      checked={formData.collection_mode === 'B'}
-                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      checked={formData.default_collection_mode === 'B'}
+                      onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
                       className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
@@ -390,8 +390,8 @@ export default function ApartmentManagement() {
                       type="radio"
                       name="collection_mode"
                       value="C"
-                      checked={formData.collection_mode === 'C'}
-                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      checked={formData.default_collection_mode === 'C'}
+                      onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
                       className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
