@@ -214,7 +214,7 @@ This is an automated acknowledgment. Please do not reply to this email.
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'FlatFund Pro <noreply@flatfundpro.com>',
+        from: 'FlatFund Pro <onboarding@resend.dev>',
         to: [email],
         subject: `Payment Received - Under Review | ${paymentTypeLabel} ${formattedAmount}`,
         html: emailHtml,
