@@ -36,9 +36,11 @@ interface ActiveCollection {
   collection_name: string;
   payment_type: string;
   payment_frequency: string;
-  amount_due: number;
+  amount_due: number | null;
   due_date: string;
   daily_fine?: number;
+  rate_per_sqft?: number | null;
+  flat_type_rates?: any;
 }
 
 export default function DynamicPaymentForm() {
@@ -47,6 +49,7 @@ export default function DynamicPaymentForm() {
   const [flats, setFlats] = useState<FlatNumber[]>([]);
   const [activeCollections, setActiveCollections] = useState<ActiveCollection[]>([]);
   const [selectedApartment, setSelectedApartment] = useState<Apartment | null>(null);
+  const [selectedFlat, setSelectedFlat] = useState<FlatNumber | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [loadingData, setLoadingData] = useState(true);
 
@@ -103,12 +106,13 @@ export default function DynamicPaymentForm() {
   }, [formData.flatId, formData.apartmentId]);
 
   useEffect(() => {
-    if (formData.flatId && formData.email && activeCollections.length > 0 && !selectedCollectionId) {
+    if (formData.flatId && formData.email && activeCollections.length > 0 && !selectedCollectionId && selectedFlat) {
       const mostRecentCollection = activeCollections[0];
       setSelectedCollectionId(mostRecentCollection.id);
 
+      const baseAmount = calculateBaseAmount(mostRecentCollection);
       const calculatedAmount = calculateAmountWithFine(
-        mostRecentCollection.amount_due,
+        baseAmount,
         mostRecentCollection.due_date,
         mostRecentCollection.daily_fine || 0,
         formData.payment_date || new Date().toISOString().split('T')[0]
@@ -118,10 +122,10 @@ export default function DynamicPaymentForm() {
         ...prev,
         payment_type: mostRecentCollection.payment_type,
         expected_collection_id: mostRecentCollection.id,
-        payment_amount: calculatedAmount.toString(),
+        payment_amount: calculatedAmount > 0 ? calculatedAmount.toString() : '',
       }));
     }
-  }, [formData.flatId, formData.email, activeCollections]);
+  }, [formData.flatId, formData.email, activeCollections, selectedFlat]);
 
   const loadApartments = async () => {
     try {
@@ -179,7 +183,7 @@ export default function DynamicPaymentForm() {
     try {
       const { data, error } = await supabase
         .from('expected_collections')
-        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date, daily_fine')
+        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date, daily_fine, rate_per_sqft, flat_type_rates')
         .eq('apartment_id', apartmentId)
         .eq('is_active', true)
         .order('due_date', { ascending: true });
@@ -194,24 +198,40 @@ export default function DynamicPaymentForm() {
 
   const loadFlatDetails = async (apartmentId: string, flatId: string) => {
     try {
-      const { data, error } = await supabase
+      // Load flat email mapping
+      const { data: emailData, error: emailError } = await supabase
         .from('flat_email_mappings')
         .select('email, occupant_type, mobile')
         .eq('apartment_id', apartmentId)
         .eq('flat_id', flatId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error loading flat details:', error);
+      if (emailError) {
+        console.error('Error loading flat email details:', emailError);
+      }
+
+      // Load flat number data (for built_up_area and flat_type)
+      const { data: flatData, error: flatError } = await supabase
+        .from('flat_numbers')
+        .select('*')
+        .eq('id', flatId)
+        .maybeSingle();
+
+      if (flatError) {
+        console.error('Error loading flat data:', flatError);
         return;
       }
 
-      if (data) {
+      // Store selected flat for amount calculation
+      setSelectedFlat(flatData);
+
+      // Update form with email data if available
+      if (emailData) {
         setFormData(prev => ({
           ...prev,
-          email: data.email || '',
-          occupant_type: data.occupant_type || '',
-          contact_number: data.mobile || '',
+          email: emailData.email || '',
+          occupant_type: emailData.occupant_type || '',
+          contact_number: emailData.mobile || '',
         }));
       } else {
         setFormData(prev => ({
@@ -226,12 +246,59 @@ export default function DynamicPaymentForm() {
     }
   };
 
+  // Calculate base amount based on collection mode
+  const calculateBaseAmount = (collection: ActiveCollection): number | null => {
+    if (!selectedApartment || !selectedFlat) return null;
+
+    const collectionMode = selectedApartment.default_collection_mode;
+
+    // Mode A: Equal/Flat Rate - use amount_due directly
+    if (collectionMode === 'A') {
+      return collection.amount_due || 0;
+    }
+
+    // Mode B: Area-Based - calculate using rate_per_sqft × built_up_area
+    if (collectionMode === 'B') {
+      if (!collection.rate_per_sqft) {
+        console.error('Mode B collection missing rate_per_sqft');
+        return null;
+      }
+      if (!selectedFlat.built_up_area) {
+        console.error('Mode B flat missing built_up_area');
+        return null;
+      }
+      return Number(collection.rate_per_sqft) * Number(selectedFlat.built_up_area);
+    }
+
+    // Mode C: Type-Based - look up flat type in flat_type_rates
+    if (collectionMode === 'C') {
+      if (!collection.flat_type_rates) {
+        console.error('Mode C collection missing flat_type_rates');
+        return null;
+      }
+      if (!selectedFlat.flat_type) {
+        console.error('Mode C flat missing flat_type');
+        return null;
+      }
+      const rate = collection.flat_type_rates[selectedFlat.flat_type];
+      if (rate === undefined) {
+        console.error(`Mode C: Rate not found for flat type ${selectedFlat.flat_type}`);
+        return null;
+      }
+      return Number(rate);
+    }
+
+    return null;
+  };
+
   const calculateAmountWithFine = (
-    baseAmount: number,
+    baseAmount: number | null,
     dueDate: string,
     dailyFine: number,
     paymentDate: string
   ): number => {
+    if (!baseAmount) return 0;
+
     const due = new Date(dueDate);
     const payment = new Date(paymentDate);
 
@@ -328,8 +395,9 @@ export default function DynamicPaymentForm() {
         if (selectedCollection) {
           setSelectedCollectionId(value);
 
+          const baseAmount = calculateBaseAmount(selectedCollection);
           const calculatedAmount = calculateAmountWithFine(
-            selectedCollection.amount_due,
+            baseAmount,
             selectedCollection.due_date,
             selectedCollection.daily_fine || 0,
             formData.payment_date || new Date().toISOString().split('T')[0]
@@ -339,7 +407,7 @@ export default function DynamicPaymentForm() {
             ...prev,
             payment_type: selectedCollection.payment_type,
             expected_collection_id: value,
-            payment_amount: calculatedAmount.toString(),
+            payment_amount: calculatedAmount > 0 ? calculatedAmount.toString() : '',
           }));
         } else {
           setFormData(prev => ({ ...prev, [name]: value }));
@@ -359,8 +427,9 @@ export default function DynamicPaymentForm() {
       if (selectedCollectionId && value) {
         const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
         if (selectedCollection) {
+          const baseAmount = calculateBaseAmount(selectedCollection);
           const calculatedAmount = calculateAmountWithFine(
-            selectedCollection.amount_due,
+            baseAmount,
             selectedCollection.due_date,
             selectedCollection.daily_fine || 0,
             value
@@ -368,7 +437,7 @@ export default function DynamicPaymentForm() {
 
           setFormData(prev => ({
             ...prev,
-            payment_amount: calculatedAmount.toString(),
+            payment_amount: calculatedAmount > 0 ? calculatedAmount.toString() : '',
           }));
         }
       }
@@ -904,11 +973,15 @@ export default function DynamicPaymentForm() {
                     }`}
                   >
                     <option value="">-- Select Payment Collection --</option>
-                    {activeCollections.map((collection) => (
-                      <option key={collection.id} value={collection.id}>
-                        {collection.collection_name} - ₹{collection.amount_due.toLocaleString()} (Due: {new Date(collection.due_date).toLocaleDateString()})
-                      </option>
-                    ))}
+                    {activeCollections.map((collection) => {
+                      const baseAmount = calculateBaseAmount(collection);
+                      const displayAmount = baseAmount ? `₹${baseAmount.toLocaleString()}` : 'Amount varies';
+                      return (
+                        <option key={collection.id} value={collection.id}>
+                          {collection.collection_name} - {displayAmount} (Due: {new Date(collection.due_date).toLocaleDateString()})
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
                 {errors.payment_type && (
@@ -919,6 +992,26 @@ export default function DynamicPaymentForm() {
               {selectedCollectionId && (() => {
                 const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
                 if (selectedCollection) {
+                  const baseAmount = calculateBaseAmount(selectedCollection);
+
+                  if (baseAmount === null) {
+                    return (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                        <h3 className="text-sm font-semibold text-red-900 mb-2">Unable to Calculate Amount</h3>
+                        <p className="text-sm text-red-800">
+                          {selectedApartment?.default_collection_mode === 'B' && !selectedFlat?.built_up_area &&
+                            'This flat is missing the built-up area required for area-based calculation. Please contact your admin.'}
+                          {selectedApartment?.default_collection_mode === 'C' && !selectedFlat?.flat_type &&
+                            'This flat is missing the flat type required for type-based calculation. Please contact your admin.'}
+                          {selectedApartment?.default_collection_mode === 'B' && selectedFlat?.built_up_area && !selectedCollection.rate_per_sqft &&
+                            'This collection is missing the rate per sq.ft. Please contact your admin.'}
+                          {selectedApartment?.default_collection_mode === 'C' && selectedFlat?.flat_type && !selectedCollection.flat_type_rates &&
+                            'This collection is missing the flat type rates. Please contact your admin.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
                   const paymentDate = formData.payment_date || new Date().toISOString().split('T')[0];
                   const dueDate = new Date(selectedCollection.due_date);
                   const payment = new Date(paymentDate);
@@ -936,7 +1029,17 @@ export default function DynamicPaymentForm() {
                       <h3 className="text-sm font-semibold text-blue-900 mb-2">Payment Details</h3>
                       <div className="space-y-1 text-sm text-blue-800">
                         <p><span className="font-medium">Collection:</span> {selectedCollection.collection_name}</p>
-                        <p><span className="font-medium">Base Amount:</span> ₹{selectedCollection.amount_due.toLocaleString()}</p>
+                        <p><span className="font-medium">Base Amount:</span> ₹{baseAmount.toLocaleString()}</p>
+                        {selectedApartment?.default_collection_mode === 'B' && selectedFlat?.built_up_area && (
+                          <p className="text-xs text-blue-700">
+                            (₹{selectedCollection.rate_per_sqft?.toLocaleString()}/sq.ft × {selectedFlat.built_up_area} sq.ft)
+                          </p>
+                        )}
+                        {selectedApartment?.default_collection_mode === 'C' && selectedFlat?.flat_type && (
+                          <p className="text-xs text-blue-700">
+                            (Rate for {selectedFlat.flat_type})
+                          </p>
+                        )}
                         <p><span className="font-medium">Due Date:</span> {new Date(selectedCollection.due_date).toLocaleDateString()}</p>
                         {isOverdue && selectedCollection.daily_fine && selectedCollection.daily_fine > 0 && (
                           <>
@@ -948,7 +1051,7 @@ export default function DynamicPaymentForm() {
                               ({daysOverdue} days × ₹{selectedCollection.daily_fine.toLocaleString()}/day)
                             </p>
                             <p className="font-bold text-blue-900 pt-2 border-t border-blue-200">
-                              <span className="font-medium">Total Amount:</span> ₹{(selectedCollection.amount_due + fineAmount).toLocaleString()}
+                              <span className="font-medium">Total Amount:</span> ₹{(baseAmount + fineAmount).toLocaleString()}
                             </p>
                           </>
                         )}
