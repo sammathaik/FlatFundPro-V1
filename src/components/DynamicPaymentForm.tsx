@@ -105,6 +105,7 @@ export default function DynamicPaymentForm() {
     }
   }, [formData.flatId, formData.apartmentId]);
 
+  // Auto-select the most recent collection when flat is first selected
   useEffect(() => {
     if (formData.flatId && formData.email && activeCollections.length > 0 && !selectedCollectionId && selectedFlat) {
       const mostRecentCollection = activeCollections[0];
@@ -126,6 +127,30 @@ export default function DynamicPaymentForm() {
       }));
     }
   }, [formData.flatId, formData.email, activeCollections, selectedFlat]);
+
+  // Recalculate amount when flat or collection changes (and a collection is already selected)
+  useEffect(() => {
+    if (selectedCollectionId && selectedFlat && activeCollections.length > 0) {
+      const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+      if (selectedCollection) {
+        const baseAmount = calculateBaseAmount(selectedCollection);
+        const calculatedAmount = calculateAmountWithFine(
+          baseAmount,
+          selectedCollection.due_date,
+          selectedCollection.daily_fine || 0,
+          formData.payment_date || new Date().toISOString().split('T')[0]
+        );
+
+        // Only update if the amount is different to avoid infinite loops
+        if (calculatedAmount > 0 && formData.payment_amount !== calculatedAmount.toString()) {
+          setFormData(prev => ({
+            ...prev,
+            payment_amount: calculatedAmount.toString(),
+          }));
+        }
+      }
+    }
+  }, [selectedFlat, selectedCollectionId, formData.payment_date, activeCollections]);
 
   const loadApartments = async () => {
     try {
