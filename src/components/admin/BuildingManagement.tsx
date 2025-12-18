@@ -423,7 +423,7 @@ export default function BuildingManagement() {
                     </div>
                   )}
                   {flat.occupant_type && (
-                    <div className="text-gray-600 capitalize">
+                    <div className="text-gray-600">
                       {flat.occupant_type}
                     </div>
                   )}
@@ -621,32 +621,43 @@ export default function BuildingManagement() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Resident Name
-                </label>
-                <input
-                  type="text"
-                  value={flatForm.owner_name}
-                  onChange={(e) => setFlatForm({ ...flatForm, owner_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  placeholder="e.g., Rajesh Kumar"
-                />
-              </div>
+              <div className="border-t border-gray-200 pt-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <strong>Optional:</strong> You can store basic resident information here for reference.
+                    To grant system access (login credentials), use the <strong>Occupant Management</strong> module.
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Occupant Type
-                </label>
-                <select
-                  value={flatForm.occupant_type}
-                  onChange={(e) => setFlatForm({ ...flatForm, occupant_type: e.target.value as '' | 'owner' | 'tenant' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                >
-                  <option value="">-- Not Specified --</option>
-                  <option value="owner">Owner</option>
-                  <option value="tenant">Tenant</option>
-                </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Resident Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={flatForm.owner_name}
+                      onChange={(e) => setFlatForm({ ...flatForm, owner_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      placeholder="e.g., Rajesh Kumar"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Occupant Type (Optional)
+                    </label>
+                    <select
+                      value={flatForm.occupant_type}
+                      onChange={(e) => setFlatForm({ ...flatForm, occupant_type: e.target.value as '' | 'Owner' | 'Tenant' })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="">-- Not Specified --</option>
+                      <option value="Owner">Owner</option>
+                      <option value="Tenant">Tenant</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {error && (

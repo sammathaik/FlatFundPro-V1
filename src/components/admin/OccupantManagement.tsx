@@ -428,7 +428,7 @@ export default function OccupantManagement() {
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Occupant Management</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {filteredOccupants.length} {filteredOccupants.length === 1 ? 'occupant' : 'occupants'}
+              {filteredOccupants.length} {filteredOccupants.length === 1 ? 'occupant' : 'occupants'} with system access credentials
               {searchTerm && ` (filtered from ${occupants.length})`}
             </p>
           </div>
@@ -457,6 +457,25 @@ export default function OccupantManagement() {
             <Plus className="w-5 h-5" />
             Add Occupant
           </button>
+        </div>
+      </div>
+
+      {/* Information Banner */}
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <div className="flex items-start gap-3">
+          <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-blue-900 mb-1">About Occupant Management</h3>
+            <p className="text-sm text-blue-800 leading-relaxed">
+              This module manages residents who have <strong>system access credentials</strong> (email and mobile)
+              for logging in and submitting payments. Residents listed here can access the occupant portal.
+            </p>
+            <p className="text-sm text-blue-800 mt-2 leading-relaxed">
+              <strong>Note:</strong> To add basic resident information to a flat (name and type), use the
+              <strong> Building Management</strong> module. Use this module specifically to grant system access
+              by providing email and mobile credentials.
+            </p>
+          </div>
         </div>
       </div>
 
