@@ -56,7 +56,6 @@ export interface FlatNumber {
   id: string;
   block_id: string;
   flat_number: string;
-  maintenance_collection_mode: CollectionMode;
   built_up_area?: number | null;
   flat_type?: string | null;
   owner_name?: string | null;

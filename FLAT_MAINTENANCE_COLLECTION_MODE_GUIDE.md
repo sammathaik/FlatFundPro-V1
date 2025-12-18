@@ -2,25 +2,25 @@
 
 ## Overview
 
-The Flat-Level Maintenance Collection Mode feature allows apartments to define how maintenance charges are calculated, and enables admins to configure individual flats according to these policies. This implementation ensures policy compliance, transparency, and flexibility in maintenance collection.
+The Flat-Level Maintenance Collection Mode feature ensures flats automatically inherit and comply with the apartment's collection policy. This implementation enforces strict policy compliance, transparency, and consistency in maintenance collection.
 
 ## System Architecture
 
-### Three-Tier Collection Mode Structure
+### Automatic Inheritance Model
 
 ```
 Super Admin (Apartment Level)
     ↓ Defines Policy
     default_collection_mode (A, B, or C)
-    ↓
+    ↓ Automatically Inherited
 Admin (Flat Level)
-    ↓ Implements Policy
-    maintenance_collection_mode (A, B, or C)
-    ↓ With mode-specific attributes
+    ↓ Provides Mode-Specific Data
     Mode A: No additional fields required
     Mode B: built_up_area (sq. ft.)
     Mode C: flat_type (1BHK, 2BHK, etc.)
 ```
+
+**Key Principle**: Flats do NOT have their own collection mode selection. They automatically use their apartment's `default_collection_mode`.
 
 ## Collection Modes Explained
 
@@ -46,198 +46,221 @@ Admin (Flat Level)
 
 ### Apartments Table
 ```sql
--- Field renamed for clarity
 default_collection_mode (collection_mode_enum) NOT NULL DEFAULT 'A'
 ```
-This represents the apartment's policy-level collection mode.
+This represents the apartment's policy-level collection mode that all flats automatically inherit.
 
 ### Flat Numbers Table
 ```sql
--- New required field
-maintenance_collection_mode (collection_mode_enum) NOT NULL DEFAULT 'A'
+-- Core fields
+id uuid PRIMARY KEY
+block_id uuid NOT NULL
+flat_number text NOT NULL
 
--- Mode-specific optional fields
-built_up_area NUMERIC(10, 2)              -- Required for Mode B
-flat_type TEXT                             -- Required for Mode C
+-- Mode-specific optional fields (no mode selection field!)
+built_up_area NUMERIC(10, 2)              -- Required when apartment uses Mode B
+flat_type TEXT                             -- Required when apartment uses Mode C
 owner_name TEXT                            -- Optional: Owner information
 occupant_type TEXT ('owner' | 'tenant')   -- Optional: Occupancy type
 updated_at TIMESTAMPTZ DEFAULT now()      -- Automatic timestamp
 ```
 
-### Database Constraints
-- Mode B flats MUST have `built_up_area > 0`
-- Mode C flats MUST have `flat_type` (non-empty)
-- Enforced via CHECK constraints at database level
+**Important**: The `maintenance_collection_mode` field has been REMOVED from flat_numbers table. Flats inherit mode from apartment.
+
+### Database View for Convenience
+```sql
+CREATE VIEW flat_numbers_with_mode AS
+SELECT
+  fn.*,
+  bbp.apartment_id,
+  bbp.block_name,
+  a.apartment_name,
+  a.default_collection_mode as collection_mode
+FROM flat_numbers fn
+JOIN buildings_blocks_phases bbp ON bbp.id = fn.block_id
+JOIN apartments a ON a.id = bbp.apartment_id;
+```
+
+This view provides easy access to flats with their inherited collection mode.
 
 ## User Interface Implementation
 
 ### Admin Flat Management Module
 
 #### 1. Flat Creation/Edit Form
-- **Dynamic Mode Selection**: Radio buttons for Mode A, B, and C
-- **Default Inheritance**: New flats inherit apartment's `default_collection_mode`
-- **Policy Indicator**: Blue badge showing "As per apartment policy"
-- **Mode-Specific Fields**: Conditionally displayed based on selected mode
+- **Policy Display**: Blue information box showing apartment's collection mode
+- **No Mode Selection**: Admins cannot select a different mode for individual flats
+- **Automatic Inheritance**: Flat automatically uses apartment's `default_collection_mode`
+- **Mode-Specific Fields**: Conditionally displayed based on apartment's policy
 
 #### 2. Mode-Specific Field Visibility
 
-**Mode A Selected:**
+**Apartment Mode A (Equal Rate):**
 ```
 ✓ Flat Number
 ✓ Building/Block
-✓ Mode Selection (A selected)
+ℹ️ Policy: Mode A - Equal/Flat Rate
 ✓ Owner Name (optional)
 ✓ Occupant Type (optional)
 ```
 
-**Mode B Selected:**
+**Apartment Mode B (Area-Based):**
 ```
 ✓ Flat Number
 ✓ Building/Block
-✓ Mode Selection (B selected)
+ℹ️ Policy: Mode B - Area-Based
 ✓ Built-up Area (sq. ft.) - REQUIRED in blue box
 ✓ Owner Name (optional)
 ✓ Occupant Type (optional)
 ```
 
-**Mode C Selected:**
+**Apartment Mode C (Type-Based):**
 ```
 ✓ Flat Number
 ✓ Building/Block
-✓ Mode Selection (C selected)
+ℹ️ Policy: Mode C - Type-Based
 ✓ Flat Type dropdown - REQUIRED in green box
 ✓ Owner Name (optional)
 ✓ Occupant Type (optional)
 ```
 
 #### 3. Flat Display Cards
-Each flat card now displays:
-- Flat number
-- Collection mode badge (color-coded):
-  - Mode A: Gray badge
-  - Mode B: Blue badge
-  - Mode C: Green badge
-- Mode-specific details:
+Each flat card displays:
+- Flat number (prominent)
+- Mode-specific details (conditionally shown):
   - Mode B: Built-up area (e.g., "1,200 sq.ft")
-  - Mode C: Flat type (e.g., "2BHK")
-- Owner name (if provided)
+  - Mode C: Flat type (e.g., "Type: 2BHK")
+- Owner name (if provided, e.g., "Owner: Rajesh Kumar")
+- Occupant type (if provided, e.g., "Tenant")
+
+**Note**: No mode badge is shown on flat cards since all flats use the same mode.
 
 ## Validation Rules
 
 ### Client-Side Validation
-1. **Mode Selection**: Mandatory, cannot be empty
-2. **Mode B**: Built-up area must be > 0 if Mode B is selected
-3. **Mode C**: Flat type must be selected if Mode C is chosen
-4. **User-Friendly Messages**: Clear error messages displayed in red boxes
+1. **Mode B (Area-Based)**: Built-up area must be > 0 if apartment uses Mode B
+2. **Mode C (Type-Based)**: Flat type must be selected if apartment uses Mode C
+3. **User-Friendly Messages**: Clear error messages displayed in red boxes
 
 ### Database-Level Validation
-1. **CHECK Constraints**: Enforce mode-specific requirements
-2. **NOT NULL**: `maintenance_collection_mode` is mandatory
-3. **Data Integrity**: Prevents invalid data insertion
+1. **NOT NULL**: Required fields enforced at database level
+2. **Data Integrity**: Prevents invalid data insertion
 
 ## Audit Logging
 
-### Audit Trail for Mode Changes
+### Audit Trail for Flat Changes
 ```javascript
-// When updating a flat with mode change
+// When creating a flat
+{
+  action: 'create',
+  table_name: 'flat_numbers',
+  record_id: flat.id,
+  details: {
+    block_id: 'xxx',
+    flat_number: '101',
+    built_up_area: 1200, // if Mode B
+    flat_type: '2BHK',   // if Mode C
+    // ... other fields
+  }
+}
+
+// When updating a flat
 {
   action: 'update',
   table_name: 'flat_numbers',
   record_id: flat.id,
   details: {
-    previous_mode: 'A',
-    new_mode: 'B',
-    built_up_area: 1200,
-    // ... other fields
+    // updated fields
   }
 }
 ```
 
 ### Audit Events Logged
-- Flat creation with mode selection
-- Mode changes for existing flats
-- Mode-specific attribute updates
+- Flat creation with mode-specific attributes
+- Attribute updates for existing flats
 - Timestamp and user identification
 
 ## Backward Compatibility
 
 ### Data Migration Strategy
-1. **Existing Flats**: Automatically assigned apartment's `default_collection_mode`
-2. **Mode B Flats**: Default `built_up_area` set to 1000 sq.ft (reviewable by admin)
-3. **Mode C Flats**: Default `flat_type` set to '2BHK' (reviewable by admin)
-4. **No Data Loss**: All existing flats remain functional
+1. **Removed Field**: `maintenance_collection_mode` field removed from flat_numbers table
+2. **No Data Loss**: Existing flats remain functional
+3. **View Created**: `flat_numbers_with_mode` view provides backward compatibility for queries
+4. **Automatic Inheritance**: Flats now automatically use apartment's collection mode
 
 ### Migration Notes
-- Admins should review auto-assigned values
-- Update flats with accurate area/type information
-- Mode changes logged for transparency
+- Old data remains intact (built_up_area, flat_type, etc.)
+- Queries can use the `flat_numbers_with_mode` view to get collection_mode
+- No manual data cleanup required
 
 ## Policy Compliance Features
 
 ### 1. Apartment-Level Policy Enforcement
-- Flats cannot deviate from apartment's allowed collection mode
-- Policy indicator visible in UI
-- Help documentation accessible via "Policy Guide" button
+- Flats CANNOT deviate from apartment's collection mode
+- Policy clearly displayed in UI during flat creation/editing
+- Database structure enforces single source of truth (apartment level)
 
-### 2. No Flat-Level Rate Override
-- Flat configuration does NOT include amount fields
-- Rates configured separately in Maintenance Setup module
-- Prevents unauthorized rate modifications
+### 2. No Flat-Level Override
+- No mode selection UI at flat level
+- Mode-specific fields are for data input only, not policy selection
+- Prevents unauthorized policy deviations
 
 ### 3. Transparency & Auditability
-- All mode changes logged with timestamp
-- Clear visual indicators of flat configuration
+- All flat changes logged with timestamp
+- Clear visual indicators of apartment policy
 - Policy documentation accessible to admins
 
 ## Integration Points
 
 ### Expected Collections Module
 The Expected Collections module should:
-- Query flats by `maintenance_collection_mode`
-- Calculate amounts based on mode:
-  - Mode A: Use flat-rate amount
+- Query flats using `flat_numbers_with_mode` view to get collection_mode
+- Calculate amounts based on inherited mode:
+  - Mode A: Use flat-rate amount for all flats
   - Mode B: Use `built_up_area × rate_per_sqft`
   - Mode C: Use `flat_type` to lookup predefined rates
 - Generate collection records accordingly
 
 ### Payment Management Module
 Payment submissions should:
-- Display flat's collection mode for context
+- Query flat's apartment to determine collection mode
+- Display mode context in payment records
 - Validate payment amounts against expected collections
-- Show mode-specific details in payment records
 
 ### Reports & Analytics
 Analytics should:
-- Group flats by collection mode
-- Calculate expected vs. actual collections per mode
-- Provide mode-wise collection performance metrics
+- Use apartment's default_collection_mode for grouping
+- Calculate expected vs. actual collections by apartment
+- Provide apartment-wise collection performance metrics
 
 ## Administrative Workflows
 
-### Super Admin Workflow
+### Super Admin Workflow (Setting Policy)
 1. Navigate to Apartment Management
 2. Create/Edit apartment
 3. Select Default Collection Mode (A, B, or C)
 4. Click "Policy Guide" for detailed explanation
 5. Save apartment configuration
+6. **This mode applies to ALL flats in the apartment**
 
 ### Admin Workflow (Flat Management)
 1. Navigate to Building Management → Flat Numbers
 2. Select building/block
 3. Click "Add Flat"
-4. Enter flat number
-5. Select Maintenance Collection Mode (inherits from apartment default)
-6. If Mode B: Enter built-up area
-7. If Mode C: Select flat type
-8. Optionally: Enter owner name and occupant type
-9. Save flat configuration
+4. View apartment's collection policy (displayed in info box)
+5. Enter flat number
+6. **If Apartment is Mode A**: No additional fields required
+7. **If Apartment is Mode B**: Enter built-up area (required)
+8. **If Apartment is Mode C**: Select flat type (required)
+9. Optionally: Enter owner name and occupant type
+10. Save flat configuration
 
 ### Editing Existing Flats
 1. Locate flat in flat list
 2. Click edit icon
-3. Review current mode configuration
-4. Update mode or mode-specific fields
-5. System validates and saves changes
+3. View current apartment policy (displayed in info box)
+4. Update flat-specific fields (area, type, owner, etc.)
+5. System validates based on apartment's policy
 6. Audit log records the modification
 
 ## Help & Documentation
@@ -247,13 +270,13 @@ Title: "Apartment-Level Maintenance Collection Policy"
 - Accessible via Info button in Apartment Management
 - Explains all three collection modes with examples
 - Covers policy rules and governance principles
-- Provides recommendations for mode selection
+- Emphasizes that policy applies to all flats in apartment
 
 ### Admin Contextual Help
-- Inline help text explaining each field
-- Mode-specific guidance when selecting B or C
-- "As per apartment policy" indicator
-- Visual cues (colored boxes) for required fields
+- Policy information box showing apartment's mode
+- Inline help text explaining mode-specific fields
+- Visual cues (colored boxes) for required fields based on policy
+- No confusing mode selection options
 
 ## Security & Permissions
 
@@ -264,7 +287,7 @@ Title: "Apartment-Level Maintenance Collection Policy"
 - Database-level enforcement
 
 ### Data Integrity
-- CHECK constraints prevent invalid configurations
+- Validation based on apartment's policy
 - NOT NULL constraints ensure required fields
 - Triggers automatically update `updated_at` timestamp
 - Transaction safety for multi-field updates
@@ -275,63 +298,71 @@ Title: "Apartment-Level Maintenance Collection Policy"
 1. Test Mode A flat creation (no additional fields)
 2. Test Mode B flat creation (with built-up area)
 3. Test Mode C flat creation (with flat type)
-4. Test mode switching (A → B, B → C, etc.)
-5. Test validation errors for missing required fields
+4. Test validation errors for missing required fields
+5. Test that flat inherits apartment's mode correctly
 
 ### Integration Testing
-1. Verify apartment policy inheritance
-2. Test flat display with different modes
+1. Verify automatic policy inheritance from apartment
+2. Test flat display with different apartment modes
 3. Validate audit log entries
-4. Verify database constraints
+4. Verify database view returns correct collection_mode
 5. Test RLS policies
 
 ### User Acceptance Testing
 1. Super Admin: Set apartment collection mode
-2. Admin: Create flats with different modes
-3. Admin: Edit flat and change mode
-4. Admin: View flat list with mode indicators
-5. Verify help documentation accessibility
+2. Admin: Create flats and verify policy is displayed
+3. Admin: Verify cannot select different mode for flat
+4. Admin: Edit flat and update mode-specific fields
+5. Verify flat list shows mode-specific details
 
-## Future Enhancements
+## Benefits of This Approach
 
-### Potential Improvements
-1. **Multiple Modes Per Apartment**: Allow apartment to have mixed collection modes
-2. **Dynamic Rate Configuration**: Link flat attributes directly to rate calculation
-3. **Historical Mode Tracking**: Track mode changes over time with effective dates
-4. **Bulk Mode Updates**: Update multiple flats' modes at once
-5. **Mode-Specific Reporting**: Dedicated reports per collection mode
+### 1. Policy Compliance
+- **Single Source of Truth**: Apartment defines policy for all flats
+- **No Deviation Possible**: Flats cannot override apartment policy
+- **Clear Governance**: Administrators know policy applies uniformly
 
-### Considerations
-- Maintain backward compatibility
-- Preserve audit trail integrity
-- Ensure policy compliance framework
-- Minimize complexity for users
+### 2. Simplicity
+- **No Confusing Options**: Admins don't select mode per flat
+- **Reduced Complexity**: Fewer fields and decisions
+- **Clear UI**: Policy displayed, not editable at flat level
+
+### 3. Data Integrity
+- **Database Enforced**: No flat-level mode field to manage
+- **Automatic Consistency**: All flats in apartment follow same policy
+- **Easy Queries**: Join to apartment to get mode
+
+### 4. Maintainability
+- **Centralized Policy**: Change apartment mode to affect all flats
+- **Audit Trail**: Policy changes tracked at apartment level
+- **Cleaner Schema**: Fewer redundant fields
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Issue**: Flat creation fails with constraint violation
+**Issue**: Mode-specific field not showing when creating flat
+**Solution**: Verify apartment has `default_collection_mode` set correctly in Apartment Management
+
+**Issue**: Validation error when saving flat
 **Solution**: Ensure Mode B has built-up area > 0, Mode C has flat type selected
 
-**Issue**: Apartment policy not reflecting in new flats
-**Solution**: Verify apartment has `default_collection_mode` set correctly
+**Issue**: Cannot find flat's collection mode
+**Solution**: Query the `flat_numbers_with_mode` view or join flat_numbers with apartments table
 
-**Issue**: Mode changes not saving
-**Solution**: Check validation errors, ensure required fields are filled
-
-**Issue**: Audit logs not showing mode changes
-**Solution**: Verify audit logging function is called in update operations
+**Issue**: Need to change a flat's collection mode
+**Solution**: Collection mode is set at apartment level. Change the apartment's `default_collection_mode` to affect all flats in that apartment
 
 ## Summary
 
-The Flat-Level Maintenance Collection Mode implementation provides:
-- **Policy-Driven Configuration**: Apartment-level policy governance
-- **Flexible Mode Selection**: Three collection modes to suit different scenarios
-- **Dynamic UI**: Mode-specific fields appear based on selection
-- **Robust Validation**: Client and database-level enforcement
+The revised Flat-Level Maintenance Collection Mode implementation provides:
+- **Automatic Policy Inheritance**: Flats inherit apartment's collection mode
+- **Simplified Administration**: No per-flat mode selection
+- **Strict Policy Compliance**: Enforced at database and UI level
+- **Mode-Specific Data Entry**: Fields appear based on apartment policy
 - **Complete Audit Trail**: All changes logged with context
-- **User-Friendly Interface**: Clear visual indicators and help documentation
-- **Backward Compatible**: Existing data migrated seamlessly
+- **User-Friendly Interface**: Clear policy display without confusing options
+- **Backward Compatible**: Existing data preserved with view for queries
+- **Single Source of Truth**: Apartment defines policy for entire complex
 
-This feature enables transparent, fair, and configurable maintenance collection while maintaining strong policy compliance and data integrity.
+This approach ensures consistent, transparent, and policy-driven maintenance collection while eliminating the possibility of flat-level policy deviations.

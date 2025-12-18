@@ -24,7 +24,6 @@ export default function BuildingManagement() {
   const [flatForm, setFlatForm] = useState({
     block_id: '',
     flat_number: '',
-    maintenance_collection_mode: 'A' as CollectionMode,
     built_up_area: '',
     flat_type: '',
     owner_name: '',
@@ -128,7 +127,6 @@ export default function BuildingManagement() {
       setFlatForm({
         block_id: flat.block_id,
         flat_number: flat.flat_number,
-        maintenance_collection_mode: flat.maintenance_collection_mode,
         built_up_area: flat.built_up_area?.toString() || '',
         flat_type: flat.flat_type || '',
         owner_name: flat.owner_name || '',
@@ -139,7 +137,6 @@ export default function BuildingManagement() {
       setFlatForm({
         block_id: selectedBuilding || (buildings[0]?.id || ''),
         flat_number: '',
-        maintenance_collection_mode: apartmentData?.default_collection_mode || 'A',
         built_up_area: '',
         flat_type: '',
         owner_name: '',
@@ -194,20 +191,17 @@ export default function BuildingManagement() {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (!flatForm.maintenance_collection_mode) {
-      setError('Maintenance Collection Mode is required');
-      return;
-    }
+    // Validation based on apartment's default collection mode
+    const apartmentMode = apartmentData?.default_collection_mode;
 
-    if (flatForm.maintenance_collection_mode === 'B') {
+    if (apartmentMode === 'B') {
       if (!flatForm.built_up_area || parseFloat(flatForm.built_up_area) <= 0) {
         setError('Built-up Area is required for Mode B (Area-Based) and must be greater than 0');
         return;
       }
     }
 
-    if (flatForm.maintenance_collection_mode === 'C') {
+    if (apartmentMode === 'C') {
       if (!flatForm.flat_type || flatForm.flat_type.trim() === '') {
         setError('Flat Type is required for Mode C (Type-Based)');
         return;
@@ -218,7 +212,6 @@ export default function BuildingManagement() {
       const flatData = {
         block_id: flatForm.block_id,
         flat_number: flatForm.flat_number.trim(),
-        maintenance_collection_mode: flatForm.maintenance_collection_mode,
         built_up_area: flatForm.built_up_area ? parseFloat(flatForm.built_up_area) : null,
         flat_type: flatForm.flat_type.trim() || null,
         owner_name: flatForm.owner_name.trim() || null,
@@ -232,11 +225,7 @@ export default function BuildingManagement() {
           .eq('id', editingFlat.id);
 
         if (error) throw error;
-        await logAudit('update', 'flat_numbers', editingFlat.id, {
-          ...flatData,
-          previous_mode: editingFlat.maintenance_collection_mode,
-          new_mode: flatForm.maintenance_collection_mode,
-        });
+        await logAudit('update', 'flat_numbers', editingFlat.id, flatData);
       } else {
         const { data, error } = await supabase
           .from('flat_numbers')
@@ -418,33 +407,24 @@ export default function BuildingManagement() {
                   </div>
                 </div>
                 <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`px-2 py-0.5 rounded text-white font-medium ${
-                      flat.maintenance_collection_mode === 'A' ? 'bg-gray-500' :
-                      flat.maintenance_collection_mode === 'B' ? 'bg-blue-500' :
-                      'bg-green-500'
-                    }`}>
-                      Mode {flat.maintenance_collection_mode}
-                    </span>
-                    <span className="text-gray-600">
-                      {flat.maintenance_collection_mode === 'A' ? 'Flat Rate' :
-                       flat.maintenance_collection_mode === 'B' ? 'Area-Based' :
-                       'Type-Based'}
-                    </span>
-                  </div>
-                  {flat.maintenance_collection_mode === 'B' && flat.built_up_area && (
+                  {apartmentData?.default_collection_mode === 'B' && flat.built_up_area && (
                     <div className="text-gray-600">
                       <span className="font-medium">{flat.built_up_area}</span> sq.ft
                     </div>
                   )}
-                  {flat.maintenance_collection_mode === 'C' && flat.flat_type && (
+                  {apartmentData?.default_collection_mode === 'C' && flat.flat_type && (
                     <div className="text-gray-600">
-                      <span className="font-medium">{flat.flat_type}</span>
+                      Type: <span className="font-medium">{flat.flat_type}</span>
                     </div>
                   )}
                   {flat.owner_name && (
                     <div className="text-gray-600 truncate" title={flat.owner_name}>
-                      {flat.owner_name}
+                      Owner: {flat.owner_name}
+                    </div>
+                  )}
+                  {flat.occupant_type && (
+                    <div className="text-gray-600 capitalize">
+                      {flat.occupant_type}
                     </div>
                   )}
                 </div>
@@ -581,69 +561,23 @@ export default function BuildingManagement() {
                 />
               </div>
 
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Maintenance Collection Mode <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                    <Info className="w-3 h-3" />
-                    <span>As per apartment policy</span>
+              <div className="border-t border-gray-200 pt-4 pb-2">
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      Apartment Collection Policy: Mode {apartmentData?.default_collection_mode}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      {apartmentData?.default_collection_mode === 'A' && 'Equal/Flat Rate - All flats pay the same amount'}
+                      {apartmentData?.default_collection_mode === 'B' && 'Area-Based - Payment based on built-up area'}
+                      {apartmentData?.default_collection_mode === 'C' && 'Type-Based - Payment based on flat type (1BHK, 2BHK, etc.)'}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-gray-500 mb-3">
-                  Default: {apartmentData?.default_collection_mode === 'A' ? 'Equal/Flat Rate' : apartmentData?.default_collection_mode === 'B' ? 'Area-Based' : 'Type-Based'}
-                </p>
-
-                <div className="space-y-2">
-                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="radio"
-                      name="maintenance_collection_mode"
-                      value="A"
-                      checked={flatForm.maintenance_collection_mode === 'A'}
-                      onChange={(e) => setFlatForm({ ...flatForm, maintenance_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm text-gray-900">Mode A: Equal / Flat Rate</div>
-                      <div className="text-xs text-gray-600 mt-0.5">All flats pay the same amount</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="radio"
-                      name="maintenance_collection_mode"
-                      value="B"
-                      checked={flatForm.maintenance_collection_mode === 'B'}
-                      onChange={(e) => setFlatForm({ ...flatForm, maintenance_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm text-gray-900">Mode B: Area-Based</div>
-                      <div className="text-xs text-gray-600 mt-0.5">Payment based on built-up area</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="radio"
-                      name="maintenance_collection_mode"
-                      value="C"
-                      checked={flatForm.maintenance_collection_mode === 'C'}
-                      onChange={(e) => setFlatForm({ ...flatForm, maintenance_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm text-gray-900">Mode C: Type-Based</div>
-                      <div className="text-xs text-gray-600 mt-0.5">Payment based on flat type (1BHK, 2BHK, etc.)</div>
-                    </div>
-                  </label>
                 </div>
               </div>
 
-              {flatForm.maintenance_collection_mode === 'B' && (
+              {apartmentData?.default_collection_mode === 'B' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Built-up Area (sq. ft.) <span className="text-red-500">*</span>
@@ -662,7 +596,7 @@ export default function BuildingManagement() {
                 </div>
               )}
 
-              {flatForm.maintenance_collection_mode === 'C' && (
+              {apartmentData?.default_collection_mode === 'C' && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Flat Type <span className="text-red-500">*</span>
