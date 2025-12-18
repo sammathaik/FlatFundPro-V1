@@ -30,6 +30,8 @@ export const supabase = createClient(fallbackUrl, fallbackKey, {
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
+export type CollectionMode = 'A' | 'B' | 'C';
+
 export interface Apartment {
   id: string;
   apartment_name: string;
@@ -37,6 +39,7 @@ export interface Apartment {
   country?: string;
   status: 'active' | 'inactive';
   public_access_code?: string | null;
+  allowed_collection_modes?: CollectionMode[];
   created_at: string;
   updated_at: string;
 }

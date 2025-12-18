@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Download, Loader2, X, Check, MapPin } from 'lucide-react';
-import { supabase, Apartment } from '../../lib/supabase';
+import { supabase, Apartment, CollectionMode } from '../../lib/supabase';
 import { exportToCSV, logAudit, formatDateTime, getCountryFlag } from '../../lib/utils';
 
 export default function ApartmentManagement() {
@@ -12,7 +12,8 @@ export default function ApartmentManagement() {
     apartment_name: '',
     city: '',
     country: '',
-    status: 'active' as 'active' | 'inactive'
+    status: 'active' as 'active' | 'inactive',
+    allowed_collection_modes: ['A', 'B', 'C'] as CollectionMode[]
   });
   const [error, setError] = useState('');
 
@@ -38,7 +39,7 @@ export default function ApartmentManagement() {
 
   function openCreateModal() {
     setEditingApartment(null);
-    setFormData({ apartment_name: '', city: '', country: '', status: 'active' });
+    setFormData({ apartment_name: '', city: '', country: '', status: 'active', allowed_collection_modes: ['A', 'B', 'C'] });
     setError('');
     setShowModal(true);
   }
@@ -49,15 +50,43 @@ export default function ApartmentManagement() {
       apartment_name: apartment.apartment_name,
       city: apartment.city || '',
       country: apartment.country || '',
-      status: apartment.status
+      status: apartment.status,
+      allowed_collection_modes: apartment.allowed_collection_modes || ['A', 'B', 'C']
     });
     setError('');
     setShowModal(true);
   }
 
+  function toggleCollectionMode(mode: CollectionMode) {
+    setFormData(prev => {
+      const modes = [...prev.allowed_collection_modes];
+      const index = modes.indexOf(mode);
+
+      if (index > -1) {
+        // Don't allow removing if it's the last mode
+        if (modes.length === 1) {
+          setError('At least one collection mode must be enabled');
+          return prev;
+        }
+        modes.splice(index, 1);
+      } else {
+        modes.push(mode);
+      }
+
+      setError('');
+      return { ...prev, allowed_collection_modes: modes };
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    // Validate collection modes
+    if (formData.allowed_collection_modes.length === 0) {
+      setError('At least one collection mode must be enabled');
+      return;
+    }
 
     try {
       if (editingApartment) {
@@ -68,6 +97,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
+            allowed_collection_modes: formData.allowed_collection_modes,
           })
           .eq('id', editingApartment.id);
 
@@ -81,6 +111,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
+            allowed_collection_modes: formData.allowed_collection_modes,
           }])
           .select()
           .single();
@@ -243,8 +274,8 @@ export default function ApartmentManagement() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full my-8">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-xl font-bold text-gray-900">
                 {editingApartment ? 'Edit Apartment' : 'Add New Apartment'}
@@ -310,6 +341,56 @@ export default function ApartmentManagement() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Maintenance Collection Modes (Apartment Policy)
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  These modes define how maintenance can be calculated within this apartment.
+                </p>
+
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowed_collection_modes.includes('A')}
+                      onChange={() => toggleCollectionMode('A')}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-gray-900">Mode A: Equal / Flat Rate</div>
+                      <div className="text-xs text-gray-600 mt-0.5">All flats pay the same amount regardless of size or type</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowed_collection_modes.includes('B')}
+                      onChange={() => toggleCollectionMode('B')}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-gray-900">Mode B: Area-Based (Built-up Area)</div>
+                      <div className="text-xs text-gray-600 mt-0.5">Payment calculated based on the flat's built-up area in sq.ft</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowed_collection_modes.includes('C')}
+                      onChange={() => toggleCollectionMode('C')}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-gray-900">Mode C: Flat-Type Based</div>
+                      <div className="text-xs text-gray-600 mt-0.5">Payment based on flat type (e.g., 1BHK, 2BHK, 3BHK, etc.)</div>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {error && (
