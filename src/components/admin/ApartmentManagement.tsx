@@ -13,7 +13,7 @@ export default function ApartmentManagement() {
     city: '',
     country: '',
     status: 'active' as 'active' | 'inactive',
-    allowed_collection_modes: ['A', 'B', 'C'] as CollectionMode[]
+    collection_mode: 'A' as CollectionMode
   });
   const [error, setError] = useState('');
 
@@ -39,7 +39,7 @@ export default function ApartmentManagement() {
 
   function openCreateModal() {
     setEditingApartment(null);
-    setFormData({ apartment_name: '', city: '', country: '', status: 'active', allowed_collection_modes: ['A', 'B', 'C'] });
+    setFormData({ apartment_name: '', city: '', country: '', status: 'active', collection_mode: 'A' });
     setError('');
     setShowModal(true);
   }
@@ -51,42 +51,15 @@ export default function ApartmentManagement() {
       city: apartment.city || '',
       country: apartment.country || '',
       status: apartment.status,
-      allowed_collection_modes: apartment.allowed_collection_modes || ['A', 'B', 'C']
+      collection_mode: apartment.collection_mode || 'A'
     });
     setError('');
     setShowModal(true);
   }
 
-  function toggleCollectionMode(mode: CollectionMode) {
-    setFormData(prev => {
-      const modes = [...prev.allowed_collection_modes];
-      const index = modes.indexOf(mode);
-
-      if (index > -1) {
-        // Don't allow removing if it's the last mode
-        if (modes.length === 1) {
-          setError('At least one collection mode must be enabled');
-          return prev;
-        }
-        modes.splice(index, 1);
-      } else {
-        modes.push(mode);
-      }
-
-      setError('');
-      return { ...prev, allowed_collection_modes: modes };
-    });
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-
-    // Validate collection modes
-    if (formData.allowed_collection_modes.length === 0) {
-      setError('At least one collection mode must be enabled');
-      return;
-    }
 
     try {
       if (editingApartment) {
@@ -97,7 +70,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
-            allowed_collection_modes: formData.allowed_collection_modes,
+            collection_mode: formData.collection_mode,
           })
           .eq('id', editingApartment.id);
 
@@ -111,7 +84,7 @@ export default function ApartmentManagement() {
             city: formData.city.trim() || null,
             country: formData.country.trim() || null,
             status: formData.status,
-            allowed_collection_modes: formData.allowed_collection_modes,
+            collection_mode: formData.collection_mode,
           }])
           .select()
           .single();
@@ -345,19 +318,21 @@ export default function ApartmentManagement() {
 
               <div className="border-t border-gray-200 pt-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Maintenance Collection Modes (Apartment Policy)
+                  Maintenance Collection Mode (Apartment Policy)
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  These modes define how maintenance can be calculated within this apartment.
+                  This mode defines how maintenance will be calculated within this apartment.
                 </p>
 
                 <div className="space-y-3">
                   <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                     <input
-                      type="checkbox"
-                      checked={formData.allowed_collection_modes.includes('A')}
-                      onChange={() => toggleCollectionMode('A')}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                      type="radio"
+                      name="collection_mode"
+                      value="A"
+                      checked={formData.collection_mode === 'A'}
+                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode A: Equal / Flat Rate</div>
@@ -367,10 +342,12 @@ export default function ApartmentManagement() {
 
                   <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                     <input
-                      type="checkbox"
-                      checked={formData.allowed_collection_modes.includes('B')}
-                      onChange={() => toggleCollectionMode('B')}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                      type="radio"
+                      name="collection_mode"
+                      value="B"
+                      checked={formData.collection_mode === 'B'}
+                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode B: Area-Based (Built-up Area)</div>
@@ -380,10 +357,12 @@ export default function ApartmentManagement() {
 
                   <label className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                     <input
-                      type="checkbox"
-                      checked={formData.allowed_collection_modes.includes('C')}
-                      onChange={() => toggleCollectionMode('C')}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                      type="radio"
+                      name="collection_mode"
+                      value="C"
+                      checked={formData.collection_mode === 'C'}
+                      onChange={(e) => setFormData({ ...formData, collection_mode: e.target.value as CollectionMode })}
+                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode C: Flat-Type Based</div>

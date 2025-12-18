@@ -39,7 +39,7 @@ export interface Apartment {
   country?: string;
   status: 'active' | 'inactive';
   public_access_code?: string | null;
-  allowed_collection_modes?: CollectionMode[];
+  collection_mode: CollectionMode;
   created_at: string;
   updated_at: string;
 }
