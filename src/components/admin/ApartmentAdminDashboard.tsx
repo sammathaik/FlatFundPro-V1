@@ -9,6 +9,7 @@ import OccupantManagement from './OccupantManagement';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import AnalyticsReports from './AnalyticsReports';
+import MaintenanceCollectionsActiveSummary from './MaintenanceCollectionsActiveSummary';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApartmentAdminDashboard() {
@@ -24,6 +25,7 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'occupants' && <OccupantManagement />}
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
+      {activeTab === 'collections' && <MaintenanceCollectionsActiveSummary />}
       {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
       {activeTab === 'analytics' && (
         adminData?.apartment_id ? (
