@@ -123,14 +123,18 @@ export default function OccupantManagement() {
 
       const { data: latestPayments } = await supabase
         .from('payment_submissions')
-        .select('flat_id, name, created_at')
+        .select('flat_id, name, contact_number, created_at')
         .in('flat_id', flatIds)
         .order('created_at', { ascending: false });
 
       const nameByFlatId: Record<string, string> = {};
+      const mobileByFlatId: Record<string, string> = {};
       latestPayments?.forEach((payment: any) => {
         if (!nameByFlatId[payment.flat_id]) {
           nameByFlatId[payment.flat_id] = payment.name;
+        }
+        if (!mobileByFlatId[payment.flat_id] && payment.contact_number) {
+          mobileByFlatId[payment.flat_id] = payment.contact_number;
         }
       });
 
@@ -144,7 +148,7 @@ export default function OccupantManagement() {
         flat_id: item.flat_id,
         flat_number: item.flat_numbers.flat_number,
         email: item.email,
-        mobile: item.mobile,
+        mobile: item.mobile || mobileByFlatId[item.flat_id] || null,
         name: item.name,
         occupant_name: nameByFlatId[item.flat_id] || null,
         occupant_type: item.occupant_type,
