@@ -28,7 +28,8 @@ type FlatCollectionStatus = {
   expected_amount: number;
   realised_amount: number;
   shortfall: number;
-  status: 'paid' | 'partial' | 'unpaid';
+  statuses: string[];
+  payment_count: number;
   owner_name: string | null;
   occupant_details: OccupantDetails | null;
 };
@@ -159,19 +160,14 @@ export default function MaintenanceCollectionsActiveSummary() {
 
           const flatPayments = payments.filter(
             p => p.flat_id === flat.id &&
-            p.expected_collection_id === collection.id &&
-            p.status === 'Approved'
+            p.expected_collection_id === collection.id
           );
 
           const realised = flatPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
           const shortfall = Math.max(0, expected - realised);
 
-          let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-          if (realised >= expected - 0.01) {
-            status = 'paid';
-          } else if (realised > 0) {
-            status = 'partial';
-          }
+          const uniqueStatuses = [...new Set(flatPayments.map(p => p.status).filter(Boolean))];
+          const paymentCount = flatPayments.length;
 
           total_expected += expected;
           total_realised += realised;
@@ -183,7 +179,8 @@ export default function MaintenanceCollectionsActiveSummary() {
             expected_amount: expected,
             realised_amount: realised,
             shortfall,
-            status,
+            statuses: uniqueStatuses,
+            payment_count: paymentCount,
             owner_name: flat.owner_name,
             occupant_details: occupantMap.get(flat.id) || null,
           });
@@ -280,6 +277,27 @@ export default function MaintenanceCollectionsActiveSummary() {
     return `${symbol}${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
+  function getStatusColor(statuses: string[]): string {
+    if (statuses.length === 0) return 'border-l-4 border-l-gray-300';
+    if (statuses.includes('Approved')) return 'border-l-4 border-l-green-500';
+    if (statuses.includes('Received')) return 'border-l-4 border-l-blue-500';
+    if (statuses.includes('Reviewed')) return 'border-l-4 border-l-amber-500';
+    return 'border-l-4 border-l-gray-300';
+  }
+
+  function getStatusBadgeColor(status: string): string {
+    switch (status) {
+      case 'Approved':
+        return 'bg-green-100 text-green-800';
+      case 'Received':
+        return 'bg-blue-100 text-blue-800';
+      case 'Reviewed':
+        return 'bg-amber-100 text-amber-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
   async function handleExportExcel(summary: CollectionSummary) {
     const data = summary.flats.map(flat => ({
       'Block/Building': flat.block_name,
@@ -287,7 +305,8 @@ export default function MaintenanceCollectionsActiveSummary() {
       'Expected Amount': flat.expected_amount,
       'Realised Amount': flat.realised_amount,
       'Shortfall': flat.shortfall,
-      'Status': flat.status.toUpperCase(),
+      'Status': flat.statuses.length > 0 ? flat.statuses.join(', ') : 'No Payment',
+      'Payment Count': flat.payment_count,
     }));
 
     data.push({
@@ -297,6 +316,7 @@ export default function MaintenanceCollectionsActiveSummary() {
       'Realised Amount': summary.total_realised,
       'Shortfall': summary.total_shortfall,
       'Status': '',
+      'Payment Count': '',
     });
 
     const fileName = `${summary.collection.collection_name || 'Collection'}_${new Date().toISOString().split('T')[0]}`;
@@ -304,14 +324,15 @@ export default function MaintenanceCollectionsActiveSummary() {
   }
 
   async function handleExportCSV(summary: CollectionSummary) {
-    const headers = ['Block/Building', 'Flat Number', 'Expected Amount', 'Realised Amount', 'Shortfall', 'Status'];
+    const headers = ['Block/Building', 'Flat Number', 'Expected Amount', 'Realised Amount', 'Shortfall', 'Status', 'Payment Count'];
     const rows = summary.flats.map(flat => [
       flat.block_name,
       flat.flat_number,
       flat.expected_amount.toString(),
       flat.realised_amount.toString(),
       flat.shortfall.toString(),
-      flat.status.toUpperCase(),
+      flat.statuses.length > 0 ? flat.statuses.join(', ') : 'No Payment',
+      flat.payment_count.toString(),
     ]);
 
     rows.push([
@@ -320,6 +341,7 @@ export default function MaintenanceCollectionsActiveSummary() {
       summary.total_expected.toString(),
       summary.total_realised.toString(),
       summary.total_shortfall.toString(),
+      '',
       '',
     ]);
 
@@ -388,7 +410,7 @@ export default function MaintenanceCollectionsActiveSummary() {
                 <td>${formatCurrency(flat.expected_amount)}</td>
                 <td>${formatCurrency(flat.realised_amount)}</td>
                 <td>${formatCurrency(flat.shortfall)}</td>
-                <td>${flat.status.toUpperCase()}</td>
+                <td>${flat.statuses.length > 0 ? flat.statuses.join(', ') : 'No Payment'}</td>
               </tr>
             `).join('')}
             <tr class="total-row">
@@ -603,11 +625,7 @@ export default function MaintenanceCollectionsActiveSummary() {
                             {sortedFlats.map((flat, index) => (
                               <tr
                                 key={flat.flat_id}
-                                className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors ${
-                                  flat.status === 'paid' ? 'border-l-4 border-l-green-500' :
-                                  flat.status === 'partial' ? 'border-l-4 border-l-amber-500' :
-                                  'border-l-4 border-l-red-500'
-                                }`}
+                                className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors ${getStatusColor(flat.statuses)}`}
                               >
                                 <td className="px-4 py-3 text-sm text-gray-900">{flat.block_name}</td>
                                 <td className="px-4 py-3 text-sm font-medium text-gray-900">{flat.flat_number}</td>
@@ -617,13 +635,22 @@ export default function MaintenanceCollectionsActiveSummary() {
                                   {formatCurrency(flat.shortfall)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                    flat.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                    flat.status === 'partial' ? 'bg-amber-100 text-amber-800' :
-                                    'bg-red-100 text-red-800'
-                                  }`}>
-                                    {flat.status === 'paid' ? 'PAID' : flat.status === 'partial' ? 'PARTIAL' : 'UNPAID'}
-                                  </span>
+                                  {flat.statuses.length === 0 ? (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                      No Payment
+                                    </span>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-1 justify-center">
+                                      {flat.statuses.map((status, idx) => (
+                                        <span
+                                          key={idx}
+                                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(status)}`}
+                                        >
+                                          {status}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   <button
