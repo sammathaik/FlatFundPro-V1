@@ -33,7 +33,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'occupants', label: 'Occupants', icon: Users },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
     { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
-    { id: 'payment-status', label: 'Fund Consolidation Status', icon: BarChart3 },
+    { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
