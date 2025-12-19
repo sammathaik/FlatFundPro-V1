@@ -21,7 +21,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'admins', label: 'Admins', icon: Users },
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
-    { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
+    { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
     { id: 'settings', label: 'System Settings', icon: Settings },
     { id: 'audit', label: 'Audit Logs', icon: Shield },
@@ -35,7 +35,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
     { id: 'collections', label: 'Collections', icon: DollarSign },
     { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
-    { id: 'analytics', label: 'Analytics & Reports', icon: TrendingUp },
+    { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
