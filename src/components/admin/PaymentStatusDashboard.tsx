@@ -21,7 +21,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 type BlockWithFlats = {
   id: string;
   block_name: string;
-  flats: { id: string; flat_number: string }[];
+  flats: { id: string; flat_number: string; flat_type: string | null; built_up_area: number | null }[];
 };
 
 type PaymentSnapshot = {
@@ -191,7 +191,7 @@ export default function PaymentStatusDashboard({
           .order('due_date', { ascending: false }),
         supabase
           .from('buildings_blocks_phases')
-          .select('id, block_name, flats:flat_numbers(id, flat_number)')
+          .select('id, block_name, flats:flat_numbers(id, flat_number, flat_type, built_up_area)')
           .eq('apartment_id', apartmentId)
           .order('block_name'),
         supabase
@@ -262,8 +262,25 @@ export default function PaymentStatusDashboard({
     [expectedCollections]
   );
 
+  function getExpectedAmountForFlat(
+    collection: ExpectedCollection,
+    flat: { flat_type: string | null; built_up_area: number | null }
+  ): number {
+    if (collection.flat_type_rates && flat.flat_type) {
+      const rate = collection.flat_type_rates[flat.flat_type];
+      if (rate !== undefined) {
+        return rate;
+      }
+    }
+
+    if (collection.rate_per_sqft && flat.built_up_area) {
+      return collection.rate_per_sqft * flat.built_up_area;
+    }
+
+    return Number(collection.amount_due || 0);
+  }
+
   function getCollectionStats(collection: ExpectedCollection) {
-    const baseAmount = Number(collection.amount_due || 0);
     const dailyFine = Number(collection.daily_fine || 0);
     const dueDate = new Date(collection.due_date);
     dueDate.setHours(0, 0, 0, 0);
@@ -276,6 +293,8 @@ export default function PaymentStatusDashboard({
 
     blocks.forEach(block => {
       block.flats.forEach(flat => {
+        const baseAmount = getExpectedAmountForFlat(collection, flat);
+
         const relevantPayments = payments.filter(
           payment => payment.flat_id === flat.id && matchesCollection(payment, collection)
         );
@@ -376,13 +395,14 @@ export default function PaymentStatusDashboard({
   }
 
   function getBlockStatuses(collection: ExpectedCollection) {
-    const baseAmount = Number(collection.amount_due || 0);
     const dailyFine = Number(collection.daily_fine || 0);
     const dueDate = new Date(collection.due_date);
     dueDate.setHours(0, 0, 0, 0);
 
     return blocks.map((block) => {
       const flats = (block.flats || []).map((flat) => {
+        const baseAmount = getExpectedAmountForFlat(collection, flat);
+
         const relevantPayments = payments.filter(
           (payment) => payment.flat_id === flat.id && matchesCollection(payment, collection),
         );

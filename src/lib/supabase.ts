@@ -130,7 +130,7 @@ export interface ExpectedCollection {
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
   quarter_basis?: 'financial' | 'yearly';
   due_date: string;
-  amount_due: number;
+  amount_due: number | null;
   daily_fine: number;
   notes?: string | null;
   payment_frequency?: 'one-time' | 'monthly' | 'quarterly' | 'yearly';
@@ -138,6 +138,8 @@ export interface ExpectedCollection {
   collection_name?: string | null;
   start_date?: string | null;
   end_date?: string | null;
+  rate_per_sqft?: number | null;
+  flat_type_rates?: Record<string, number> | null;
   created_at: string;
   updated_at: string;
 }
