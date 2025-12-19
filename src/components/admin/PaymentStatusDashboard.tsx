@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, Bell, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, Power, PowerOff, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bell, CheckCircle2, ChevronDown, ChevronUp, Eye, Loader2, Mail, Power, PowerOff, RefreshCcw, Trash2 } from 'lucide-react';
 import { supabase, ExpectedCollection } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -170,6 +170,7 @@ export default function PaymentStatusDashboard({
   const [reminderMessage, setReminderMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [selectedCollectionForReminder, setSelectedCollectionForReminder] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const currencySymbol = useMemo(() => getCurrencySymbol(apartmentCountry), [apartmentCountry]);
 
@@ -690,29 +691,18 @@ export default function PaymentStatusDashboard({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-blue-600" />
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {showChart ? 'Payment Status' : 'Fund Collection Setup'} · {apartmentName}
-            </h2>
-            <p className="text-gray-600">
-              {showChart
-                ? 'Live view of maintenance collections across every flat'
-                : 'Define expected maintenance/other collections and fines'}
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <BarChart3 className="w-6 h-6 text-blue-600" />
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {showChart ? 'Payment Status' : 'Fund Collection Setup'} · {apartmentName}
+          </h2>
+          <p className="text-gray-600">
+            {showChart
+              ? 'Live view of maintenance collections across every flat'
+              : 'Define expected maintenance/other collections and fines'}
+          </p>
         </div>
-        {showChart && publicAccessCode && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-900">
-            <p className="font-semibold mb-1">Guest link</p>
-            <p className="text-blue-800 break-all">
-              {`${window.location.origin}/admin/payment-status?apartment=${publicAccessCode}`}
-            </p>
-            <p className="text-blue-700 mt-1">Share this link with residents to let them track payment status.</p>
-          </div>
-        )}
       </div>
 
       {showChart && activeCollections.length === 0 && archivedCollections.length === 0 && (
@@ -1203,6 +1193,22 @@ export default function PaymentStatusDashboard({
                   Send Reminders
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showChart && publicAccessCode && (
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="bg-gray-50 rounded-lg px-4 py-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Public Access</p>
+            <p className="text-sm text-gray-700 mb-2">
+              Share this link with residents to allow them to track payment status:
+            </p>
+            <div className="bg-white border border-gray-200 rounded px-3 py-2">
+              <code className="text-xs text-gray-600 break-all">
+                {`${window.location.origin}/admin/payment-status?apartment=${publicAccessCode}`}
+              </code>
             </div>
           </div>
         </div>
