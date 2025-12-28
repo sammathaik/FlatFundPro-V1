@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import React from 'react';
-import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Shield, AlertTriangle } from 'lucide-react';
+import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Shield, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
@@ -68,6 +68,8 @@ export default function PaymentManagement() {
   const [paymentToDelete, setPaymentToDelete] = useState<PaymentWithDetails | null>(null);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -370,6 +372,21 @@ export default function PaymentManagement() {
   const allSelected = filteredPayments.length > 0 && selectedIds.size === filteredPayments.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < filteredPayments.length;
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, quarterFilter, paymentTypeFilter, fraudFilter]);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -412,86 +429,102 @@ export default function PaymentManagement() {
         </div>
       </div>
 
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or flat..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-          />
-        </div>
-        <div className="sm:w-48 relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <select
-            value={quarterFilter}
-            onChange={(e) => setQuarterFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
-          >
-            <option value="all">All Quarters</option>
-            {Array.from(new Set(payments.map(p => p.payment_quarter).filter(Boolean))).sort().reverse().map(q => (
-              <option key={q} value={q}>{q}</option>
-            ))}
-          </select>
-        </div>
-        <div className="sm:w-48 relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
-          >
-            <option value="all">All Status</option>
-            <option value="Received">Received</option>
-            <option value="Reviewed">Reviewed</option>
-            <option value="Approved">Approved</option>
-          </select>
-        </div>
-        <div className="sm:w-60 relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <select
-            value={paymentTypeFilter}
-            onChange={(e) => setPaymentTypeFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
-          >
-            <option value="all">All Payment Types</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="contingency">Contingency</option>
-            <option value="emergency">Emergency</option>
-          </select>
-        </div>
-        <div className="sm:w-48 relative">
-          <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <select
-            value={fraudFilter}
-            onChange={(e) => setFraudFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="flagged">Flagged Only</option>
-            <option value="critical">Critical (80+)</option>
-            <option value="high">High (60-79)</option>
-            <option value="medium">Medium (40-59)</option>
-            <option value="clean">Clean (&lt;40)</option>
-          </select>
+      <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="xl:col-span-2 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or flat..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-shadow"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={quarterFilter}
+              onChange={(e) => setQuarterFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+            >
+              <option value="all">All Quarters</option>
+              {Array.from(new Set(payments.map(p => p.payment_quarter).filter(Boolean))).sort().reverse().map(q => (
+                <option key={q} value={q}>{q}</option>
+              ))}
+            </select>
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+            >
+              <option value="all">All Status</option>
+              <option value="Received">Received</option>
+              <option value="Reviewed">Reviewed</option>
+              <option value="Approved">Approved</option>
+            </select>
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={paymentTypeFilter}
+              onChange={(e) => setPaymentTypeFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+            >
+              <option value="all">All Types</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="contingency">Contingency</option>
+              <option value="emergency">Emergency</option>
+            </select>
+          </div>
+          <div className="md:col-span-2 lg:col-span-1 relative">
+            <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={fraudFilter}
+              onChange={(e) => setFraudFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+            >
+              <option value="all">All Risk Levels</option>
+              <option value="flagged">Flagged Only</option>
+              <option value="critical">Critical (80+)</option>
+              <option value="high">High (60-79)</option>
+              <option value="medium">Medium (40-59)</option>
+              <option value="clean">Clean (&lt;40)</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
-        <p className="text-sm text-blue-800">
-          Showing {filteredPayments.length} of {payments.length} payment submissions
-          {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
-        </p>
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-4 mb-6 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-800">
+            <span className="font-semibold">{filteredPayments.length}</span> of{' '}
+            <span className="font-semibold">{payments.length}</span> payment{payments.length !== 1 ? 's' : ''} shown
+            {selectedIds.size > 0 && (
+              <span className="ml-2 text-amber-700 font-semibold">
+                · {selectedIds.size} selected
+              </span>
+            )}
+          </p>
+          {totalPages > 1 && (
+            <p className="text-xs text-gray-600">
+              Page <span className="font-semibold">{currentPage}</span> of{' '}
+              <span className="font-semibold">{totalPages}</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left w-12">
+              <th className="px-6 py-4 text-left w-12">
                 <button
                   onClick={toggleSelectAll}
                   className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -506,37 +539,37 @@ export default function PaymentManagement() {
                   )}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Resident
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Type
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Fraud Risk
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+              <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider w-28">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredPayments.map((payment) => (
+            {paginatedPayments.map((payment) => (
               <React.Fragment key={payment.id}>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-4">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="px-6 py-5">
                     <button
                       onClick={() => toggleSelect(payment.id)}
                       className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -548,21 +581,21 @@ export default function PaymentManagement() {
                       )}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="font-medium">{payment.block?.block_name}</div>
-                    <div className="text-gray-500 text-xs">{payment.flat?.flat_number}</div>
+                  <td className="px-6 py-5 text-sm text-gray-900">
+                    <div className="font-semibold">{payment.block?.block_name}</div>
+                    <div className="text-gray-500 text-xs mt-0.5">{payment.flat?.flat_number}</div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{payment.name}</div>
-                    <div className="text-xs text-gray-500">{payment.email}</div>
+                  <td className="px-6 py-5">
+                    <div className="text-sm font-semibold text-gray-900">{payment.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{payment.email}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                  <td className="px-6 py-5 text-sm font-bold text-gray-900">
                     {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-5 text-sm text-gray-700">
                     {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-5">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         payment.status === 'Approved'
@@ -575,27 +608,27 @@ export default function PaymentManagement() {
                       {payment.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-5">
                     {payment.fraud_score !== null && payment.fraud_score !== undefined ? (
                       <div className="flex items-center gap-2">
                         <span
-                          className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getFraudRiskBgColor(
+                          className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full ${getFraudRiskBgColor(
                             payment.fraud_score
                           )} ${getFraudRiskColor(payment.fraud_score)}`}
                         >
                           {payment.is_fraud_flagged && <AlertTriangle className="w-3 h-3 mr-1" />}
                           {payment.fraud_score}
                         </span>
-                        <span className="text-xs text-gray-500">{getFraudRiskLabel(payment.fraud_score)}</span>
+                        <span className="text-xs text-gray-600 font-medium">{getFraudRiskLabel(payment.fraud_score)}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400">Not checked</span>
+                      <span className="text-xs text-gray-400 italic">Not checked</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-5 text-sm text-gray-700 font-medium">
                     {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => toggleRow(payment.id)}
@@ -853,9 +886,10 @@ export default function PaymentManagement() {
               </React.Fragment>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
 
-        {filteredPayments.length === 0 && (
+        {paginatedPayments.length === 0 && filteredPayments.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             No payment submissions found matching your criteria.
           </div>
@@ -863,10 +897,10 @@ export default function PaymentManagement() {
       </div>
 
       {/* Mobile/Tablet Card View */}
-      <div className="lg:hidden space-y-4">
-        {filteredPayments.map((payment) => (
-          <div key={payment.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="p-4">
+      <div className="lg:hidden space-y-5">
+        {paginatedPayments.map((payment) => (
+          <div key={payment.id} className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+            <div className="p-5">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3 flex-1">
                   <button
@@ -1099,12 +1133,118 @@ export default function PaymentManagement() {
           </div>
         ))}
 
-        {filteredPayments.length === 0 && (
+        {paginatedPayments.length === 0 && filteredPayments.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             No payment submissions found matching your criteria.
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredPayments.length > 0 && (
+        <div className="mt-6 flex flex-col items-center gap-4 bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-sm text-gray-700 text-center sm:text-left">
+              Showing <span className="font-bold text-amber-700">{startIndex + 1}</span> to{' '}
+              <span className="font-bold text-amber-700">{Math.min(endIndex, filteredPayments.length)}</span> of{' '}
+              <span className="font-bold text-amber-700">{filteredPayments.length}</span> results
+              {selectedIds.size > 0 && (
+                <span className="ml-2 text-amber-600 font-semibold">
+                  · {selectedIds.size} selected
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="perPage" className="text-sm text-gray-700 font-medium whitespace-nowrap">
+                Per page:
+              </label>
+              <select
+                id="perPage"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-medium"
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+
+            <button
+              onClick={() => goToPage(1)}
+              disabled={currentPage === 1}
+              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              title="First page"
+            >
+              <ChevronsLeft className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              title="Previous page"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
+                        : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              title="Next page"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => goToPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              title="Last page"
+            >
+              <ChevronsRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedPayment && !showStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
