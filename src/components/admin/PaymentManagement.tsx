@@ -70,6 +70,14 @@ export default function PaymentManagement() {
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [fraudCheckResult, setFraudCheckResult] = useState<{
+    score: number;
+    isFlagged: boolean;
+    indicators?: any[];
+  } | null>(null);
+  const [showFraudResultModal, setShowFraudResultModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -186,6 +194,7 @@ export default function PaymentManagement() {
     if (!selectedPayment || !adminData) return;
 
     try {
+      setUpdatingStatus(true);
       const { error } = await supabase
         .from('payment_submissions')
         .update({
@@ -204,9 +213,15 @@ export default function PaymentManagement() {
       });
 
       setShowStatusModal(false);
-      loadPayments();
+      await loadPayments();
+
+      // Show success message
+      setSuccessMessage(`Payment status updated to "${newStatus}" successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
       alert('Error updating status: ' + error.message);
+    } finally {
+      setUpdatingStatus(false);
     }
   }
 
@@ -294,7 +309,14 @@ export default function PaymentManagement() {
 
       if (data?.success) {
         await loadPayments();
-        alert(`Fraud check complete! Score: ${data.fraud_score}, Flagged: ${data.is_flagged ? 'Yes' : 'No'}`);
+
+        // Show fraud result in modal
+        setFraudCheckResult({
+          score: data.fraud_score,
+          isFlagged: data.is_flagged,
+          indicators: data.fraud_indicators
+        });
+        setShowFraudResultModal(true);
       } else {
         alert('Error: ' + (data?.error || 'Unknown error'));
       }
@@ -1414,11 +1436,20 @@ export default function PaymentManagement() {
                 </button>
                 <button
                   onClick={updateStatus}
-                  disabled={newStatus === selectedPayment.status}
+                  disabled={newStatus === selectedPayment.status || updatingStatus}
                   className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
-                  <Check className="w-4 h-4" />
-                  Update Status
+                  {updatingStatus ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Update Status
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1573,6 +1604,113 @@ export default function PaymentManagement() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showFraudResultModal && fraudCheckResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Fraud Check Results</h3>
+              <button
+                onClick={() => {
+                  setShowFraudResultModal(false);
+                  setFraudCheckResult(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center ${getFraudRiskBgColor(
+                    fraudCheckResult.score
+                  )}`}
+                >
+                  {fraudCheckResult.isFlagged && (
+                    <AlertTriangle className={`w-8 h-8 ${getFraudRiskColor(fraudCheckResult.score)}`} />
+                  )}
+                  {!fraudCheckResult.isFlagged && (
+                    <Shield className={`w-8 h-8 ${getFraudRiskColor(fraudCheckResult.score)}`} />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Fraud Risk Score</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900">{fraudCheckResult.score}</span>
+                    <span className="text-sm text-gray-500">/ 100</span>
+                  </div>
+                  <p className={`text-sm font-semibold mt-1 ${getFraudRiskColor(fraudCheckResult.score)}`}>
+                    {getFraudRiskLabel(fraudCheckResult.score)} Risk
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`border-l-4 p-3 rounded ${
+                  fraudCheckResult.isFlagged
+                    ? 'bg-red-50 border-red-500'
+                    : 'bg-green-50 border-green-500'
+                }`}
+              >
+                <p className={`text-sm font-medium ${fraudCheckResult.isFlagged ? 'text-red-800' : 'text-green-800'}`}>
+                  {fraudCheckResult.isFlagged
+                    ? 'This payment has been flagged for review'
+                    : 'No significant fraud indicators detected'}
+                </p>
+              </div>
+
+              {fraudCheckResult.indicators && fraudCheckResult.indicators.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-700">Detected Issues:</p>
+                  {fraudCheckResult.indicators.map((indicator: any, index: number) => (
+                    <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-start justify-between mb-1">
+                        <span className="text-xs font-semibold text-gray-900">{indicator.type}</span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded ${
+                            indicator.severity === 'CRITICAL'
+                              ? 'bg-red-100 text-red-700'
+                              : indicator.severity === 'HIGH'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}
+                        >
+                          {indicator.severity}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600">{indicator.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">Impact: +{indicator.points} points</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowFraudResultModal(false);
+                    setFraudCheckResult(null);
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3">
+            <Check className="w-5 h-5" />
+            <p className="font-medium">{successMessage}</p>
           </div>
         </div>
       )}
