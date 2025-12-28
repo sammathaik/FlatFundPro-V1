@@ -213,6 +213,7 @@ export default function PaymentManagement() {
       });
 
       setShowStatusModal(false);
+      setSelectedPayment(null);
       await loadPayments();
 
       // Show success message
