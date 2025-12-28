@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import React from 'react';
-import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square } from 'lucide-react';
+import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
@@ -34,6 +34,11 @@ interface PaymentWithDetails {
   narration?: string | null;
   screenshot_source?: string | null;
   other_text?: string | null;
+  fraud_score?: number | null;
+  is_fraud_flagged?: boolean | null;
+  fraud_indicators?: any[] | null;
+  fraud_checked_at?: string | null;
+  ocr_confidence_score?: number | null;
 }
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -51,12 +56,14 @@ export default function PaymentManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [quarterFilter, setQuarterFilter] = useState('all');
   const [paymentTypeFilter, setPaymentTypeFilter] = useState('all');
+  const [fraudFilter, setFraudFilter] = useState('all');
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<'Received' | 'Reviewed' | 'Approved'>('Received');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+  const [recheckingFraud, setRecheckingFraud] = useState<string | null>(null);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -94,7 +101,7 @@ export default function PaymentManagement() {
 
   useEffect(() => {
     filterPayments();
-  }, [payments, searchTerm, statusFilter, quarterFilter, paymentTypeFilter]);
+  }, [payments, searchTerm, statusFilter, quarterFilter, paymentTypeFilter, fraudFilter]);
 
   async function loadPayments() {
     if (!adminData?.apartment_id) return;
@@ -143,6 +150,20 @@ export default function PaymentManagement() {
 
     if (paymentTypeFilter !== 'all') {
       filtered = filtered.filter((p) => (p.payment_type || '').toLowerCase() === paymentTypeFilter.toLowerCase());
+    }
+
+    if (fraudFilter !== 'all') {
+      if (fraudFilter === 'flagged') {
+        filtered = filtered.filter((p) => p.is_fraud_flagged === true);
+      } else if (fraudFilter === 'critical') {
+        filtered = filtered.filter((p) => (p.fraud_score || 0) >= 80);
+      } else if (fraudFilter === 'high') {
+        filtered = filtered.filter((p) => (p.fraud_score || 0) >= 60 && (p.fraud_score || 0) < 80);
+      } else if (fraudFilter === 'medium') {
+        filtered = filtered.filter((p) => (p.fraud_score || 0) >= 40 && (p.fraud_score || 0) < 60);
+      } else if (fraudFilter === 'clean') {
+        filtered = filtered.filter((p) => (p.fraud_score || 0) < 40);
+      }
     }
 
     setFilteredPayments(filtered);
@@ -244,6 +265,54 @@ export default function PaymentManagement() {
     }
   }
 
+  async function recheckFraud(paymentId: string) {
+    setRecheckingFraud(paymentId);
+    try {
+      const { data, error } = await supabase.rpc('manual_fraud_recheck', {
+        p_payment_id: paymentId
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        await loadPayments();
+        alert(`Fraud check complete! Score: ${data.fraud_score}, Flagged: ${data.is_flagged ? 'Yes' : 'No'}`);
+      } else {
+        alert('Error: ' + (data?.error || 'Unknown error'));
+      }
+    } catch (error: any) {
+      console.error('Error rechecking fraud:', error);
+      alert('Error rechecking fraud: ' + error.message);
+    } finally {
+      setRecheckingFraud(null);
+    }
+  }
+
+  function getFraudRiskLabel(score: number | null | undefined): string {
+    if (!score) return 'Not Checked';
+    if (score >= 80) return 'Critical';
+    if (score >= 60) return 'High';
+    if (score >= 40) return 'Medium';
+    if (score >= 20) return 'Low';
+    return 'Clean';
+  }
+
+  function getFraudRiskColor(score: number | null | undefined): string {
+    if (!score) return 'text-gray-600';
+    if (score >= 80) return 'text-red-700';
+    if (score >= 60) return 'text-orange-700';
+    if (score >= 40) return 'text-yellow-700';
+    return 'text-green-700';
+  }
+
+  function getFraudRiskBgColor(score: number | null | undefined): string {
+    if (!score) return 'bg-gray-100';
+    if (score >= 80) return 'bg-red-100';
+    if (score >= 60) return 'bg-orange-100';
+    if (score >= 40) return 'bg-yellow-100';
+    return 'bg-green-100';
+  }
+
   function handleExport() {
     const exportData = filteredPayments.map((payment) => ({
       building_block: payment.block?.block_name || '',
@@ -272,6 +341,9 @@ export default function PaymentManagement() {
       narration: payment.narration || '',
       screenshot_source: payment.screenshot_source || '',
       other_text: payment.other_text || '',
+      fraud_score: payment.fraud_score || '',
+      is_fraud_flagged: payment.is_fraud_flagged ? 'Yes' : 'No',
+      fraud_checked_at: payment.fraud_checked_at || '',
     }));
 
     exportToCSV(exportData, 'payment_submissions');
@@ -374,6 +446,21 @@ export default function PaymentManagement() {
             <option value="emergency">Emergency</option>
           </select>
         </div>
+        <div className="sm:w-48 relative">
+          <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <select
+            value={fraudFilter}
+            onChange={(e) => setFraudFilter(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
+          >
+            <option value="all">All Risk Levels</option>
+            <option value="flagged">Flagged Only</option>
+            <option value="critical">Critical (80+)</option>
+            <option value="high">High (60-79)</option>
+            <option value="medium">Medium (40-59)</option>
+            <option value="clean">Clean (&lt;40)</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
@@ -417,6 +504,9 @@ export default function PaymentManagement() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Fraud Risk
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Date
@@ -469,6 +559,23 @@ export default function PaymentManagement() {
                       {payment.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    {payment.fraud_score !== null && payment.fraud_score !== undefined ? (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getFraudRiskBgColor(
+                            payment.fraud_score
+                          )} ${getFraudRiskColor(payment.fraud_score)}`}
+                        >
+                          {payment.is_fraud_flagged && <AlertTriangle className="w-3 h-3 mr-1" />}
+                          {payment.fraud_score}
+                        </span>
+                        <span className="text-xs text-gray-500">{getFraudRiskLabel(payment.fraud_score)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">Not checked</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
                   </td>
@@ -518,6 +625,17 @@ export default function PaymentManagement() {
                                 Update Status
                               </button>
                               <button
+                                onClick={() => {
+                                  recheckFraud(payment.id);
+                                  setActionMenuOpen(null);
+                                }}
+                                disabled={recheckingFraud === payment.id}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Shield className="w-4 h-4" />
+                                {recheckingFraud === payment.id ? 'Checking...' : 'Recheck Fraud'}
+                              </button>
+                              <button
                                 onClick={() => deletePayment(payment)}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                               >
@@ -533,8 +651,68 @@ export default function PaymentManagement() {
                 </tr>
                 {expandedRows.has(payment.id) && (
                   <tr key={`${payment.id}-details`} className="bg-amber-50">
-                    <td colSpan={8} className="px-6 py-4">
-                      <div className="bg-white rounded-lg border border-amber-200 p-4">
+                    <td colSpan={9} className="px-6 py-4">
+                      <div className="bg-white rounded-lg border border-amber-200 p-4 space-y-4">
+                        {payment.is_fraud_flagged && (
+                          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                            <div className="flex items-start gap-3">
+                              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-bold text-red-900 mb-2">FRAUD WARNING</h4>
+                                <p className="text-sm text-red-800 mb-3">
+                                  This payment has been flagged with a {getFraudRiskLabel(payment.fraud_score)} risk score of {payment.fraud_score}
+                                </p>
+                                {payment.fraud_indicators && payment.fraud_indicators.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-red-900 uppercase">Fraud Indicators:</p>
+                                    {payment.fraud_indicators.map((indicator: any, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className={`p-2 rounded border text-xs ${
+                                          indicator.severity === 'CRITICAL'
+                                            ? 'bg-red-100 border-red-300 text-red-900'
+                                            : indicator.severity === 'HIGH'
+                                            ? 'bg-orange-100 border-orange-300 text-orange-900'
+                                            : 'bg-yellow-100 border-yellow-300 text-yellow-900'
+                                        }`}
+                                      >
+                                        <div className="font-semibold">{indicator.type.replace(/_/g, ' ')}</div>
+                                        <div className="mt-1">{indicator.message}</div>
+                                        <div className="mt-1 flex items-center justify-between">
+                                          <span className="font-semibold">{indicator.severity}</span>
+                                          <span>+{indicator.points} points</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {payment.fraud_score !== null && payment.fraud_score !== undefined && !payment.is_fraud_flagged && payment.fraud_indicators && payment.fraud_indicators.length > 0 && (
+                          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                            <div className="flex items-start gap-3">
+                              <Shield className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-bold text-yellow-900 mb-2">Fraud Indicators Detected (Not Flagged)</h4>
+                                <p className="text-sm text-yellow-800 mb-3">
+                                  Risk Score: {payment.fraud_score} - Below flagging threshold but has {payment.fraud_indicators.length} indicator(s)
+                                </p>
+                                <div className="space-y-2">
+                                  {payment.fraud_indicators.map((indicator: any, idx: number) => (
+                                    <div key={idx} className="p-2 rounded border border-yellow-300 bg-yellow-100 text-xs text-yellow-900">
+                                      <div className="font-semibold">{indicator.type.replace(/_/g, ' ')}</div>
+                                      <div className="mt-1">{indicator.message}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <span className="w-1 h-4 bg-amber-600 rounded"></span>
                           Complete Payment Details
@@ -738,6 +916,17 @@ export default function PaymentManagement() {
                         >
                           <RefreshCw className="w-4 h-4" />
                           Update Status
+                        </button>
+                        <button
+                          onClick={() => {
+                            recheckFraud(payment.id);
+                            setActionMenuOpen(null);
+                          }}
+                          disabled={recheckingFraud === payment.id}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Shield className="w-4 h-4" />
+                          {recheckingFraud === payment.id ? 'Checking...' : 'Recheck Fraud'}
                         </button>
                         <button
                           onClick={() => deletePayment(payment)}
