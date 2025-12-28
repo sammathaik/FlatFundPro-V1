@@ -4,7 +4,7 @@ import ApartmentManagement from './ApartmentManagement';
 import AdminManagement from './AdminManagement';
 import SuperAdminOverview from './SuperAdminOverview';
 import LeadsManagement from './LeadsManagement';
-import AnalyticsReports from './AnalyticsReports';
+import SuperAdminExecutiveSummary from './SuperAdminExecutiveSummary';
 import SystemSettings from './SystemSettings';
 import AuditLogs from './AuditLogs';
 import FAQManagement from './FAQManagement';
@@ -20,7 +20,7 @@ export default function SuperAdminDashboard() {
       {activeTab === 'admins' && <AdminManagement />}
       {activeTab === 'leads' && <LeadsManagement />}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard />}
-      {activeTab === 'analytics' && <AnalyticsReports />}
+      {activeTab === 'analytics' && <SuperAdminExecutiveSummary />}
       {activeTab === 'faq' && <FAQManagement />}
       {activeTab === 'settings' && <SystemSettings />}
       {activeTab === 'audit' && <AuditLogs />}
