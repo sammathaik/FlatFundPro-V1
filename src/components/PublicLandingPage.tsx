@@ -4,6 +4,7 @@ import HeroSection from './HeroSection';
 import HowItWorks from './HowItWorks';
 import StatsSection from './StatsSection';
 import DynamicPaymentForm from './DynamicPaymentForm';
+import PortalAccessSection from './PortalAccessSection';
 
 interface PublicLandingPageProps {
   onNavigate: (path: string) => void;
@@ -33,43 +34,18 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
         <DynamicPaymentForm />
       </div>
 
-      <div className="bg-gray-900 text-white py-8">
+      {/* Portal Access Section - New dedicated section */}
+      <PortalAccessSection onNavigate={onNavigate} />
+
+      {/* Simple, clean footer */}
+      <footer className="bg-gray-900 text-white py-6">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-6">
-            <button
-              onClick={() => onNavigate('/occupant')}
-              className="text-white hover:text-blue-300 font-medium text-base transition-colors border-2 border-blue-400 hover:border-blue-300 px-8 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 shadow-lg"
-            >
-              Occupant Portal - View Your Payments →
-            </button>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-6">
-            <button
-              onClick={() => onNavigate('/marketing')}
-              className="text-white hover:text-amber-300 font-medium text-sm transition-colors border border-white hover:border-amber-300 px-6 py-3 rounded-lg"
-            >
-              Learn More About FlatFund Pro →
-            </button>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-            <button
-              onClick={() => onNavigate('/admin')}
-              className="text-amber-400 hover:text-amber-300 font-medium text-sm transition-colors border border-amber-400 hover:border-amber-300 px-6 py-3 rounded-lg"
-            >
-              Apartment Admin Login →
-            </button>
-            <button
-              onClick={() => onNavigate('/super-admin')}
-              className="text-emerald-400 hover:text-emerald-300 font-medium text-sm transition-colors border border-emerald-400 hover:border-emerald-300 px-6 py-3 rounded-lg"
-            >
-              Super Admin Login →
-            </button>
-          </div>
-          <div className="text-center mt-6 text-gray-400 text-xs">
+          <div className="text-center text-gray-400 text-sm">
             <p>© 2024 FlatFund Pro. All rights reserved.</p>
+            <p className="mt-2 text-xs text-gray-500">Simplifying society management, one payment at a time.</p>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
