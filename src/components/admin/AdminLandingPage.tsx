@@ -14,12 +14,12 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
             <img
               src="/FlatFundPro-2-Logo.jpeg"
               alt="FlatFund Pro"
-              className="h-24 sm:h-28 md:h-32 w-auto object-contain mb-6"
+              className="h-20 sm:h-24 w-auto object-contain mb-6"
             />
             <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-xl mb-6">
               <div className="flex items-center gap-3">
                 <Building2 className="w-10 h-10" />
-                <h2 className="text-4xl font-bold">Apartment Admin Portal</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold">Apartment Admin Portal</h2>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-lg p-6 max-w-3xl">

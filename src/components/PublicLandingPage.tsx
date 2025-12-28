@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Header from './Header';
 import HeroSection from './HeroSection';
+import AboutFlatFundPro from './AboutFlatFundPro';
 import HowItWorks from './HowItWorks';
 import StatsSection from './StatsSection';
 import DynamicPaymentForm from './DynamicPaymentForm';
@@ -28,6 +29,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <div ref={heroRef as React.RefObject<HTMLDivElement>} className="pt-20">
         <HeroSection onGetStarted={scrollToForm} />
       </div>
+      <AboutFlatFundPro />
       <HowItWorks />
       <StatsSection />
       <div ref={formRef as React.RefObject<HTMLDivElement>}>

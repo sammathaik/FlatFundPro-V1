@@ -229,16 +229,21 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
-      <div className="bg-white shadow-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-2 rounded-lg">
-                <Home className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">Occupant Portal</h1>
-                <p className="text-sm text-gray-600">
+      <header className="bg-white shadow-md border-b-2 border-amber-100 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <img
+                src="/FlatFundPro-2-Logo.jpeg"
+                alt="FlatFund Pro"
+                className="h-14 sm:h-16 object-contain flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                  Occupant Portal
+                  <Home className="w-5 h-5 text-amber-600" />
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {apartmentInfo?.apartment_name} - {apartmentInfo?.block_name} - Flat{' '}
                   {apartmentInfo?.flat_number}
                 </p>
@@ -246,20 +251,20 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </div>
             <button
               onClick={onLogout}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium flex-shrink-0"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
 
-          <div className="flex gap-2 mt-4 border-t pt-4">
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'dashboard'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-700'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -267,10 +272,10 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </button>
             <button
               onClick={() => setActiveTab('help')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'help'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-700'
               }`}
             >
               <HelpCircle className="w-4 h-4" />
@@ -278,7 +283,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'help' ? (

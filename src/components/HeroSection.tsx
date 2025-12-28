@@ -6,7 +6,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onGetStarted }: HeroSectionProps) {
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
+    <section id="features" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 scroll-mt-20">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -right-1/4 w-96 h-96 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>

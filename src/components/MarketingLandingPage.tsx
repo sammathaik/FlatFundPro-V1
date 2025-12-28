@@ -80,10 +80,10 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <img src="/FlatFundPro-2-Logo.jpeg" alt="FlatFund Pro" className="h-12 sm:h-14 object-contain" />
+              <img src="/FlatFundPro-2-Logo.jpeg" alt="FlatFund Pro" className="h-14 sm:h-16 object-contain" />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">FlatFund Pro</h1>
-                <p className="text-xs text-amber-600">Smart Payment Management</p>
+                <p className="text-xs text-amber-600 font-medium">Smart Society Management</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

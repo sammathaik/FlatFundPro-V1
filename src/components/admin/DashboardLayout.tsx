@@ -46,24 +46,25 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
       {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-20 border-b-2 border-gray-100">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 gap-4">
+      <header className="bg-white shadow-md sticky top-0 z-20 border-b-2 border-amber-100">
+        <div className="px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between gap-4">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
             {/* Logo and Title */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               <img
                 src="/FlatFundPro-2-Logo.jpeg"
                 alt="FlatFund Pro"
-                className="h-12 sm:h-14 object-contain flex-shrink-0"
+                className="h-14 sm:h-16 object-contain flex-shrink-0"
               />
+              <div className="hidden md:block h-10 w-px bg-gray-300"></div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
                   {isSuperAdmin ? 'Super Admin' : 'Admin'} Dashboard
@@ -79,10 +80,11 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
                 className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-amber-50 rounded-lg"
               >
                 <Home className="w-4 h-4" />
+                <span className="hidden md:inline">Home</span>
               </a>
               <button
                 onClick={signOut}
-                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg transition-all text-sm font-medium shadow-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign Out</span>
@@ -92,16 +94,16 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
           {/* Apartment Info Banner - For Admin Only */}
           {!isSuperAdmin && adminData?.apartment && (
-            <div className="flex flex-wrap items-center gap-2 pb-3 pt-1">
-              <div className="bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm">
-                <p className="text-xs sm:text-sm font-semibold text-amber-900">
+            <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-200">
+              <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-200 px-4 py-2 rounded-xl shadow-sm">
+                <p className="text-xs sm:text-sm font-bold text-amber-900">
                   {adminData.apartment.apartment_name}
                 </p>
               </div>
               {(adminData.apartment.city || adminData.apartment.country) && (
-                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
-                  <span className="text-base sm:text-lg" title={adminData.apartment.country || ''}>
+                <div className="flex items-center gap-2 bg-blue-50 border-2 border-blue-200 px-3 py-2 rounded-xl shadow-sm">
+                  <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <span className="text-lg" title={adminData.apartment.country || ''}>
                     {getCountryFlag(adminData.apartment.country)}
                   </span>
                   <span className="text-xs sm:text-sm font-medium text-blue-900">

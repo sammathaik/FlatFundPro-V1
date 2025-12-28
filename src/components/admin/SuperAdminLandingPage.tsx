@@ -14,12 +14,12 @@ export default function SuperAdminLandingPage({ onLogin, onBackToPublic }: Super
             <img
               src="/FlatFundPro-2-Logo.jpeg"
               alt="FlatFund Pro"
-              className="h-24 sm:h-28 md:h-32 w-auto object-contain mb-6 drop-shadow-2xl"
+              className="h-20 sm:h-24 w-auto object-contain mb-6 drop-shadow-2xl"
             />
             <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white px-8 py-4 rounded-2xl shadow-2xl mb-6 border-2 border-emerald-400/30">
               <div className="flex items-center gap-3">
                 <Shield className="w-10 h-10 drop-shadow-lg" />
-                <h2 className="text-4xl font-bold drop-shadow-lg">Super Administrator Portal</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold drop-shadow-lg">Super Administrator Portal</h2>
               </div>
             </div>
             <div className="bg-slate-800/80 backdrop-blur-sm border-2 border-emerald-500/30 rounded-xl shadow-2xl p-6 max-w-3xl">
