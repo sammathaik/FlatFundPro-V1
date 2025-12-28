@@ -64,6 +64,10 @@ export default function PaymentManagement() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   const [recheckingFraud, setRecheckingFraud] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<PaymentWithDetails | null>(null);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -204,40 +208,49 @@ export default function PaymentManagement() {
     }
   }
 
-  async function deletePayment(payment: PaymentWithDetails) {
-    if (!confirm(`Delete payment submission from ${payment.name}? This action cannot be undone.`)) {
-      return;
-    }
+  function confirmDeletePayment(payment: PaymentWithDetails) {
+    setPaymentToDelete(payment);
+    setShowDeleteModal(true);
+    setActionMenuOpen(null);
+  }
+
+  async function deletePayment() {
+    if (!paymentToDelete) return;
 
     try {
+      setDeleting(true);
       const { error } = await supabase
         .from('payment_submissions')
         .delete()
-        .eq('id', payment.id);
+        .eq('id', paymentToDelete.id);
 
       if (error) throw error;
 
-      await logAudit('delete', 'payment_submissions', payment.id, {
-        name: payment.name,
-        email: payment.email,
+      await logAudit('delete', 'payment_submissions', paymentToDelete.id, {
+        name: paymentToDelete.name,
+        email: paymentToDelete.email,
       });
 
-      setActionMenuOpen(null);
-      loadPayments();
+      setShowDeleteModal(false);
+      setPaymentToDelete(null);
+      await loadPayments();
     } catch (error: any) {
       alert('Error deleting payment: ' + error.message);
+    } finally {
+      setDeleting(false);
     }
+  }
+
+  function confirmBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setShowBulkDeleteModal(true);
   }
 
   async function deleteSelectedPayments() {
     if (selectedIds.size === 0) return;
 
-    const count = selectedIds.size;
-    if (!confirm(`Delete ${count} payment submission${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
+      setDeleting(true);
       const idsToDelete = Array.from(selectedIds);
       const { error } = await supabase
         .from('payment_submissions')
@@ -258,10 +271,13 @@ export default function PaymentManagement() {
         }
       }
 
+      setShowBulkDeleteModal(false);
       setSelectedIds(new Set());
-      loadPayments();
+      await loadPayments();
     } catch (error: any) {
       alert('Error deleting payments: ' + error.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -372,7 +388,7 @@ export default function PaymentManagement() {
         <div className="flex flex-wrap gap-3">
           {selectedIds.size > 0 && (
             <button
-              onClick={deleteSelectedPayments}
+              onClick={confirmBulkDelete}
               className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
             >
               <Trash2 className="w-4 h-4" />
@@ -636,7 +652,7 @@ export default function PaymentManagement() {
                                 {recheckingFraud === payment.id ? 'Checking...' : 'Recheck Fraud'}
                               </button>
                               <button
-                                onClick={() => deletePayment(payment)}
+                                onClick={() => confirmDeletePayment(payment)}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -929,7 +945,7 @@ export default function PaymentManagement() {
                           {recheckingFraud === payment.id ? 'Checking...' : 'Recheck Fraud'}
                         </button>
                         <button
-                          onClick={() => deletePayment(payment)}
+                          onClick={() => confirmDeletePayment(payment)}
                           className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1263,6 +1279,157 @@ export default function PaymentManagement() {
                 >
                   <Check className="w-4 h-4" />
                   Update Status
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && paymentToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Delete Payment Submission</h3>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setPaymentToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors text-2xl"
+                disabled={deleting}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900 mb-2">
+                    Are you sure you want to delete the payment submission from <strong>{paymentToDelete.name}</strong>?
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    This action cannot be undone. All data associated with this submission will be permanently removed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500">Flat:</span>
+                    <span className="ml-2 font-medium text-gray-900">{paymentToDelete.flat?.flat_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Amount:</span>
+                    <span className="ml-2 font-medium text-gray-900">
+                      {paymentToDelete.payment_amount ? `₹${paymentToDelete.payment_amount.toLocaleString()}` : '-'}
+                    </span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Email:</span>
+                    <span className="ml-2 font-medium text-gray-900">{paymentToDelete.email}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setPaymentToDelete(null);
+                  }}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deletePayment}
+                  disabled={deleting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Delete Multiple Submissions</h3>
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors text-2xl"
+                disabled={deleting}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900 mb-2">
+                    Are you sure you want to delete <strong>{selectedIds.size}</strong> payment submission{selectedIds.size > 1 ? 's' : ''}?
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    This action cannot be undone. All data associated with these submissions will be permanently removed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
+                <p className="text-xs text-red-800 font-medium">
+                  Warning: You are about to delete {selectedIds.size} payment{selectedIds.size > 1 ? 's' : ''} at once.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowBulkDeleteModal(false)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteSelectedPayments}
+                  disabled={deleting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Delete All
+                    </>
+                  )}
                 </button>
               </div>
             </div>
