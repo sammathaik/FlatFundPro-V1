@@ -20,17 +20,17 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md border-b-2 border-amber-100">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <button
             onClick={onLogoClick}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity flex-shrink-0"
+            className="flex items-center gap-3 hover:opacity-90 transition-all transform hover:scale-105 flex-shrink-0"
           >
             <img
-              src="/FlatFundPro-2-Logo.jpeg"
+              src="/AppLogo-FlatFund Pro.jpg"
               alt="FlatFund Pro"
-              className="h-14 sm:h-16 w-auto object-contain"
+              className="h-16 sm:h-20 w-auto object-contain drop-shadow-md"
             />
           </button>
 

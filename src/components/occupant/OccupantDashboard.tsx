@@ -234,9 +234,9 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <img
-                src="/FlatFundPro-2-Logo.jpeg"
+                src="/AppLogo-FlatFund Pro.jpg"
                 alt="FlatFund Pro"
-                className="h-14 sm:h-16 object-contain flex-shrink-0"
+                className="h-14 sm:h-16 lg:h-18 object-contain flex-shrink-0 drop-shadow-md"
               />
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">

@@ -12,9 +12,9 @@ export default function SuperAdminLandingPage({ onLogin, onBackToPublic }: Super
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img
-              src="/FlatFundPro-2-Logo.jpeg"
+              src="/AppLogo-FlatFund Pro.jpg"
               alt="FlatFund Pro"
-              className="h-20 sm:h-24 w-auto object-contain mb-6 drop-shadow-2xl"
+              className="h-24 sm:h-28 w-auto object-contain mb-6 drop-shadow-2xl"
             />
             <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white px-8 py-4 rounded-2xl shadow-2xl mb-6 border-2 border-emerald-400/30">
               <div className="flex items-center gap-3">

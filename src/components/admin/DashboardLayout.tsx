@@ -62,11 +62,11 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
             {/* Logo and Title */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <img
-                src="/FlatFundPro-2-Logo.jpeg"
+                src="/AppLogo-FlatFund Pro.jpg"
                 alt="FlatFund Pro"
-                className="h-12 sm:h-14 object-contain flex-shrink-0"
+                className="h-14 sm:h-16 lg:h-18 object-contain flex-shrink-0 drop-shadow-md"
               />
-              <div className="hidden md:block h-10 w-px bg-gray-300"></div>
+              <div className="hidden md:block h-12 w-px bg-gray-300"></div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-base sm:text-lg font-bold text-gray-900">
