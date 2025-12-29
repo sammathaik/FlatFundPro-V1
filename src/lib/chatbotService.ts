@@ -67,8 +67,21 @@ class ChatbotService {
       limit_count: 3
     });
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('Knowledge base search error:', error);
+      throw error;
+    }
+
+    console.log('Knowledge base search results:', data);
+
+    const results = (data || []).map(result => ({
+      ...result,
+      confidence_score: typeof result.confidence_score === 'string'
+        ? parseFloat(result.confidence_score)
+        : result.confidence_score
+    }));
+
+    return results;
   }
 
   async saveMessage(
@@ -178,27 +191,35 @@ class ChatbotService {
 
     const results = await this.searchKnowledgeBase(userMessage, userRole);
 
-    if (results.length > 0 && results[0].confidence_score >= 0.6) {
+    console.log('Search results for:', userMessage, 'Role:', userRole, 'Results:', results);
+
+    if (results.length > 0) {
       const topResult = results[0];
-      let response = topResult.answer;
+      const confidence = Number(topResult.confidence_score);
 
-      if (results.length > 1 && results[1].confidence_score >= 0.6) {
-        response += "\n\nRelated: " + results[1].question;
+      console.log('Top result confidence:', confidence, 'Type:', typeof confidence);
+
+      if (confidence >= 0.6) {
+        let response = topResult.answer;
+
+        if (results.length > 1 && Number(results[1].confidence_score) >= 0.6) {
+          response += "\n\nRelated: " + results[1].question;
+        }
+
+        await this.saveMessage(
+          conversationId,
+          'bot',
+          response,
+          'knowledge_base',
+          confidence
+        );
+
+        return {
+          botResponse: response,
+          confidence: confidence,
+          source: 'knowledge_base'
+        };
       }
-
-      await this.saveMessage(
-        conversationId,
-        'bot',
-        response,
-        'knowledge_base',
-        topResult.confidence_score
-      );
-
-      return {
-        botResponse: response,
-        confidence: topResult.confidence_score,
-        source: 'knowledge_base'
-      };
     }
 
     const fallbackResponse = this.getFallbackResponse(userRole);
