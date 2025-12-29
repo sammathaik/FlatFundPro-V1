@@ -245,8 +245,8 @@ export default function ApartmentAdminOverview() {
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     green: 'bg-green-100 text-green-600',
-    amber: 'bg-amber-100 text-amber-600',
-    orange: 'bg-orange-100 text-orange-600',
+    amber: 'bg-blue-100 text-blue-600',
+    orange: 'bg-indigo-100 text-indigo-600',
     purple: 'bg-purple-100 text-purple-600',
     indigo: 'bg-indigo-100 text-indigo-600',
     red: 'bg-red-100 text-red-600',
@@ -404,40 +404,40 @@ export default function ApartmentAdminOverview() {
         </div>
 
         {/* Admin Capabilities */}
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-amber-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">Management Tools</h3>
           </div>
           <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex items-start gap-2">
-              <Building2 className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <Building2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Buildings & Flats:</strong> Comprehensive management of buildings, blocks, phases, and flat numbers
               </div>
             </li>
             <li className="flex items-start gap-2">
-              <DollarSign className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <DollarSign className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Collection Management:</strong> Set up multiple collection types with flexible frequencies (monthly, quarterly, etc.)
               </div>
             </li>
             <li className="flex items-start gap-2">
-              <Users className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Occupant Portal:</strong> Give residents secure access to view their payment history and make submissions
               </div>
             </li>
             <li className="flex items-start gap-2">
-              <QrCode className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <QrCode className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>QR Codes:</strong> Generate unique QR codes for each flat for easy payment submission
               </div>
             </li>
             <li className="flex items-start gap-2">
-              <BarChart3 className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Advanced Analytics:</strong> Executive summaries, collection performance, fraud patterns, and time-based analytics
               </div>
@@ -495,12 +495,12 @@ export default function ApartmentAdminOverview() {
       )}
 
       {stats.pendingPayments > 0 && (
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
+        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-6">
           <div className="flex items-start gap-3">
-            <Clock className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+            <Clock className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
             <div>
               <h3 className="text-lg font-bold text-orange-900 mb-2">Pending Reviews</h3>
-              <p className="text-orange-800">
+              <p className="text-indigo-800">
                 You have <strong>{stats.pendingPayments} payment{stats.pendingPayments !== 1 ? 's' : ''}</strong> waiting for your review.
                 Navigate to Payment Management to approve or request corrections.
               </p>

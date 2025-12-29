@@ -428,7 +428,7 @@ export default function OccupantManagement() {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Users className="w-8 h-8 text-amber-600" />
+          <Users className="w-8 h-8 text-blue-600" />
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Occupant Management</h2>
             <p className="text-sm text-gray-600 mt-1">
@@ -456,7 +456,7 @@ export default function OccupantManagement() {
           </button>
           <button
             onClick={handleAdd}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-lg"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-lg"
           >
             <Plus className="w-5 h-5" />
             Add Occupant
@@ -491,7 +491,7 @@ export default function OccupantManagement() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by apartment, building, flat number, name, email, mobile, or type..."
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {searchTerm && (
             <button
@@ -513,20 +513,20 @@ export default function OccupantManagement() {
           </div>
         ) : (
           blockGroups.map((group) => (
-            <div key={group.block_id} className="bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-amber-500">
+            <div key={group.block_id} className="bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-blue-500">
               <button
                 onClick={() => toggleBlock(group.block_id)}
-                className="w-full px-6 py-4 bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 hover:from-amber-200 hover:via-orange-200 hover:to-yellow-200 transition-all flex items-center justify-between"
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-100 via-indigo-100 to-blue-200 hover:from-blue-200 hover:via-indigo-200 hover:to-blue-300 transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg shadow-sm">
-                    <Building className="w-5 h-5 text-orange-600" />
+                    <Building className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left">
                     <h3 className="text-base font-semibold">
-                      <span className="text-orange-700">{group.apartment_name}</span>
+                      <span className="text-indigo-700">{group.apartment_name}</span>
                       <span className="text-gray-500 mx-2">•</span>
-                      <span className="text-amber-700">{group.block_name}</span>
+                      <span className="text-blue-700">{group.block_name}</span>
                     </h3>
                     <p className="text-xs font-medium mt-0.5">
                       <span className="text-teal-700">{group.block_type}</span>
@@ -536,9 +536,9 @@ export default function OccupantManagement() {
                   </div>
                 </div>
                 {expandedBlocks.has(group.block_id) ? (
-                  <ChevronUp className="w-5 h-5 text-orange-600" />
+                  <ChevronUp className="w-5 h-5 text-indigo-600" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-orange-600" />
+                  <ChevronDown className="w-5 h-5 text-indigo-600" />
                 )}
               </button>
 
@@ -570,7 +570,7 @@ export default function OccupantManagement() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {group.occupants.map((occupant) => (
                         <React.Fragment key={occupant.id}>
-                          <tr className="hover:bg-amber-50 transition-colors">
+                          <tr className="hover:bg-blue-50 transition-colors">
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
@@ -635,7 +635,7 @@ export default function OccupantManagement() {
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleEdit(occupant)}
-                                  className="text-amber-600 hover:text-amber-800 transition-colors p-1.5 hover:bg-amber-50 rounded"
+                                  className="text-blue-600 hover:text-blue-800 transition-colors p-1.5 hover:bg-blue-50 rounded"
                                   title="Edit occupant"
                                 >
                                   <Edit2 className="w-4 h-4" />
@@ -758,7 +758,7 @@ export default function OccupantManagement() {
                       occupant: { ...editModal.occupant, name: e.target.value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter occupant name"
                 />
                 {!editModal.isNew && editModal.occupant.occupant_name && (
@@ -787,7 +787,7 @@ export default function OccupantManagement() {
                     loadBlocks(e.target.value);
                   }}
                   disabled={!editModal.isNew}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   {apartments.map((apt) => (
                     <option key={apt.id} value={apt.id}>
@@ -815,7 +815,7 @@ export default function OccupantManagement() {
                     loadFlats(e.target.value);
                   }}
                   disabled={!editModal.isNew}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   <option value="">Select...</option>
                   {blocks.map((block) => (
@@ -839,7 +839,7 @@ export default function OccupantManagement() {
                     })
                   }
                   disabled={!editModal.isNew}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   <option value="">Select...</option>
                   {flats.map((flat) => (
@@ -863,7 +863,7 @@ export default function OccupantManagement() {
                       occupant: { ...editModal.occupant, email: e.target.value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="user@example.com"
                 />
               </div>
@@ -881,7 +881,7 @@ export default function OccupantManagement() {
                       occupant: { ...editModal.occupant, mobile: e.target.value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="+91 XXXXXXXXXX"
                 />
               </div>
@@ -901,7 +901,7 @@ export default function OccupantManagement() {
                       },
                     })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Owner">Owner</option>
                   <option value="Tenant">Tenant</option>
@@ -912,7 +912,7 @@ export default function OccupantManagement() {
             <div className="flex gap-4 mt-8">
               <button
                 onClick={handleSave}
-                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 px-6 rounded-lg font-medium transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-lg font-medium transition-all"
               >
                 <Save className="w-5 h-5" />
                 Save

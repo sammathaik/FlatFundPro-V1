@@ -196,20 +196,20 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
           </div>
 
           {/* Outstanding */}
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-6 border border-orange-200">
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-6 border border-indigo-200">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="text-sm font-medium text-orange-900 mb-1">Outstanding</div>
-                <div className="text-xs text-orange-700 leading-tight">
+                <div className="text-xs text-indigo-700 leading-tight">
                   Expected amount minus collected amount
                 </div>
               </div>
-              <TrendingDown className="w-6 h-6 text-orange-600 flex-shrink-0" />
+              <TrendingDown className="w-6 h-6 text-indigo-600 flex-shrink-0" />
             </div>
             <div className="text-3xl font-bold text-orange-900">
               {formatCurrency(data.totalOutstanding)}
             </div>
-            <div className="mt-2 text-xs text-orange-700 bg-orange-200 bg-opacity-50 rounded px-2 py-1">
+            <div className="mt-2 text-xs text-indigo-700 bg-indigo-200 bg-opacity-50 rounded px-2 py-1">
               Pending collections to receive
             </div>
           </div>
@@ -418,11 +418,11 @@ export default function CollectionPerformanceDashboard({ buildingId }: Props) {
           <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Top Defaulters</h3>
-              <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <Info className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                <Info className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-orange-900">
                   <p className="font-medium mb-1">What is this?</p>
-                  <p className="text-orange-800 leading-relaxed">
+                  <p className="text-indigo-800 leading-relaxed">
                     Lists flats with the highest outstanding amounts (Expected - Collected) for the selected period.
                     Shows payment count and last payment date to help identify follow-up priorities.
                   </p>

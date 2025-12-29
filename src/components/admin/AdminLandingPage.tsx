@@ -7,7 +7,7 @@ interface AdminLandingPageProps {
 
 export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandingPageProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100">
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
@@ -16,7 +16,7 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
               alt="FlatFund Pro"
               className="h-24 sm:h-28 w-auto object-contain mb-6 drop-shadow-lg"
             />
-            <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white px-8 py-4 rounded-2xl shadow-xl mb-6">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl shadow-xl mb-6">
               <div className="flex items-center gap-3">
                 <Building2 className="w-10 h-10" />
                 <h2 className="text-3xl sm:text-4xl font-bold">Apartment Admin Portal</h2>
@@ -24,7 +24,7 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
             </div>
             <div className="bg-white rounded-xl shadow-lg p-6 max-w-3xl">
               <p className="text-xl text-gray-700 leading-relaxed">
-                <span className="font-semibold text-amber-600">Streamline your apartment management</span> – Handle maintenance payments, track submissions, manage building structures, and keep residents organized. All the tools you need in one powerful dashboard.
+                <span className="font-semibold text-blue-600">Streamline your apartment management</span> – Handle maintenance payments, track submissions, manage building structures, and keep residents organized. All the tools you need in one powerful dashboard.
               </p>
             </div>
           </div>
@@ -33,8 +33,8 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
             <div className="flex items-start gap-4">
-              <div className="bg-amber-100 p-3 rounded-lg">
-                <FileText className="w-6 h-6 text-amber-600" />
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <FileText className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Payment Management</h3>
@@ -47,8 +47,8 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
 
           <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
             <div className="flex items-start gap-4">
-              <div className="bg-amber-100 p-3 rounded-lg">
-                <Building2 className="w-6 h-6 text-amber-600" />
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <Building2 className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Building Structure</h3>
@@ -61,8 +61,8 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
 
           <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
             <div className="flex items-start gap-4">
-              <div className="bg-amber-100 p-3 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-amber-600" />
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Analytics Dashboard</h3>
@@ -75,8 +75,8 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
 
           <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
             <div className="flex items-start gap-4">
-              <div className="bg-amber-100 p-3 rounded-lg">
-                <Users className="w-6 h-6 text-amber-600" />
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Resident Records</h3>
@@ -92,7 +92,7 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
           <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Access Admin Portal</h3>
           <button
             onClick={onLogin}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
           >
             Sign In as Apartment Admin
           </button>

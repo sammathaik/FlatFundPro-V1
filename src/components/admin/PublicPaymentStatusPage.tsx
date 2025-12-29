@@ -70,7 +70,7 @@ export default function PublicPaymentStatusPage({ navigate }: PublicPaymentStatu
     return (
       <GuestLayout>
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <Loader2 className="w-10 h-10 text-amber-600 animate-spin" />
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
           <p className="text-gray-600">Loading payment status...</p>
         </div>
       </GuestLayout>
@@ -102,7 +102,7 @@ export default function PublicPaymentStatusPage({ navigate }: PublicPaymentStatu
       <div className="mt-10 text-center">
         <button
           onClick={() => navigate('/admin')}
-          className="text-sm font-medium text-gray-600 hover:text-amber-600"
+          className="text-sm font-medium text-gray-600 hover:text-blue-600"
         >
           Apartment admin? Sign in →
         </button>
@@ -113,8 +113,8 @@ export default function PublicPaymentStatusPage({ navigate }: PublicPaymentStatu
 
 function GuestLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 py-10 px-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-amber-100 p-6 sm:p-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-10 px-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-blue-100 p-6 sm:p-10">
         {children}
       </div>
     </div>

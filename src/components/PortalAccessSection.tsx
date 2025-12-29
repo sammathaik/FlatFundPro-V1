@@ -10,14 +10,14 @@ export default function PortalAccessSection({ onNavigate }: PortalAccessSectionP
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden opacity-40">
         <div className="absolute top-20 right-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl"></div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md mb-4">
-            <Sparkles className="w-4 h-4 text-amber-600" />
+            <Sparkles className="w-4 h-4 text-blue-600" />
             <span className="text-sm font-semibold text-gray-700">Quick Access</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -82,11 +82,11 @@ export default function PortalAccessSection({ onNavigate }: PortalAccessSectionP
 
           {/* Learn More About FlatFund Pro */}
           <div className="group">
-            <div className="relative h-full bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 border-2 border-amber-200 hover:border-amber-300 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 opacity-50"></div>
+            <div className="relative h-full bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 border-2 border-blue-200 hover:border-blue-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50"></div>
 
               <div className="relative p-6">
-                <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Info className="w-7 h-7 text-white" />
                 </div>
 
@@ -99,7 +99,7 @@ export default function PortalAccessSection({ onNavigate }: PortalAccessSectionP
 
                 <button
                   onClick={() => onNavigate('/marketing')}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold py-3 px-5 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2 group/btn"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-5 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2 group/btn"
                 >
                   Learn More
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -110,7 +110,7 @@ export default function PortalAccessSection({ onNavigate }: PortalAccessSectionP
 
           {/* Admin Login */}
           <div className="group">
-            <div className="relative h-full bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-200 hover:border-amber-300 overflow-hidden">
+            <div className="relative h-full bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-200 hover:border-blue-300 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-slate-50"></div>
 
               <div className="relative p-6">
@@ -168,7 +168,7 @@ export default function PortalAccessSection({ onNavigate }: PortalAccessSectionP
             <span>Trusted by 100+ Societies</span>
           </div>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-600" />
+            <Sparkles className="w-4 h-4 text-blue-600" />
             <span>AI-Powered Detection</span>
           </div>
         </div>

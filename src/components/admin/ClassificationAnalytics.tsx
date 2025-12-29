@@ -91,7 +91,7 @@ export default function ClassificationAnalytics() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">High Confidence</h3>
-            <BarChart3 className="w-5 h-5 text-orange-500" />
+            <BarChart3 className="w-5 h-5 text-indigo-500" />
           </div>
           <p className="text-3xl font-bold text-gray-900">
             {byConfidence.High || 0}

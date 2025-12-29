@@ -19,7 +19,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md border-b-2 border-amber-100">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md border-b-2 border-blue-100">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
@@ -38,37 +38,37 @@ export default function Header({ onLogoClick }: HeaderProps) {
           <nav className="hidden lg:flex items-center gap-6 flex-1 justify-center">
             <button
               onClick={() => onLogoClick?.()}
-              className="text-gray-700 hover:text-amber-600 font-medium transition-colors"
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               Home
             </button>
             <button
               onClick={() => scrollToSection('about')}
-              className="text-gray-700 hover:text-amber-600 font-medium transition-colors"
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               About
             </button>
             <div className="relative group">
-              <button className="flex items-center gap-1 text-gray-700 hover:text-amber-600 font-medium transition-colors">
+              <button className="flex items-center gap-1 text-gray-700 hover:text-blue-600 font-medium transition-colors">
                 Learn More
                 <ChevronDown className="w-4 h-4" />
               </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-amber-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-blue-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 <button
                   onClick={() => scrollToSection('features')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                 >
                   Features
                 </button>
                 <button
                   onClick={() => scrollToSection('how-it-works')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                 >
                   How It Works
                 </button>
                 <button
                   onClick={() => scrollToSection('benefits')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                 >
                   Benefits
                 </button>
@@ -78,7 +78,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
           {/* Tagline Badge - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-5 py-2 rounded-full shadow-lg flex items-center gap-2">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2 rounded-full shadow-lg flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span className="font-bold text-sm">Smart Society Management</span>
             </div>
@@ -101,19 +101,19 @@ export default function Header({ onLogoClick }: HeaderProps) {
                 onLogoClick?.();
                 setMobileMenuOpen(false);
               }}
-              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 font-medium rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
             >
               Home
             </button>
             <button
               onClick={() => scrollToSection('about')}
-              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 font-medium rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
             >
               About
             </button>
             <button
               onClick={() => setLearnMoreOpen(!learnMoreOpen)}
-              className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-amber-700 font-medium rounded-lg transition-colors"
+              className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
             >
               Learn More
               <ChevronDown className={`w-4 h-4 transition-transform ${learnMoreOpen ? 'rotate-180' : ''}`} />
@@ -122,19 +122,19 @@ export default function Header({ onLogoClick }: HeaderProps) {
               <div className="pl-4 space-y-1">
                 <button
                   onClick={() => scrollToSection('features')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
                 >
                   Features
                 </button>
                 <button
                   onClick={() => scrollToSection('how-it-works')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
                 >
                   How It Works
                 </button>
                 <button
                   onClick={() => scrollToSection('benefits')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
                 >
                   Benefits
                 </button>

@@ -207,7 +207,7 @@ export default function FlatPaymentHistory({ buildingId }: Props) {
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600 mb-1">Total Outstanding</div>
-          <div className="text-2xl font-bold text-orange-600">
+          <div className="text-2xl font-bold text-indigo-600">
             {formatCurrency(data.reduce((sum, f) => sum + f.outstanding, 0))}
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function FlatPaymentHistory({ buildingId }: Props) {
                   </td>
                   <td className="py-3 px-4 text-right">
                     {flat.outstanding > 0 ? (
-                      <span className="text-orange-600 font-medium">
+                      <span className="text-indigo-600 font-medium">
                         {formatCurrency(flat.outstanding)}
                       </span>
                     ) : (

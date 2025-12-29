@@ -221,15 +221,15 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100">
         <div className="text-gray-600 text-lg">Loading your dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
-      <header className="bg-white shadow-md border-b-2 border-amber-100 sticky top-0 z-30">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100">
+      <header className="bg-white shadow-md border-b-2 border-blue-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -241,7 +241,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
                   Occupant Portal
-                  <Home className="w-5 h-5 text-amber-600" />
+                  <Home className="w-5 h-5 text-blue-600" />
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {apartmentInfo?.apartment_name} - {apartmentInfo?.block_name} - Flat{' '}
@@ -263,8 +263,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               onClick={() => setActiveTab('dashboard')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'dashboard'
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-700'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -274,8 +274,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               onClick={() => setActiveTab('help')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'help'
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-700'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
               }`}
             >
               <HelpCircle className="w-4 h-4" />
@@ -304,8 +304,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                   disabled={switchingFlat}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     selectedFlatId === flat.flat_id
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-gray-200 hover:border-amber-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300 bg-white'
                   } disabled:opacity-50`}
                 >
                   <p className="font-semibold text-gray-900">
@@ -318,7 +318,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                     {flat.block_name}
                   </p>
                   {selectedFlatId === flat.flat_id && (
-                    <p className="text-xs text-amber-600 font-medium mt-2">
+                    <p className="text-xs text-blue-600 font-medium mt-2">
                       Currently Viewing
                     </p>
                   )}
@@ -385,7 +385,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium opacity-90">Total Payments</h3>
               <FileText className="w-6 h-6 opacity-80" />
@@ -403,7 +403,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {categories.map((category) => (
                     <option key={category} value={category}>

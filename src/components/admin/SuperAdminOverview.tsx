@@ -59,8 +59,8 @@ export default function SuperAdminOverview() {
           const colorClasses = {
             blue: 'bg-blue-100 text-blue-600',
             green: 'bg-green-100 text-green-600',
-            amber: 'bg-amber-100 text-amber-600',
-            orange: 'bg-orange-100 text-orange-600',
+            amber: 'bg-blue-100 text-blue-600',
+            orange: 'bg-indigo-100 text-indigo-600',
             purple: 'bg-purple-100 text-purple-600',
             indigo: 'bg-indigo-100 text-indigo-600',
             teal: 'bg-teal-100 text-teal-600',
@@ -83,26 +83,26 @@ export default function SuperAdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-2">Super Admin Capabilities</h3>
           <p className="text-gray-700 mb-4">
             You have full system access to manage the entire FlatFund Pro platform.
           </p>
           <ul className="space-y-2 text-sm text-gray-700">
             <li className="flex items-start">
-              <span className="text-amber-600 mr-2">•</span>
+              <span className="text-blue-600 mr-2">•</span>
               <span><strong>Apartments:</strong> Create and manage apartment societies</span>
             </li>
             <li className="flex items-start">
-              <span className="text-amber-600 mr-2">•</span>
+              <span className="text-blue-600 mr-2">•</span>
               <span><strong>Admins:</strong> Assign and manage apartment administrators</span>
             </li>
             <li className="flex items-start">
-              <span className="text-amber-600 mr-2">•</span>
+              <span className="text-blue-600 mr-2">•</span>
               <span><strong>Lead Generation:</strong> Track and manage new apartment inquiries</span>
             </li>
             <li className="flex items-start">
-              <span className="text-amber-600 mr-2">•</span>
+              <span className="text-blue-600 mr-2">•</span>
               <span><strong>System Monitoring:</strong> Monitor platform usage and activity</span>
             </li>
           </ul>

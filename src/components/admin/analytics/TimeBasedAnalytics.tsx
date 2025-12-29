@@ -175,13 +175,13 @@ export default function TimeBasedAnalytics({ buildingId }: Props) {
           )}
 
           {data.worstCollectionMonth && (
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6 border border-orange-200">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6 border border-indigo-200">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-orange-600 rounded-lg">
+                <div className="p-3 bg-indigo-600 rounded-lg">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="text-sm text-orange-700 font-medium">Lowest Collection Month</div>
+                  <div className="text-sm text-indigo-700 font-medium">Lowest Collection Month</div>
                   <div className="text-2xl font-bold text-orange-900">
                     {data.worstCollectionMonth.month}
                   </div>

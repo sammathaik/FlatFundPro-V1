@@ -6,7 +6,7 @@ export default function AboutFlatFundPro() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
             <Building2 className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -19,7 +19,7 @@ export default function AboutFlatFundPro() {
         </div>
 
         {/* Mission Statement */}
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-3xl p-8 md:p-12 mb-12 shadow-lg">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 md:p-12 mb-12 shadow-lg">
           <h3 className="text-3xl font-bold text-gray-900 mb-4 text-center">Our Mission</h3>
           <p className="text-lg text-gray-700 leading-relaxed text-center max-w-4xl mx-auto">
             We're transforming how apartment societies manage their finances by eliminating manual processes,
@@ -53,8 +53,8 @@ export default function AboutFlatFundPro() {
           </div>
 
           <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
-            <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center mb-6">
-              <Users className="w-7 h-7 text-amber-600" />
+            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+              <Users className="w-7 h-7 text-blue-600" />
             </div>
             <h4 className="text-xl font-bold text-gray-900 mb-3">User Friendly</h4>
             <p className="text-gray-600 leading-relaxed">
@@ -131,12 +131,12 @@ export default function AboutFlatFundPro() {
         </div>
 
         {/* Who We Serve */}
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-3xl p-8 md:p-12 shadow-lg">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 md:p-12 shadow-lg">
           <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Who We Serve</h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-                <Building2 className="w-8 h-8 text-amber-600" />
+                <Building2 className="w-8 h-8 text-blue-600" />
               </div>
               <h4 className="font-bold text-gray-900 mb-2 text-lg">Apartment Societies</h4>
               <p className="text-gray-600 text-sm">
@@ -147,7 +147,7 @@ export default function AboutFlatFundPro() {
 
             <div className="text-center">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-                <Users className="w-8 h-8 text-amber-600" />
+                <Users className="w-8 h-8 text-blue-600" />
               </div>
               <h4 className="font-bold text-gray-900 mb-2 text-lg">Society Administrators</h4>
               <p className="text-gray-600 text-sm">
@@ -158,7 +158,7 @@ export default function AboutFlatFundPro() {
 
             <div className="text-center">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-                <BarChart3 className="w-8 h-8 text-amber-600" />
+                <BarChart3 className="w-8 h-8 text-blue-600" />
               </div>
               <h4 className="font-bold text-gray-900 mb-2 text-lg">Property Managers</h4>
               <p className="text-gray-600 text-sm">
@@ -177,7 +177,7 @@ export default function AboutFlatFundPro() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#features"
-              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
               Explore Features
             </a>

@@ -238,13 +238,13 @@ export default function SuperAdminExecutiveSummary() {
           <div className="text-sm font-medium text-emerald-700 mt-1">Total Flats</div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-200 rounded-xl p-6 shadow-lg">
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-blue-200 rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-3">
-            <Users className="w-8 h-8 text-amber-600" />
-            <span className="text-xs font-semibold text-amber-700 bg-amber-200 px-2 py-1 rounded-full">ADMINS</span>
+            <Users className="w-8 h-8 text-blue-600" />
+            <span className="text-xs font-semibold text-blue-700 bg-blue-200 px-2 py-1 rounded-full">ADMINS</span>
           </div>
-          <div className="text-3xl font-bold text-amber-900">{data.platformStats.totalAdmins}</div>
-          <div className="text-sm font-medium text-amber-700 mt-1">Administrators</div>
+          <div className="text-3xl font-bold text-blue-900">{data.platformStats.totalAdmins}</div>
+          <div className="text-sm font-medium text-blue-700 mt-1">Administrators</div>
         </div>
 
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-6 shadow-lg">
@@ -313,7 +313,7 @@ export default function SuperAdminExecutiveSummary() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700">Pending Approvals</span>
-              <span className="text-lg font-bold text-amber-600">{data.financialOverview.pendingApprovals}</span>
+              <span className="text-lg font-bold text-blue-600">{data.financialOverview.pendingApprovals}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700">Avg Payment</span>
@@ -368,12 +368,12 @@ export default function SuperAdminExecutiveSummary() {
               </div>
               <AlertTriangle className="w-10 h-10 text-rose-600 opacity-50" />
             </div>
-            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
               <div>
                 <div className="text-sm text-gray-600">Flagged Payments</div>
-                <div className="text-2xl font-bold text-amber-600 mt-1">{data.fraudDetectionStats.flaggedPayments}</div>
+                <div className="text-2xl font-bold text-blue-600 mt-1">{data.fraudDetectionStats.flaggedPayments}</div>
               </div>
-              <AlertTriangle className="w-10 h-10 text-amber-600 opacity-50" />
+              <AlertTriangle className="w-10 h-10 text-blue-600 opacity-50" />
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>

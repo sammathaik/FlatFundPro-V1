@@ -385,7 +385,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 type="date"
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -397,7 +397,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 type="date"
                 value={formData.end_date}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </>
@@ -422,7 +422,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                   setFormData({ ...formData, start_date: date.toISOString().split('T')[0] });
                 }
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
             <p className="text-xs text-gray-500 mt-1">Payments due on this day every month</p>
@@ -440,7 +440,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 value={formData.financial_year}
                 onChange={(e) => setFormData({ ...formData, financial_year: e.target.value })}
                 placeholder="e.g., FY25"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -451,7 +451,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
               <select
                 value={formData.quarter}
                 onChange={(e) => setFormData({ ...formData, quarter: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="Q1">Q1 (Apr-Jun)</option>
@@ -473,7 +473,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
               value={formData.financial_year}
               onChange={(e) => setFormData({ ...formData, financial_year: e.target.value })}
               placeholder="e.g., FY25, 2025"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -484,7 +484,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -514,7 +514,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
         </div>
         <button
           onClick={() => openForm()}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
           Create Collection
@@ -651,7 +651,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                   </button>
                   <button
                     onClick={() => openForm(collection)}
-                    className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
+                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-5 h-5" />
@@ -696,7 +696,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                   value={formData.collection_name}
                   onChange={(e) => setFormData({ ...formData, collection_name: e.target.value })}
                   placeholder="e.g., Annual Maintenance 2025, Emergency Repair Fund"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -711,7 +711,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                     onChange={(e) =>
                       setFormData({ ...formData, payment_type: e.target.value as any })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="maintenance">Maintenance</option>
@@ -729,7 +729,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                     onChange={(e) =>
                       setFormData({ ...formData, payment_frequency: e.target.value as any })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="one-time">One-Time</option>
@@ -753,7 +753,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -791,7 +791,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                         value={formData.amount_due}
                         onChange={(e) => setFormData({ ...formData, amount_due: e.target.value })}
                         placeholder="5000"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
@@ -811,7 +811,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                         value={formData.daily_fine}
                         onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
                         placeholder="0"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -834,7 +834,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                         value={formData.rate_per_sqft}
                         onChange={(e) => setFormData({ ...formData, rate_per_sqft: e.target.value })}
                         placeholder="5.00"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
@@ -854,7 +854,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                         value={formData.daily_fine}
                         onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
                         placeholder="0"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -890,7 +890,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                               })
                             }
                             placeholder="0"
-                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 text-sm"
+                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                             required
                           />
                         </div>
@@ -911,7 +911,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                         value={formData.daily_fine}
                         onChange={(e) => setFormData({ ...formData, daily_fine: e.target.value })}
                         placeholder="0"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -927,12 +927,12 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Additional information or instructions for residents..."
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded">
-                <p className="text-sm text-amber-800">
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                <p className="text-sm text-blue-800">
                   <strong>Note:</strong> This collection will be created as <strong>inactive</strong>.
                   You can activate it later from the collections list.
                 </p>
@@ -950,7 +950,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   {saving ? (
                     <>

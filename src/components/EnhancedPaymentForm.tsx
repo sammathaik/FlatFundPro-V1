@@ -301,7 +301,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
   if (submissionState === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-50"></div>
           <div className="relative">
@@ -321,7 +321,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
             </p>
             <button
               onClick={resetForm}
-              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Submit Another Payment
             </button>
@@ -351,7 +351,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   setShowEmailMismatchModal(false);
                   setErrors({});
                 }}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
               >
                 Understood
               </button>
@@ -363,9 +363,9 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
       <section id="submit-form" className="py-20 px-4 bg-gradient-to-br from-gray-50 to-amber-50">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full mb-4">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-semibold text-amber-800">Smart Detection Enabled</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-4">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-semibold text-blue-800">Smart Detection Enabled</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Submit Your Payment Proof
@@ -404,7 +404,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.name}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.name ? 'border-red-500' : 'border-gray-200'
                     }`}
                     placeholder="Enter your full name"
@@ -425,7 +425,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.flat_number}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.flat_number ? 'border-red-500' : 'border-gray-200'
                     }`}
                     placeholder="e.g., 101, A-205"
@@ -447,7 +447,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   value={formData.building_block_phase}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.building_block_phase ? 'border-red-500' : 'border-gray-200'
                   }`}
                   placeholder="e.g., Block A, Phase 2, Tower B"
@@ -469,7 +469,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.email ? 'border-red-500' : 'border-gray-200'
                     }`}
                     placeholder="your.email@example.com"
@@ -489,7 +489,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.occupant_type}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.occupant_type ? 'border-red-500' : 'border-gray-200'
                     }`}
                   >
@@ -515,7 +515,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.contact_number}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="+91 98765 43210"
                   />
                 </div>
@@ -531,7 +531,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     value={formData.payment_amount}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="e.g., 5000"
                     step="0.01"
                     min="0"
@@ -550,7 +550,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   value={formData.payment_date}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -570,7 +570,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   />
                   <label
                     htmlFor="screenshot"
-                    className={`flex items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-2xl cursor-pointer transition-all hover:border-amber-500 hover:bg-amber-50 ${
+                    className={`flex items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-2xl cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 ${
                       errors.screenshot ? 'border-red-500' : 'border-gray-300'
                     } ${submissionState === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
@@ -579,7 +579,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                         <div className="space-y-3">
                           <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg shadow-md" />
                           <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-amber-600">
+                            <span className="font-semibold text-blue-600">
                               {formData.screenshot?.name}
                             </span>
                             <br />
@@ -590,9 +590,9 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                         </div>
                       ) : formData.screenshot ? (
                         <div className="space-y-3">
-                          <ImageIcon className="w-12 h-12 text-amber-500 mx-auto" />
+                          <ImageIcon className="w-12 h-12 text-blue-500 mx-auto" />
                           <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-amber-600">
+                            <span className="font-semibold text-blue-600">
                               {formData.screenshot.name}
                             </span>
                             <br />
@@ -605,7 +605,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                         <>
                           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                           <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-amber-600">Click to upload</span> or drag and drop
+                            <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
                             <br />
                             <span className="text-xs">JPG, PNG or PDF (Max 10MB)</span>
                           </p>
@@ -614,8 +614,8 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                     </div>
                   </label>
                 </div>
-                <div className="mt-3 flex items-start text-xs text-gray-600 bg-amber-50 p-4 rounded-xl">
-                  <Sparkles className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="mt-3 flex items-start text-xs text-gray-600 bg-blue-50 p-4 rounded-xl">
+                  <Sparkles className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
                   <span>
                     <strong>Smart Detection:</strong> Make sure your screenshot clearly shows the transaction ID (UTR), payment amount, and date. Our system will automatically extract these details.
                   </span>
@@ -656,7 +656,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
               <button
                 type="submit"
                 disabled={submissionState === 'loading'}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 text-lg shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 text-lg shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
               >
                 {submissionState === 'loading' ? 'Processing...' : 'Submit Payment Proof'}
               </button>

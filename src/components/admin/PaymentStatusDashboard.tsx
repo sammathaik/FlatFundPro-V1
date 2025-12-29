@@ -61,7 +61,7 @@ interface FlatStatusDisplay {
 
 const STATUS_META: Record<FlatStatus, { label: string; color: string; bg: string }> = {
   paid: { label: 'Paid', color: 'bg-green-500', bg: 'bg-green-100' },
-  partial: { label: 'Partial', color: 'bg-amber-500', bg: 'bg-amber-100' },
+  partial: { label: 'Partial', color: 'bg-blue-500', bg: 'bg-blue-100' },
   pending: { label: 'Not Paid', color: 'bg-red-500', bg: 'bg-red-100' },
 };
 
@@ -849,7 +849,7 @@ export default function PaymentStatusDashboard({
                           </div>
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">{stats.partialCount}</p>
@@ -1070,7 +1070,7 @@ export default function PaymentStatusDashboard({
                               </div>
                               <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                   <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
                                 </div>
                                 <p className="text-xl font-bold text-gray-900">{stats.partialCount}</p>

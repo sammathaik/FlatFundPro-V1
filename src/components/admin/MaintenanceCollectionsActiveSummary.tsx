@@ -292,7 +292,7 @@ export default function MaintenanceCollectionsActiveSummary() {
       case 'Received':
         return 'bg-blue-100 text-blue-800';
       case 'Reviewed':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -494,7 +494,7 @@ export default function MaintenanceCollectionsActiveSummary() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className={`text-2xl font-bold ${summary.collection_percentage >= 90 ? 'text-green-600' : summary.collection_percentage >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                      <div className={`text-2xl font-bold ${summary.collection_percentage >= 90 ? 'text-green-600' : summary.collection_percentage >= 50 ? 'text-blue-600' : 'text-red-600'}`}>
                         {summary.collection_percentage.toFixed(1)}%
                       </div>
                       <div className="text-xs text-gray-500">Collected</div>
@@ -541,7 +541,7 @@ export default function MaintenanceCollectionsActiveSummary() {
                             <div
                               className={`h-3 rounded-full transition-all ${
                                 summary.collection_percentage >= 90 ? 'bg-green-500' :
-                                summary.collection_percentage >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                                summary.collection_percentage >= 50 ? 'bg-blue-500' : 'bg-red-500'
                               }`}
                               style={{ width: `${Math.min(100, summary.collection_percentage)}%` }}
                             />

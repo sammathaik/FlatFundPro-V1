@@ -88,7 +88,7 @@ export default function QRCodeGenerator({
       {showDownload && (
         <button
           onClick={downloadQRCode}
-          className="mt-4 flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg transition-colors font-medium shadow-md"
+          className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium shadow-md"
         >
           <Download className="w-5 h-5" />
           Download QR Code

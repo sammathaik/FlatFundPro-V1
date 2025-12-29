@@ -212,7 +212,7 @@ export default function PaymentForm() {
 
   if (submissionState === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
@@ -227,7 +227,7 @@ export default function PaymentForm() {
           </p>
           <button
             onClick={resetForm}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
           >
             Submit Another Payment
           </button>
@@ -237,10 +237,10 @@ export default function PaymentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-center">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
             <img
               src="/flatfundpro-2-logo.jpeg"
               alt="FlatFund Pro"
@@ -273,7 +273,7 @@ export default function PaymentForm() {
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your full name"
@@ -294,7 +294,7 @@ export default function PaymentForm() {
                   value={formData.building_block_phase}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.building_block_phase ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., Block A, Phase 2"
@@ -315,7 +315,7 @@ export default function PaymentForm() {
                   value={formData.flat_number}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.flat_number ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., 101, A-205"
@@ -336,7 +336,7 @@ export default function PaymentForm() {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="your.email@example.com"
@@ -357,7 +357,7 @@ export default function PaymentForm() {
                   value={formData.contact_number}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="+91 98765 43210"
                 />
               </div>
@@ -373,7 +373,7 @@ export default function PaymentForm() {
                   value={formData.payment_amount}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="e.g., 5000"
                   step="0.01"
                   min="0"
@@ -391,7 +391,7 @@ export default function PaymentForm() {
                   value={formData.payment_date}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -411,7 +411,7 @@ export default function PaymentForm() {
                   />
                   <label
                     htmlFor="screenshot"
-                    className={`flex items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-amber-500 hover:bg-amber-50 ${
+                    className={`flex items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 ${
                       errors.screenshot ? 'border-red-500' : 'border-gray-300'
                     } ${submissionState === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
@@ -419,7 +419,7 @@ export default function PaymentForm() {
                       <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                       {formData.screenshot ? (
                         <p className="text-sm text-gray-600">
-                          <span className="font-semibold text-amber-600">
+                          <span className="font-semibold text-blue-600">
                             {formData.screenshot.name}
                           </span>
                           <br />
@@ -438,7 +438,7 @@ export default function PaymentForm() {
                   </label>
                 </div>
                 <div className="mt-2 flex items-start text-xs text-gray-600 bg-gray-50 p-3 rounded">
-                  <Info className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
                   <span>
                     <strong>Tip:</strong> Crop or zoom your screenshot so that the transaction details are clearly visible.
                   </span>
@@ -479,7 +479,7 @@ export default function PaymentForm() {
               <button
                 type="submit"
                 disabled={submissionState === 'loading'}
-                className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 {submissionState === 'loading' ? 'Uploading...' : 'Upload & Submit'}
               </button>

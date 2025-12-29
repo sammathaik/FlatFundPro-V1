@@ -173,7 +173,7 @@ export default function CollectionEfficiencyMetrics({ buildingId }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-600">Average Delay</div>
-              <Clock className="w-5 h-5 text-orange-600" />
+              <Clock className="w-5 h-5 text-indigo-600" />
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-2">
               {data.averageDelay ? `${data.averageDelay} days` : '0 days'}
@@ -384,7 +384,7 @@ export default function CollectionEfficiencyMetrics({ buildingId }: Props) {
             {data.onTimeRate >= 80 ? (
               <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
             ) : (
-              <AlertCircle className="w-6 h-6 text-orange-600 mt-0.5" />
+              <AlertCircle className="w-6 h-6 text-indigo-600 mt-0.5" />
             )}
             <div>
               <h3 className="font-semibold text-gray-900 mb-1">Efficiency Assessment</h3>

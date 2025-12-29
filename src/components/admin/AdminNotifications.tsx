@@ -92,7 +92,7 @@ export default function AdminNotifications() {
       case 'critical':
         return <AlertCircle className="w-5 h-5 text-red-500" />;
       case 'high':
-        return <AlertTriangle className="w-5 h-5 text-orange-500" />;
+        return <AlertTriangle className="w-5 h-5 text-indigo-500" />;
       case 'medium':
         return <Info className="w-5 h-5 text-yellow-500" />;
       case 'low':
@@ -107,7 +107,7 @@ export default function AdminNotifications() {
       case 'critical':
         return 'bg-red-50 border-red-200';
       case 'high':
-        return 'bg-orange-50 border-orange-200';
+        return 'bg-indigo-50 border-indigo-200';
       case 'medium':
         return 'bg-yellow-50 border-yellow-200';
       case 'low':

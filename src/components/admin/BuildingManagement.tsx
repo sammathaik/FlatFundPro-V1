@@ -290,7 +290,7 @@ export default function BuildingManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -307,7 +307,7 @@ export default function BuildingManagement() {
             <h3 className="text-lg font-bold text-gray-900">Buildings/Blocks/Phases</h3>
             <button
               onClick={() => openBuildingModal()}
-              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
               Add
@@ -321,7 +321,7 @@ export default function BuildingManagement() {
                 onClick={() => setSelectedBuilding(building.id)}
                 className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                   selectedBuilding === building.id
-                    ? 'bg-amber-100 border-2 border-amber-600'
+                    ? 'bg-blue-100 border-2 border-blue-600'
                     : 'bg-white border-2 border-transparent hover:border-gray-300'
                 }`}
               >
@@ -373,7 +373,7 @@ export default function BuildingManagement() {
             <button
               onClick={() => openFlatModal()}
               disabled={buildings.length === 0}
-              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
               Add
@@ -384,7 +384,7 @@ export default function BuildingManagement() {
             {selectedBuildingFlats.map((flat) => (
               <div
                 key={flat.id}
-                className="bg-white border border-gray-200 rounded-lg p-3 group hover:border-amber-500 transition-colors"
+                className="bg-white border border-gray-200 rounded-lg p-3 group hover:border-blue-500 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export default function BuildingManagement() {
                   type="text"
                   value={buildingForm.block_name}
                   onChange={(e) => setBuildingForm({ ...buildingForm, block_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Block A, North Tower"
                   required
                 />
@@ -478,7 +478,7 @@ export default function BuildingManagement() {
                 <select
                   value={buildingForm.type}
                   onChange={(e) => setBuildingForm({ ...buildingForm, type: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Block">Block</option>
                   <option value="Building">Building</option>
@@ -504,7 +504,7 @@ export default function BuildingManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   <Check className="w-4 h-4" />
                   {editingBuilding ? 'Update' : 'Create'}
@@ -535,7 +535,7 @@ export default function BuildingManagement() {
                 <select
                   value={flatForm.block_id}
                   onChange={(e) => setFlatForm({ ...flatForm, block_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="">-- Select --</option>
@@ -555,7 +555,7 @@ export default function BuildingManagement() {
                   type="text"
                   value={flatForm.flat_number}
                   onChange={(e) => setFlatForm({ ...flatForm, flat_number: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., 101, A-205"
                   required
                 />
@@ -586,7 +586,7 @@ export default function BuildingManagement() {
                     type="number"
                     value={flatForm.built_up_area}
                     onChange={(e) => setFlatForm({ ...flatForm, built_up_area: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., 1200"
                     step="0.01"
                     min="0"
@@ -604,7 +604,7 @@ export default function BuildingManagement() {
                   <select
                     value={flatForm.flat_type}
                     onChange={(e) => setFlatForm({ ...flatForm, flat_type: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
                     <option value="">-- Select Flat Type --</option>
@@ -638,7 +638,7 @@ export default function BuildingManagement() {
                       type="text"
                       value={flatForm.owner_name}
                       onChange={(e) => setFlatForm({ ...flatForm, owner_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="e.g., Rajesh Kumar"
                     />
                   </div>
@@ -650,7 +650,7 @@ export default function BuildingManagement() {
                     <select
                       value={flatForm.occupant_type}
                       onChange={(e) => setFlatForm({ ...flatForm, occupant_type: e.target.value as '' | 'Owner' | 'Tenant' })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">-- Not Specified --</option>
                       <option value="Owner">Owner</option>
@@ -676,7 +676,7 @@ export default function BuildingManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   <Check className="w-4 h-4" />
                   {editingFlat ? 'Update' : 'Create'}

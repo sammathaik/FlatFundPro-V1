@@ -40,7 +40,7 @@ function App() {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 flex items-center justify-center p-4">
         <div className="max-w-2xl bg-white rounded-2xl shadow-xl p-8">
           <div className="flex items-center gap-4 mb-6">
             <AlertTriangle className="w-12 h-12 text-red-600" />
@@ -58,7 +58,7 @@ function App() {
           </div>
           <button
             onClick={() => window.location.href = '/diagnostic'}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
           >
             View Diagnostic Page
           </button>
@@ -69,9 +69,9 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ function App() {
 
     if (userRole === 'super_admin') {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex items-center justify-center p-4">
           <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Wrong Portal</h2>
             <p className="text-gray-600 mb-6">You are a Super Administrator. Please use the Super Admin portal.</p>
@@ -152,13 +152,13 @@ function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex items-center justify-center p-4">
         <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">You do not have Apartment Administrator privileges.</p>
           <button
             onClick={() => navigate('/')}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
           >
             Go to Public Portal
           </button>

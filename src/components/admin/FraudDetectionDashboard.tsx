@@ -157,9 +157,9 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
               <p className="text-xs font-medium text-red-900 mb-1">Future Date</p>
               <p className="text-2xl font-bold text-red-600">{statistics.indicatorTypes.FUTURE_DATE}</p>
             </div>
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
               <p className="text-xs font-medium text-orange-900 mb-1">Suspicious UPI</p>
-              <p className="text-2xl font-bold text-orange-600">{statistics.indicatorTypes.SUSPICIOUS_UPI_ID}</p>
+              <p className="text-2xl font-bold text-indigo-600">{statistics.indicatorTypes.SUSPICIOUS_UPI_ID}</p>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-xs font-medium text-yellow-900 mb-1">Suspicious TXN</p>
@@ -284,7 +284,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                               indicator.severity === 'CRITICAL'
                                 ? 'bg-red-100 text-red-700'
                                 : indicator.severity === 'HIGH'
-                                ? 'bg-orange-100 text-orange-700'
+                                ? 'bg-indigo-100 text-indigo-700'
                                 : 'bg-yellow-100 text-yellow-700'
                             }`}
                           >
@@ -401,7 +401,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                               indicator.severity === 'CRITICAL'
                                 ? 'bg-red-100 text-red-700'
                                 : indicator.severity === 'HIGH'
-                                ? 'bg-orange-100 text-orange-700'
+                                ? 'bg-indigo-100 text-indigo-700'
                                 : 'bg-yellow-100 text-yellow-700'
                             }`}
                           >
@@ -484,7 +484,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                           indicator.severity === 'CRITICAL'
                             ? 'bg-red-50 border-red-200'
                             : indicator.severity === 'HIGH'
-                            ? 'bg-orange-50 border-orange-200'
+                            ? 'bg-indigo-50 border-indigo-200'
                             : 'bg-yellow-50 border-yellow-200'
                         }`}
                       >
@@ -499,7 +499,7 @@ export function FraudDetectionDashboard({ apartmentId }: Props) {
                                 indicator.severity === 'CRITICAL'
                                   ? 'bg-red-100 text-red-700'
                                   : indicator.severity === 'HIGH'
-                                  ? 'bg-orange-100 text-orange-700'
+                                  ? 'bg-indigo-100 text-indigo-700'
                                   : 'bg-yellow-100 text-yellow-700'
                               }`}
                             >

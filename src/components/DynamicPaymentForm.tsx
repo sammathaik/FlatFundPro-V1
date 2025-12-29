@@ -730,9 +730,9 @@ export default function DynamicPaymentForm() {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading apartments...</p>
         </div>
       </div>
@@ -741,9 +741,9 @@ export default function DynamicPaymentForm() {
 
   if (apartments.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-          <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+          <AlertCircle className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-4">No Active Apartments</h2>
           <p className="text-gray-600">
             There are currently no active apartments available for payment submission.
@@ -756,7 +756,7 @@ export default function DynamicPaymentForm() {
 
   if (submissionState === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
@@ -772,7 +772,7 @@ export default function DynamicPaymentForm() {
           </p>
           <button
             onClick={resetForm}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
           >
             Submit Another Payment
           </button>
@@ -782,10 +782,10 @@ export default function DynamicPaymentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-center">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
             <img
               src="/flatfundpro-2-logo.jpeg"
               alt="FlatFund Pro"
@@ -795,7 +795,7 @@ export default function DynamicPaymentForm() {
               Submit Your Maintenance Payment Proof
             </h1>
             {selectedApartment && (
-              <p className="text-amber-100 font-medium">
+              <p className="text-blue-100 font-medium">
                 {selectedApartment.apartment_name}
               </p>
             )}
@@ -824,7 +824,7 @@ export default function DynamicPaymentForm() {
                     value={formData.apartmentId}
                     onChange={handleApartmentChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.apartment ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
@@ -852,7 +852,7 @@ export default function DynamicPaymentForm() {
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your full name"
@@ -872,7 +872,7 @@ export default function DynamicPaymentForm() {
                   value={formData.blockId}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading' || !formData.apartmentId}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.block ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -898,7 +898,7 @@ export default function DynamicPaymentForm() {
                   value={formData.flatId}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading' || !formData.blockId}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.flat ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -926,7 +926,7 @@ export default function DynamicPaymentForm() {
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="your.email@example.com"
@@ -946,7 +946,7 @@ export default function DynamicPaymentForm() {
                     value={formData.occupant_type}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading'}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.occupant_type ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
@@ -971,7 +971,7 @@ export default function DynamicPaymentForm() {
                   value={formData.contact_number}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="+91 98765 43210"
                 />
               </div>
@@ -981,8 +981,8 @@ export default function DynamicPaymentForm() {
                   What is this payment for? <span className="text-red-500">*</span>
                 </label>
                 {activeCollections.length === 0 && formData.apartmentId ? (
-                  <div className="w-full px-4 py-3 bg-amber-50 border-2 border-amber-300 rounded-lg">
-                    <p className="text-sm text-amber-800 font-medium">
+                  <div className="w-full px-4 py-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium">
                       No active payment collections available. Please contact your apartment admin.
                     </p>
                   </div>
@@ -993,7 +993,7 @@ export default function DynamicPaymentForm() {
                     value={selectedCollectionId}
                     onChange={handleInputChange}
                     disabled={submissionState === 'loading' || activeCollections.length === 0}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                       errors.payment_type ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
@@ -1099,7 +1099,7 @@ export default function DynamicPaymentForm() {
                   value={formData.payment_amount}
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="e.g., 5000"
                   step="0.01"
                   min="0"
@@ -1123,7 +1123,7 @@ export default function DynamicPaymentForm() {
                   onChange={handleInputChange}
                   disabled={submissionState === 'loading'}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -1143,7 +1143,7 @@ export default function DynamicPaymentForm() {
                   />
                   <label
                     htmlFor="screenshot"
-                    className={`flex items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-amber-500 hover:bg-amber-50 ${
+                    className={`flex items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 ${
                       errors.screenshot ? 'border-red-500' : 'border-gray-300'
                     } ${submissionState === 'loading' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
@@ -1151,7 +1151,7 @@ export default function DynamicPaymentForm() {
                       <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                       {formData.screenshot ? (
                         <p className="text-sm text-gray-600">
-                          <span className="font-semibold text-amber-600">
+                          <span className="font-semibold text-blue-600">
                             {formData.screenshot.name}
                           </span>
                           <br />
@@ -1170,7 +1170,7 @@ export default function DynamicPaymentForm() {
                   </label>
                 </div>
                 <div className="mt-2 flex items-start text-xs text-gray-600 bg-gray-50 p-3 rounded">
-                  <Info className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
                   <span>
                     <strong>Tip:</strong> Crop or zoom your screenshot so that the transaction details are clearly visible.
                   </span>
@@ -1211,7 +1211,7 @@ export default function DynamicPaymentForm() {
               <button
                 type="submit"
                 disabled={submissionState === 'loading'}
-                className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 {submissionState === 'loading' ? 'Uploading...' : 'Upload & Submit'}
               </button>
@@ -1235,7 +1235,7 @@ export default function DynamicPaymentForm() {
                         setShowEmailMismatchModal(false);
                         setErrors({});
                       }}
-                      className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                     >
                       Understood
                     </button>
@@ -1291,8 +1291,8 @@ export default function DynamicPaymentForm() {
                     </div>
                   </div>
 
-                  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded">
-                    <p className="text-sm text-amber-800">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+                    <p className="text-sm text-blue-800">
                       <strong>Important:</strong> You have already submitted a payment for this specific collection. If you need to pay for a different collection (e.g., Maintenance vs Contingency Fund), please select that collection from the form. If you believe this is an error, please contact your Admin/Secretary/Treasurer.
                     </p>
                   </div>
@@ -1308,7 +1308,7 @@ export default function DynamicPaymentForm() {
                       setShowDuplicateAlert(false);
                       setDuplicateInfo(null);
                     }}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
                   >
                     Understood
                   </button>
@@ -1322,8 +1322,8 @@ export default function DynamicPaymentForm() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowConfirmDialog(false)}>
                   <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center mb-4">
-                      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-                        <AlertTriangle className="w-10 h-10 text-amber-600" />
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-10 h-10 text-blue-600" />
                       </div>
                     </div>
 
@@ -1335,26 +1335,26 @@ export default function DynamicPaymentForm() {
                       Please verify all details before submitting your payment proof:
                     </p>
 
-                    <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-3 space-y-2.5">
-                      <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">Flat Details</h4>
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-3 space-y-2.5">
+                      <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2">Flat Details</h4>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <span className="text-xs font-medium text-gray-600">Apartment:</span>
-                          <p className="text-sm font-bold text-amber-800">{selectedApartment?.apartment_name}</p>
+                          <p className="text-sm font-bold text-blue-800">{selectedApartment?.apartment_name}</p>
                         </div>
                         <div>
                           <span className="text-xs font-medium text-gray-600">Building/Block:</span>
-                          <p className="text-sm font-bold text-amber-800">{getSelectedBlockName()}</p>
+                          <p className="text-sm font-bold text-blue-800">{getSelectedBlockName()}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <span className="text-xs font-medium text-gray-600">Flat Number:</span>
-                          <p className="text-base font-bold text-amber-900">{getSelectedFlatNumber()}</p>
+                          <p className="text-base font-bold text-blue-900">{getSelectedFlatNumber()}</p>
                         </div>
                         <div>
                           <span className="text-xs font-medium text-gray-600">Name:</span>
-                          <p className="text-sm font-bold text-amber-800">{formData.name}</p>
+                          <p className="text-sm font-bold text-blue-800">{formData.name}</p>
                         </div>
                       </div>
                     </div>
@@ -1402,7 +1402,7 @@ export default function DynamicPaymentForm() {
                       </button>
                       <button
                         onClick={handleConfirmSubmit}
-                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
                       >
                         Confirm & Submit
                       </button>

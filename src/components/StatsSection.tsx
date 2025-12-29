@@ -34,7 +34,7 @@ function StatItem({ icon, value, label, suffix = '', prefix = '' }: StatItemProp
   return (
     <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
       <div className="flex items-center justify-between mb-4">
-        <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
           {icon}
         </div>
       </div>
@@ -48,7 +48,7 @@ function StatItem({ icon, value, label, suffix = '', prefix = '' }: StatItemProp
 
 export default function StatsSection() {
   return (
-    <section id="benefits" className="py-20 px-4 bg-gradient-to-br from-amber-50 to-orange-50 scroll-mt-20">
+    <section id="benefits" className="py-20 px-4 bg-gradient-to-br from-blue-50 to-indigo-50 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -130,8 +130,8 @@ export default function StatsSection() {
                 </li>
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl p-8 text-center">
-              <div className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600 mb-2">
+            <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8 text-center">
+              <div className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
                 2 Days
               </div>
               <p className="text-lg font-semibold text-gray-800 mb-2">

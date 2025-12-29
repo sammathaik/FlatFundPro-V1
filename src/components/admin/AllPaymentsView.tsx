@@ -109,7 +109,7 @@ export default function AllPaymentsView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function AllPaymentsView() {
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap flex-shrink-0"
         >
           <Download className="w-4 h-4" />
           <span className="hidden sm:inline">Export CSV</span>
@@ -139,7 +139,7 @@ export default function AllPaymentsView() {
             placeholder="Search by name, email, apartment, or flat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         <div className="sm:w-48 relative">
@@ -147,7 +147,7 @@ export default function AllPaymentsView() {
           <select
             value={quarterFilter}
             onChange={(e) => setQuarterFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
           >
             <option value="all">All Quarters</option>
             {Array.from(new Set(payments.map(p => p.payment_quarter).filter(Boolean))).sort().reverse().map(q => (
@@ -160,7 +160,7 @@ export default function AllPaymentsView() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
           >
             <option value="all">All Status</option>
             <option value="Received">Received</option>
@@ -246,7 +246,7 @@ export default function AllPaymentsView() {
                     <td className="px-3 sm:px-6 py-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => setSelectedPayment(payment)}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
@@ -354,7 +354,7 @@ export default function AllPaymentsView() {
                   href={selectedPayment.screenshot_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium"
+                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
                 >
                   View Screenshot →
                 </a>

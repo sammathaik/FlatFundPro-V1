@@ -289,12 +289,12 @@ export default function OccupantEngagementAnalytics({ buildingId }: Props) {
                 </div>
               </div>
 
-              <div className="p-4 bg-orange-50 rounded-lg">
+              <div className="p-4 bg-indigo-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900">Needs Encouragement</span>
-                  <MessageSquare className="w-5 h-5 text-orange-600" />
+                  <MessageSquare className="w-5 h-5 text-indigo-600" />
                 </div>
-                <div className="text-2xl font-bold text-orange-600 mb-1">
+                <div className="text-2xl font-bold text-indigo-600 mb-1">
                   {data.slowPayers}
                 </div>
                 <div className="text-sm text-gray-600">

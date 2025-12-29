@@ -147,7 +147,7 @@ export default function ApartmentManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
@@ -170,7 +170,7 @@ export default function ApartmentManagement() {
           </button>
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Add Apartment</span>
@@ -290,7 +290,7 @@ export default function ApartmentManagement() {
                   type="text"
                   value={formData.apartment_name}
                   onChange={(e) => setFormData({ ...formData, apartment_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Green Meadows"
                   required
                 />
@@ -304,7 +304,7 @@ export default function ApartmentManagement() {
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Mumbai, New York"
                 />
               </div>
@@ -317,7 +317,7 @@ export default function ApartmentManagement() {
                   type="text"
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., India, USA, UK"
                 />
               </div>
@@ -329,7 +329,7 @@ export default function ApartmentManagement() {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -362,7 +362,7 @@ export default function ApartmentManagement() {
                       value="A"
                       checked={formData.default_collection_mode === 'A'}
                       onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode A: Equal / Flat Rate</div>
@@ -377,7 +377,7 @@ export default function ApartmentManagement() {
                       value="B"
                       checked={formData.default_collection_mode === 'B'}
                       onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode B: Area-Based (Built-up Area)</div>
@@ -392,7 +392,7 @@ export default function ApartmentManagement() {
                       value="C"
                       checked={formData.default_collection_mode === 'C'}
                       onChange={(e) => setFormData({ ...formData, default_collection_mode: e.target.value as CollectionMode })}
-                      className="mt-1 w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500 cursor-pointer"
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm text-gray-900">Mode C: Flat-Type Based</div>
@@ -418,7 +418,7 @@ export default function ApartmentManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   <Check className="w-4 h-4" />
                   {editingApartment ? 'Update' : 'Create'}

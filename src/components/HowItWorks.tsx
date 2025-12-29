@@ -16,15 +16,15 @@ export default function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <div className="hidden md:block absolute top-1/4 left-1/3 right-1/3 h-1 bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200"></div>
 
-          <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
                 1
               </div>
             </div>
             <div className="mt-8 mb-6">
               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
-                <Upload className="w-10 h-10 text-amber-600" />
+                <Upload className="w-10 h-10 text-blue-600" />
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
@@ -35,15 +35,15 @@ export default function HowItWorks() {
             </p>
           </div>
 
-          <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
                 2
               </div>
             </div>
             <div className="mt-8 mb-6">
               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
-                <Scan className="w-10 h-10 text-amber-600" />
+                <Scan className="w-10 h-10 text-blue-600" />
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
@@ -54,15 +54,15 @@ export default function HowItWorks() {
             </p>
           </div>
 
-          <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
                 3
               </div>
             </div>
             <div className="mt-8 mb-6">
               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
-                <CheckCircle2 className="w-10 h-10 text-amber-600" />
+                <CheckCircle2 className="w-10 h-10 text-blue-600" />
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
@@ -74,7 +74,7 @@ export default function HowItWorks() {
           </div>
         </div>
 
-        <div className="mt-16 bg-gradient-to-r from-amber-100 to-orange-100 rounded-3xl p-8 text-center">
+        <div className="mt-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-3xl p-8 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-3">
             Save Time, Skip the Hassle
           </h3>

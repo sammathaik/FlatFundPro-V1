@@ -33,7 +33,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
     <div className={`min-h-screen flex items-center justify-center p-4 ${
       isSuperAdmin
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900'
-        : 'bg-gradient-to-br from-amber-50 via-white to-orange-50'
+        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
     }`}>
       <div className="w-full max-w-md">
         <div className={`rounded-2xl shadow-xl overflow-hidden ${
@@ -42,7 +42,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
           <div className={`px-6 py-8 text-center ${
             isSuperAdmin
               ? 'bg-gradient-to-r from-emerald-700 to-emerald-600'
-              : 'bg-gradient-to-r from-amber-600 to-orange-600'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600'
           }`}>
             {isSuperAdmin ? (
               <Shield className="w-20 h-20 text-white mx-auto mb-4" />
@@ -52,7 +52,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
             <h1 className="text-2xl font-bold text-white">
               {isSuperAdmin ? 'Super Admin Portal' : 'Apartment Admin Portal'}
             </h1>
-            <p className={`mt-2 ${isSuperAdmin ? 'text-emerald-100' : 'text-amber-100'}`}>
+            <p className={`mt-2 ${isSuperAdmin ? 'text-emerald-100' : 'text-blue-100'}`}>
               {isSuperAdmin ? 'Master system access' : 'Sign in to manage your apartment'}
             </p>
           </div>
@@ -78,7 +78,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
                       isSuperAdmin
                         ? 'bg-slate-700 border-slate-600 text-white focus:ring-emerald-500 placeholder-slate-400'
-                        : 'bg-white border-gray-300 text-gray-900 focus:ring-amber-500 placeholder-gray-400'
+                        : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500 placeholder-gray-400'
                     }`}
                     placeholder="admin@example.com"
                     required
@@ -105,7 +105,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
                       isSuperAdmin
                         ? 'bg-slate-700 border-slate-600 text-white focus:ring-emerald-500 placeholder-slate-400'
-                        : 'bg-white border-gray-300 text-gray-900 focus:ring-amber-500 placeholder-gray-400'
+                        : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500 placeholder-gray-400'
                     }`}
                     placeholder="Enter your password"
                     required
@@ -132,7 +132,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
                 className={`w-full font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center ${
                   isSuperAdmin
                     ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600'
-                    : 'bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400'
+                    : 'bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400'
                 } text-white disabled:cursor-not-allowed`}
               >
                 {loading ? (
@@ -164,7 +164,7 @@ export default function LoginPage({ portalType = 'admin', onBack }: LoginPagePro
             className={`font-medium text-sm transition-colors ${
               isSuperAdmin
                 ? 'text-emerald-400 hover:text-emerald-300'
-                : 'text-amber-600 hover:text-amber-700'
+                : 'text-blue-600 hover:text-blue-700'
             }`}
           >
             ← Back

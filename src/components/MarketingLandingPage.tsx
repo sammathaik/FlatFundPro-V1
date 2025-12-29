@@ -83,19 +83,19 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
               <img src="/flatfundpro-2-logo.jpeg" alt="FlatFund Pro" className="h-16 sm:h-18 object-contain drop-shadow-md" />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">FlatFund Pro</h1>
-                <p className="text-xs text-amber-600 font-medium">Smart Society Management</p>
+                <p className="text-xs text-blue-600 font-medium">Smart Society Management</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleNavigate('/admin')}
-                className="hidden sm:inline-flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors text-sm font-medium"
+                className="hidden sm:inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium"
               >
                 Sign In
               </button>
               <button
                 onClick={() => handleNavigate('/admin')}
-                className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm"
               >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
@@ -110,7 +110,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
                 <Sparkles className="w-4 h-4" />
                 Trusted by 100+ Apartment Societies
               </div>
@@ -123,7 +123,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
                   href="#demo"
-                  className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
                 >
                   Request Demo
                   <ArrowRight className="w-5 h-5" />
@@ -145,8 +145,8 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   Setup in Minutes
                 </div>
               </div>
-              <div className="hidden lg:flex items-center gap-3 mt-8 p-4 bg-white rounded-xl border-2 border-amber-200 shadow-md">
-                <QrCode className="w-10 h-10 text-amber-600" />
+              <div className="hidden lg:flex items-center gap-3 mt-8 p-4 bg-white rounded-xl border-2 border-blue-200 shadow-md">
+                <QrCode className="w-10 h-10 text-blue-600" />
                 <div>
                   <p className="font-semibold text-gray-900">Scan for Quick Demo</p>
                   <p className="text-sm text-gray-600">Jump to request form</p>
@@ -154,16 +154,16 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
               </div>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-8 shadow-2xl">
+              <div className="bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl p-8 shadow-2xl">
                 <div className="bg-white rounded-xl p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900">Payment Overview</h3>
                     <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">Live</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-amber-50 p-4 rounded-lg">
+                    <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-sm text-gray-600">Collected</p>
-                      <p className="text-2xl font-bold text-amber-600">₹8.5L</p>
+                      <p className="text-2xl font-bold text-blue-600">₹8.5L</p>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-sm text-gray-600">Pending</p>
@@ -174,7 +174,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                     {[92, 78, 85].map((percent, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className="flex-1 bg-gray-100 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
+                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
                         </div>
                         <span className="text-sm font-medium text-gray-700">{percent}%</span>
                       </div>
@@ -182,7 +182,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   </div>
                 </div>
               </div>
-              <div className="absolute -bottom-6 -right-6 bg-white rounded-xl p-4 shadow-xl border-2 border-amber-200">
+              <div className="absolute -bottom-6 -right-6 bg-white rounded-xl p-4 shadow-xl border-2 border-blue-200">
                 <div className="flex items-center gap-3">
                   <div className="bg-green-100 p-2 rounded-lg">
                     <TrendingUp className="w-6 h-6 text-green-600" />
@@ -243,7 +243,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
               <Target className="w-4 h-4" />
               Complete Solution
             </div>
@@ -293,7 +293,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 color: 'orange'
               }
             ].map((feature, index) => (
-              <div key={index} className="group bg-white p-8 rounded-xl shadow-sm border-2 border-gray-100 hover:border-amber-300 hover:shadow-lg transition-all">
+              <div key={index} className="group bg-white p-8 rounded-xl shadow-sm border-2 border-gray-100 hover:border-blue-300 hover:shadow-lg transition-all">
                 <div className={`bg-${feature.color}-50 w-14 h-14 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                   <feature.icon className={`w-7 h-7 text-${feature.color}-600`} />
                 </div>
@@ -306,7 +306,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-gradient-to-br from-amber-50 to-orange-50">
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
@@ -336,13 +336,13 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             ].map((step, index) => (
               <div key={index} className="relative">
                 <div className="bg-white p-8 rounded-xl shadow-lg">
-                  <div className="text-5xl font-bold text-amber-200 mb-4">{step.step}</div>
+                  <div className="text-5xl font-bold text-blue-200 mb-4">{step.step}</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
                   <p className="text-gray-600">{step.description}</p>
                 </div>
                 {index < 2 && (
                   <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ArrowRight className="w-8 h-8 text-amber-300" />
+                    <ArrowRight className="w-8 h-8 text-blue-300" />
                   </div>
                 )}
               </div>
@@ -394,7 +394,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 color: 'amber'
               }
             ].map((item, index) => (
-              <div key={index} className="bg-white border-2 border-gray-100 rounded-xl p-6 hover:border-amber-300 hover:shadow-lg transition-all">
+              <div key={index} className="bg-white border-2 border-gray-100 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all">
                 <div className={`bg-${item.color}-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
                   <item.icon className={`w-6 h-6 text-${item.color}-600`} />
                 </div>
@@ -483,7 +483,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
               }
             ].map((useCase, index) => (
               <div key={index} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div className="bg-white/20 p-2 rounded-lg">
                       <useCase.icon className="w-6 h-6 text-white" />
@@ -527,7 +527,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
               <Heart className="w-4 h-4" />
               Loved by Admins
             </div>
@@ -563,14 +563,14 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 rating: 5
               }
             ].map((testimonial, index) => (
-              <div key={index} className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-100">
+              <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-100">
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Award key={i} className="w-5 h-5 text-amber-500 fill-amber-500" />
+                    <Award key={i} className="w-5 h-5 text-blue-500 fill-amber-500" />
                   ))}
                 </div>
                 <blockquote className="text-gray-700 mb-4 italic">"{testimonial.quote}"</blockquote>
-                <div className="border-t border-amber-200 pt-4">
+                <div className="border-t border-blue-200 pt-4">
                   <p className="font-bold text-gray-900">{testimonial.name}</p>
                   <p className="text-sm text-gray-600">{testimonial.role}</p>
                   <p className="text-xs text-gray-500 mt-1">{testimonial.society}</p>
@@ -602,23 +602,23 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   { text: 'Access from anywhere, anytime', icon: Smartphone }
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <benefit.icon className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
+                    <benefit.icon className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
                     <p className="text-gray-200 text-lg">{benefit.text}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 p-8 rounded-2xl border border-amber-500/30">
+            <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 p-8 rounded-2xl border border-blue-500/30">
               <div className="bg-gray-800 p-8 rounded-xl shadow-lg">
                 <h3 className="text-2xl font-bold text-white mb-6">Proven Results</h3>
                 <div className="space-y-6">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-gray-300">Collection Efficiency</span>
-                      <span className="text-2xl font-bold text-amber-400">+40%</span>
+                      <span className="text-2xl font-bold text-blue-400">+40%</span>
                     </div>
                     <div className="bg-gray-700 rounded-full h-3">
-                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full" style={{ width: '95%' }}></div>
+                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-3 rounded-full" style={{ width: '95%' }}></div>
                     </div>
                   </div>
                   <div>
@@ -702,9 +702,9 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 answer: 'You can continue with our affordable subscription plans. Pricing is transparent and based on the number of flats. No hidden costs, cancel anytime.'
               }
             ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-sm border-2 border-gray-100 p-6 hover:border-amber-200 transition-all">
+              <div key={index} className="bg-white rounded-xl shadow-sm border-2 border-gray-100 p-6 hover:border-blue-200 transition-all">
                 <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-start gap-2">
-                  <MessageCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-1" />
+                  <MessageCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
                   {faq.question}
                 </h3>
                 <p className="text-gray-600 pl-7">{faq.answer}</p>
@@ -728,7 +728,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <button
               onClick={() => handleNavigate('/admin')}
-              className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg"
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />
@@ -771,15 +771,15 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             <p className="text-lg text-gray-600 mb-6">
               See FlatFund Pro in action. Fill out the form below and we'll get back to you within 24 hours.
             </p>
-            <div className="inline-flex items-center gap-3 bg-amber-50 px-6 py-3 rounded-xl border-2 border-amber-200">
-              <QrCode className="w-6 h-6 text-amber-600" />
+            <div className="inline-flex items-center gap-3 bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
+              <QrCode className="w-6 h-6 text-blue-600" />
               <span className="text-sm font-medium text-gray-700">
                 Share this page via QR code - scroll down for printable version
               </span>
             </div>
           </div>
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 sm:p-12">
+            <div className="lg:col-span-2 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 sm:p-12">
               {submitted ? (
                 <div className="text-center py-12">
                   <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -801,7 +801,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="John Doe"
                       required
                     />
@@ -814,7 +814,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="john@example.com"
                       required
                     />
@@ -829,7 +829,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="+91 98765 43210"
                     />
                   </div>
@@ -841,7 +841,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                       type="text"
                       value={formData.apartment_name}
                       onChange={(e) => setFormData({ ...formData, apartment_name: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Green Meadows"
                       required
                     />
@@ -855,7 +855,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Mumbai, Bangalore, etc."
                     required
                   />
@@ -868,14 +868,14 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Tell us about your apartment society..."
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Submitting...' : 'Request Demo'}
                   {!loading && <ArrowRight className="w-5 h-5" />}
@@ -885,7 +885,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             </div>
 
             <div className="hidden lg:flex flex-col items-center justify-center">
-              <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-amber-200">
+              <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-blue-200">
                 <div className="text-center mb-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Quick Access</h3>
                   <p className="text-sm text-gray-600">Scan to request demo</p>

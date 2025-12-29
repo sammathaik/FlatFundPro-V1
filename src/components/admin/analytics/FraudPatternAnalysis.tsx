@@ -161,9 +161,9 @@ export default function FraudPatternAnalysis({ buildingId }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-600">Flagged</div>
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <AlertTriangle className="w-5 h-5 text-indigo-600" />
             </div>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-2xl font-bold text-indigo-600">
               {data.flaggedCount}
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function FraudPatternAnalysis({ buildingId }: Props) {
             {data.fraudRate === 0 ? (
               <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
             ) : (
-              <AlertTriangle className="w-6 h-6 text-orange-600 mt-0.5" />
+              <AlertTriangle className="w-6 h-6 text-indigo-600 mt-0.5" />
             )}
             <div>
               <h3 className="font-semibold text-gray-900 mb-1">Security Status</h3>
@@ -245,7 +245,7 @@ export default function FraudPatternAnalysis({ buildingId }: Props) {
                         <div
                           className={`h-2 rounded-full ${
                             type.type === 'Clear' ? 'bg-green-600' :
-                            type.type === 'Flagged' ? 'bg-orange-600' : 'bg-red-600'
+                            type.type === 'Flagged' ? 'bg-indigo-600' : 'bg-red-600'
                           }`}
                           style={{ width: `${percentage}%` }}
                         />
@@ -309,7 +309,7 @@ export default function FraudPatternAnalysis({ buildingId }: Props) {
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           incident.status === 'high_risk' ? 'bg-red-100 text-red-800' :
-                          'bg-orange-100 text-orange-800'
+                          'bg-indigo-100 text-indigo-800'
                         }`}>
                           {incident.status === 'high_risk' ? 'High Risk' : 'Flagged'}
                         </span>

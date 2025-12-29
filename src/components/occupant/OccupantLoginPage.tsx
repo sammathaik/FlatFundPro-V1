@@ -199,7 +199,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {onBack && (
           <button
@@ -213,7 +213,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 rounded-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-full">
               <Home className="w-12 h-12 text-white" />
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your registered email"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : 'Continue'}
               </button>
@@ -268,7 +268,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
           {step === 'mobile' && (
             <form onSubmit={handleMobileSubmit} className="space-y-6">
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-4">
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
                 <p className="text-sm">
                   Please provide your mobile number to receive an OTP for secure login.
                 </p>
@@ -287,7 +287,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                     placeholder="Enter 10-digit mobile number"
                     maxLength={10}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -318,7 +318,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sending...' : 'Send OTP'}
                 </button>
@@ -347,7 +347,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-center text-2xl tracking-widest"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
                   />
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
               </button>
@@ -383,7 +383,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                   type="button"
                   onClick={handleResendOtp}
                   disabled={loading}
-                  className="text-amber-600 hover:text-amber-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Resend OTP
                 </button>
@@ -422,8 +422,8 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                       key={flat.flat_id}
                       className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         selectedFlatId === flat.flat_id
-                          ? 'border-amber-500 bg-amber-50'
-                          : 'border-gray-200 hover:border-amber-300 bg-white'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300 bg-white'
                       }`}
                     >
                       <input
@@ -432,7 +432,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                         value={flat.flat_id}
                         checked={selectedFlatId === flat.flat_id}
                         onChange={(e) => setSelectedFlatId(e.target.value)}
-                        className="mt-1 text-amber-600 focus:ring-amber-500"
+                        className="mt-1 text-blue-600 focus:ring-blue-500"
                       />
                       <div className="ml-3 flex-1">
                         <p className="font-semibold text-gray-900">
@@ -459,7 +459,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
               <button
                 type="submit"
                 disabled={loading || !selectedFlatId}
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Continuing...' : 'Continue to Dashboard'}
               </button>

@@ -343,7 +343,7 @@ export default function PaymentManagement() {
   function getFraudRiskColor(score: number | null | undefined): string {
     if (!score) return 'text-gray-600';
     if (score >= 80) return 'text-red-700';
-    if (score >= 60) return 'text-orange-700';
+    if (score >= 60) return 'text-indigo-700';
     if (score >= 40) return 'text-yellow-700';
     return 'text-green-700';
   }
@@ -351,7 +351,7 @@ export default function PaymentManagement() {
   function getFraudRiskBgColor(score: number | null | undefined): string {
     if (!score) return 'bg-gray-100';
     if (score >= 80) return 'bg-red-100';
-    if (score >= 60) return 'bg-orange-100';
+    if (score >= 60) return 'bg-indigo-100';
     if (score >= 40) return 'bg-yellow-100';
     return 'bg-green-100';
   }
@@ -415,7 +415,7 @@ export default function PaymentManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -446,7 +446,7 @@ export default function PaymentManagement() {
           </button>
           <button
             onClick={loadPayments}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -463,7 +463,7 @@ export default function PaymentManagement() {
               placeholder="Search by name, email, or flat..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
             />
           </div>
           <div className="relative">
@@ -471,7 +471,7 @@ export default function PaymentManagement() {
             <select
               value={quarterFilter}
               onChange={(e) => setQuarterFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-shadow"
             >
               <option value="all">All Quarters</option>
               {Array.from(new Set(payments.map(p => p.payment_quarter).filter(Boolean))).sort().reverse().map(q => (
@@ -484,7 +484,7 @@ export default function PaymentManagement() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-shadow"
             >
               <option value="all">All Status</option>
               <option value="Received">Received</option>
@@ -497,7 +497,7 @@ export default function PaymentManagement() {
             <select
               value={paymentTypeFilter}
               onChange={(e) => setPaymentTypeFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-shadow"
             >
               <option value="all">All Types</option>
               <option value="maintenance">Maintenance</option>
@@ -510,7 +510,7 @@ export default function PaymentManagement() {
             <select
               value={fraudFilter}
               onChange={(e) => setFraudFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-shadow"
             >
               <option value="all">All Risk Levels</option>
               <option value="flagged">Flagged Only</option>
@@ -523,13 +523,13 @@ export default function PaymentManagement() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-4 mb-6 rounded-lg shadow-sm">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-800">
             <span className="font-semibold">{filteredPayments.length}</span> of{' '}
             <span className="font-semibold">{payments.length}</span> payment{payments.length !== 1 ? 's' : ''} shown
             {selectedIds.size > 0 && (
-              <span className="ml-2 text-amber-700 font-semibold">
+              <span className="ml-2 text-blue-700 font-semibold">
                 · {selectedIds.size} selected
               </span>
             )}
@@ -556,9 +556,9 @@ export default function PaymentManagement() {
                   title={allSelected ? "Deselect all" : "Select all"}
                 >
                   {allSelected ? (
-                    <CheckSquare className="w-5 h-5 text-amber-600" />
+                    <CheckSquare className="w-5 h-5 text-blue-600" />
                   ) : someSelected ? (
-                    <div className="w-5 h-5 border-2 border-amber-600 bg-amber-50 rounded"></div>
+                    <div className="w-5 h-5 border-2 border-blue-600 bg-blue-50 rounded"></div>
                   ) : (
                     <Square className="w-5 h-5 text-gray-400" />
                   )}
@@ -593,14 +593,14 @@ export default function PaymentManagement() {
           <tbody className="divide-y divide-gray-200">
             {paginatedPayments.map((payment) => (
               <React.Fragment key={payment.id}>
-                <tr className="hover:bg-amber-50/30 transition-colors">
+                <tr className="hover:bg-blue-50/30 transition-colors">
                   <td className="px-6 py-5">
                     <button
                       onClick={() => toggleSelect(payment.id)}
                       className="p-1 hover:bg-gray-200 rounded transition-colors"
                     >
                       {selectedIds.has(payment.id) ? (
-                        <CheckSquare className="w-5 h-5 text-amber-600" />
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
                       ) : (
                         <Square className="w-5 h-5 text-gray-400" />
                       )}
@@ -657,7 +657,7 @@ export default function PaymentManagement() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => toggleRow(payment.id)}
-                        className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title={expandedRows.has(payment.id) ? "Collapse" : "Expand"}
                       >
                         {expandedRows.has(payment.id) ? (
@@ -724,9 +724,9 @@ export default function PaymentManagement() {
                   </td>
                 </tr>
                 {expandedRows.has(payment.id) && (
-                  <tr key={`${payment.id}-details`} className="bg-amber-50">
+                  <tr key={`${payment.id}-details`} className="bg-blue-50">
                     <td colSpan={9} className="px-6 py-4">
-                      <div className="bg-white rounded-lg border border-amber-200 p-4 space-y-4">
+                      <div className="bg-white rounded-lg border border-blue-200 p-4 space-y-4">
                         {payment.is_fraud_flagged && (
                           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                             <div className="flex items-start gap-3">
@@ -746,7 +746,7 @@ export default function PaymentManagement() {
                                           indicator.severity === 'CRITICAL'
                                             ? 'bg-red-100 border-red-300 text-red-900'
                                             : indicator.severity === 'HIGH'
-                                            ? 'bg-orange-100 border-orange-300 text-orange-900'
+                                            ? 'bg-indigo-100 border-orange-300 text-orange-900'
                                             : 'bg-yellow-100 border-yellow-300 text-yellow-900'
                                         }`}
                                       >
@@ -794,7 +794,7 @@ export default function PaymentManagement() {
                         />
 
                         <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <span className="w-1 h-4 bg-amber-600 rounded"></span>
+                          <span className="w-1 h-4 bg-blue-600 rounded"></span>
                           Complete Payment Details
                         </h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
@@ -904,7 +904,7 @@ export default function PaymentManagement() {
                               href={payment.screenshot_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
+                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
                             >
                               View Screenshot →
                             </a>
@@ -939,7 +939,7 @@ export default function PaymentManagement() {
                     className="mt-1 p-1"
                   >
                     {selectedIds.has(payment.id) ? (
-                      <CheckSquare className="w-5 h-5 text-amber-600" />
+                      <CheckSquare className="w-5 h-5 text-blue-600" />
                     ) : (
                       <Square className="w-5 h-5 text-gray-400" />
                     )}
@@ -1049,7 +1049,7 @@ export default function PaymentManagement() {
 
               <button
                 onClick={() => toggleRow(payment.id)}
-                className="w-full mt-3 pt-3 border-t border-gray-200 flex items-center justify-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium"
+                className="w-full mt-3 pt-3 border-t border-gray-200 flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 {expandedRows.has(payment.id) ? (
                   <>
@@ -1152,7 +1152,7 @@ export default function PaymentManagement() {
                         href={payment.screenshot_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
                       >
                         View Screenshot →
                       </a>
@@ -1176,11 +1176,11 @@ export default function PaymentManagement() {
         <div className="mt-6 flex flex-col items-center gap-4 bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-sm text-gray-700 text-center sm:text-left">
-              Showing <span className="font-bold text-amber-700">{startIndex + 1}</span> to{' '}
-              <span className="font-bold text-amber-700">{Math.min(endIndex, filteredPayments.length)}</span> of{' '}
-              <span className="font-bold text-amber-700">{filteredPayments.length}</span> results
+              Showing <span className="font-bold text-blue-700">{startIndex + 1}</span> to{' '}
+              <span className="font-bold text-blue-700">{Math.min(endIndex, filteredPayments.length)}</span> of{' '}
+              <span className="font-bold text-blue-700">{filteredPayments.length}</span> results
               {selectedIds.size > 0 && (
-                <span className="ml-2 text-amber-600 font-semibold">
+                <span className="ml-2 text-blue-600 font-semibold">
                   · {selectedIds.size} selected
                 </span>
               )}
@@ -1197,7 +1197,7 @@ export default function PaymentManagement() {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-medium"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
               >
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -1212,7 +1212,7 @@ export default function PaymentManagement() {
             <button
               onClick={() => goToPage(1)}
               disabled={currentPage === 1}
-              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
               title="First page"
             >
               <ChevronsLeft className="w-5 h-5" />
@@ -1221,7 +1221,7 @@ export default function PaymentManagement() {
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
               title="Previous page"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -1246,7 +1246,7 @@ export default function PaymentManagement() {
                     onClick={() => goToPage(pageNum)}
                     className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                       currentPage === pageNum
-                        ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
+                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
                         : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
@@ -1259,7 +1259,7 @@ export default function PaymentManagement() {
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
               title="Next page"
             >
               <ChevronRight className="w-5 h-5" />
@@ -1268,7 +1268,7 @@ export default function PaymentManagement() {
             <button
               onClick={() => goToPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-600"
               title="Last page"
             >
               <ChevronsRight className="w-5 h-5" />
@@ -1367,7 +1367,7 @@ export default function PaymentManagement() {
                   href={selectedPayment.screenshot_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium"
+                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
                 >
                   View Screenshot →
                 </a>
@@ -1376,7 +1376,7 @@ export default function PaymentManagement() {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => openStatusModal(selectedPayment)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Update Status
@@ -1403,7 +1403,7 @@ export default function PaymentManagement() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Current Status: <span className="text-amber-600">{selectedPayment.status}</span>
+                  Current Status: <span className="text-blue-600">{selectedPayment.status}</span>
                 </label>
                 <div className="space-y-2">
                   {statusOptions.map((status) => (
@@ -1411,7 +1411,7 @@ export default function PaymentManagement() {
                       key={status}
                       className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-colors ${
                         newStatus === status
-                          ? 'border-amber-600 bg-amber-50'
+                          ? 'border-blue-600 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -1446,7 +1446,7 @@ export default function PaymentManagement() {
                 <button
                   onClick={updateStatus}
                   disabled={newStatus === selectedPayment.status || updatingStatus}
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   {updatingStatus ? (
                     <>
@@ -1685,7 +1685,7 @@ export default function PaymentManagement() {
                             indicator.severity === 'CRITICAL'
                               ? 'bg-red-100 text-red-700'
                               : indicator.severity === 'HIGH'
-                              ? 'bg-orange-100 text-orange-700'
+                              ? 'bg-indigo-100 text-indigo-700'
                               : 'bg-yellow-100 text-yellow-700'
                           }`}
                         >

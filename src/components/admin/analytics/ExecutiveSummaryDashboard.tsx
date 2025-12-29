@@ -271,13 +271,13 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
             <div className="text-2xl font-bold text-green-900">{formatCurrency(summary.summary.totalCollected)}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-6 border border-orange-200">
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-6 border border-indigo-200">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <div className="text-sm font-medium text-orange-900 mb-1">Total Outstanding</div>
-                <div className="text-xs text-orange-700">Pending collections</div>
+                <div className="text-xs text-indigo-700">Pending collections</div>
               </div>
-              <TrendingDown className="w-6 h-6 text-orange-600" />
+              <TrendingDown className="w-6 h-6 text-indigo-600" />
             </div>
             <div className="text-2xl font-bold text-orange-900">{formatCurrency(summary.summary.totalOutstanding)}</div>
           </div>
@@ -359,7 +359,7 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
                         <td className="py-3 px-4 text-right font-semibold text-green-700">
                           {formatCurrency(month.totalCollected)}
                         </td>
-                        <td className="py-3 px-4 text-right font-semibold text-orange-700">
+                        <td className="py-3 px-4 text-right font-semibold text-indigo-700">
                           {formatCurrency(month.totalOutstanding)}
                         </td>
                         <td className="py-3 px-4 text-right font-semibold text-red-700">
@@ -369,7 +369,7 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             collectionRate >= 90 ? 'bg-green-100 text-green-800 border border-green-300' :
                             collectionRate >= 75 ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
-                            collectionRate >= 50 ? 'bg-orange-100 text-orange-800 border border-orange-300' :
+                            collectionRate >= 50 ? 'bg-indigo-100 text-indigo-800 border border-orange-300' :
                             'bg-red-100 text-red-800 border border-red-300'
                           }`}>
                             {formatPercentage(collectionRate)}
@@ -446,7 +446,7 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
                   <td className="py-4 px-4 text-right text-green-700 text-lg">
                     {formatCurrency(summary.summary.totalCollected)}
                   </td>
-                  <td className="py-4 px-4 text-right text-orange-700 text-lg">
+                  <td className="py-4 px-4 text-right text-indigo-700 text-lg">
                     {formatCurrency(summary.summary.totalOutstanding)}
                   </td>
                   <td className="py-4 px-4 text-right text-red-700 text-lg">
@@ -502,12 +502,12 @@ export default function ExecutiveSummaryDashboard({ buildingId }: Props) {
                 </div>
               </div>
 
-              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                <div className="text-xs text-orange-700 mb-1">Outstanding</div>
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                <div className="text-xs text-indigo-700 mb-1">Outstanding</div>
                 <div className="text-2xl font-bold text-orange-900">
                   {formatCurrency(summary.summary.totalOutstanding)}
                 </div>
-                <div className="text-xs text-orange-600 mt-1">
+                <div className="text-xs text-indigo-600 mt-1">
                   {formatPercentage(summary.summary.totalExpected > 0 ? (summary.summary.totalOutstanding / summary.summary.totalExpected) * 100 : 0)} of expected
                 </div>
               </div>

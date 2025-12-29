@@ -46,9 +46,9 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
   const userName = isSuperAdmin ? superAdminData?.name : adminData?.admin_name;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-20 border-b-2 border-amber-100">
+      <header className="bg-white shadow-md sticky top-0 z-20 border-b-2 border-blue-100">
         <div className="px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Mobile Menu Button */}
@@ -75,9 +75,9 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
                   {!isSuperAdmin && adminData?.apartment && (
                     <>
                       <span className="hidden lg:inline text-gray-400">|</span>
-                      <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 px-3 py-1 rounded-lg">
-                        <Building2 className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                        <span className="text-xs font-semibold text-amber-900 truncate max-w-xs">
+                      <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 px-3 py-1 rounded-lg">
+                        <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                        <span className="text-xs font-semibold text-blue-900 truncate max-w-xs">
                           {adminData.apartment.apartment_name}
                         </span>
                       </div>
@@ -109,7 +109,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
               {!isSuperAdmin && <AdminNotifications />}
               <a
                 href="/"
-                className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-amber-50 rounded-lg"
+                className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-blue-50 rounded-lg"
               >
                 <Home className="w-4 h-4" />
                 <span className="hidden md:inline">Home</span>
@@ -127,9 +127,9 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
           {/* Mobile Apartment Info - Shows on smaller screens */}
           {!isSuperAdmin && adminData?.apartment && (
             <div className="flex lg:hidden flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-200">
-              <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 px-3 py-1.5 rounded-lg">
-                <Building2 className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                <span className="text-xs font-semibold text-amber-900">
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 px-3 py-1.5 rounded-lg">
+                <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span className="text-xs font-semibold text-blue-900">
                   {adminData.apartment.apartment_name}
                 </span>
               </div>
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
                     onClick={() => onTabChange(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       activeTab === tab.id
-                        ? 'bg-amber-50 text-amber-700 font-medium'
+                        ? 'bg-blue-50 text-blue-700 font-medium'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                     title={!sidebarOpen ? tab.label : ''}
@@ -212,7 +212,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-amber-50 text-amber-700 font-medium'
+                          ? 'bg-blue-50 text-blue-700 font-medium'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >

@@ -134,7 +134,7 @@ export default function HelpCenter() {
       case 'purple':
         return 'bg-purple-50 border-purple-200 text-purple-900';
       case 'orange':
-        return 'bg-orange-50 border-orange-200 text-orange-900';
+        return 'bg-indigo-50 border-indigo-200 text-orange-900';
       default:
         return 'bg-gray-50 border-gray-200 text-gray-900';
     }
@@ -146,7 +146,7 @@ export default function HelpCenter() {
       case 'red': return 'text-red-600';
       case 'green': return 'text-green-600';
       case 'purple': return 'text-purple-600';
-      case 'orange': return 'text-orange-600';
+      case 'orange': return 'text-indigo-600';
       default: return 'text-gray-600';
     }
   };
