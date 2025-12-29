@@ -1,7 +1,8 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
+import AdminNotifications from './AdminNotifications';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
     { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
+    { id: 'classification', label: 'AI Classification', icon: Brain },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
 
@@ -104,6 +106,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
             {/* Header Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {!isSuperAdmin && <AdminNotifications />}
               <a
                 href="/"
                 className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-amber-50 rounded-lg"

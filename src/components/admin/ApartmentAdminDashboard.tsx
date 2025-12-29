@@ -10,6 +10,7 @@ import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import AnalyticsReports from './AnalyticsReports';
 import MaintenanceCollectionsActiveSummary from './MaintenanceCollectionsActiveSummary';
+import ClassificationAnalytics from './ClassificationAnalytics';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApartmentAdminDashboard() {
@@ -38,6 +39,7 @@ export default function ApartmentAdminDashboard() {
         )
       )}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
+      {activeTab === 'classification' && <ClassificationAnalytics />}
       {activeTab === 'faq' && <FAQManagement />}
     </DashboardLayout>
   );

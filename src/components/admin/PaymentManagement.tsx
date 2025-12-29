@@ -4,6 +4,7 @@ import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, C
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
+import DocumentClassificationBadge from './DocumentClassificationBadge';
 
 interface PaymentWithDetails {
   id: string;
@@ -39,6 +40,7 @@ interface PaymentWithDetails {
   fraud_indicators?: any[] | null;
   fraud_checked_at?: string | null;
   ocr_confidence_score?: number | null;
+  ocr_text?: string | null;
 }
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -784,6 +786,12 @@ export default function PaymentManagement() {
                             </div>
                           </div>
                         )}
+
+                        <DocumentClassificationBadge
+                          paymentId={payment.id}
+                          ocrText={payment.ocr_text}
+                          compact={false}
+                        />
 
                         <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <span className="w-1 h-4 bg-amber-600 rounded"></span>
