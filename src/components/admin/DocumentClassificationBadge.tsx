@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, RefreshCw, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { FileText, RefreshCw, CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import {
   getPaymentClassification,
   classifyPaymentDocument,
@@ -23,10 +23,18 @@ export default function DocumentClassificationBadge({
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [classifying, setClassifying] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadClassification();
   }, [paymentId]);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   async function loadClassification() {
     setLoading(true);
@@ -37,19 +45,20 @@ export default function DocumentClassificationBadge({
 
   async function handleClassify() {
     if (!ocrText || ocrText.length < 10) {
-      alert('No extracted text available for classification. The payment must be analyzed first.');
+      setMessage({ type: 'error', text: 'No extracted text available for classification. The payment must be analyzed first.' });
       return;
     }
 
     setClassifying(true);
+    setMessage(null);
     const result = await classifyPaymentDocument(paymentId, ocrText);
     setClassifying(false);
 
     if (result.success) {
       await loadClassification();
-      alert('Document classified successfully!');
+      setMessage({ type: 'success', text: 'Document classified successfully!' });
     } else {
-      alert(`Classification failed: ${result.error}`);
+      setMessage({ type: 'error', text: `Classification failed: ${result.error}` });
     }
   }
 
@@ -64,26 +73,44 @@ export default function DocumentClassificationBadge({
 
   if (!classification) {
     return (
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleClassify}
-          disabled={!ocrText || classifying}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {classifying ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Classifying...
-            </>
-          ) : (
-            <>
-              <FileText className="w-4 h-4" />
-              Classify Document
-            </>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClassify}
+            disabled={!ocrText || classifying}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {classifying ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Classifying...
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4" />
+                Classify Document
+              </>
+            )}
+          </button>
+          {!ocrText && (
+            <span className="text-xs text-gray-500">No OCR text available</span>
           )}
-        </button>
-        {!ocrText && (
-          <span className="text-xs text-gray-500">No OCR text available</span>
+        </div>
+        {message && (
+          <div className={`flex items-start gap-2 p-3 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            {message.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            )}
+            <span className="text-sm flex-1">{message.text}</span>
+            <button
+              onClick={() => setMessage(null)}
+              className="text-current opacity-70 hover:opacity-100"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
     );
@@ -128,6 +155,22 @@ export default function DocumentClassificationBadge({
           Re-classify
         </button>
       </div>
+      {message && (
+        <div className={`flex items-start gap-2 p-3 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {message.type === 'success' ? (
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          )}
+          <span className="text-sm flex-1">{message.text}</span>
+          <button
+            onClick={() => setMessage(null)}
+            className="text-current opacity-70 hover:opacity-100"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       <ClassificationDetails classification={classification} onReClassify={handleClassify} classifying={classifying} />
     </div>
   );
