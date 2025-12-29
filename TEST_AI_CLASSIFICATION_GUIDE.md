@@ -1,5 +1,19 @@
 # How to Test AI Document Classification on the Web Page
 
+## Important Note About Text Extraction
+
+**Field Clarification:**
+- The system uses the `other_text` field to store AI-extracted text from payment screenshots
+- This field contains the text extracted by OpenAI Vision API during fraud detection
+- The classification feature reads from `other_text` (not `ocr_text`)
+- Payments must have `other_text` populated for classification to work
+
+**Current Status:**
+- 11 out of 16 payments have `other_text` populated and are ready for classification
+- Classification button will only be enabled for payments with extracted text
+
+---
+
 ## Prerequisites
 
 ### 1. Configure OpenAI API Key (CRITICAL - MUST DO FIRST!)

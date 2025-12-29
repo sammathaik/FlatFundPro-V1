@@ -789,7 +789,7 @@ export default function PaymentManagement() {
 
                         <DocumentClassificationBadge
                           paymentId={payment.id}
-                          ocrText={payment.ocr_text}
+                          ocrText={payment.other_text}
                           compact={false}
                         />
 

@@ -37,7 +37,7 @@ export default function DocumentClassificationBadge({
 
   async function handleClassify() {
     if (!ocrText || ocrText.length < 10) {
-      alert('No OCR text available for classification');
+      alert('No extracted text available for classification. The payment must be analyzed first.');
       return;
     }
 
