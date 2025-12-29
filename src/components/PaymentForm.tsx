@@ -242,7 +242,7 @@ export default function PaymentForm() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-center">
             <img
-              src="/AppLogo-FlatFund Pro.jpg"
+              src="/flatfundpro-2-logo.jpeg"
               alt="FlatFund Pro"
               className="h-20 mx-auto mb-4 object-contain"
             />

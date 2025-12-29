@@ -787,7 +787,7 @@ export default function DynamicPaymentForm() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-8 text-center">
             <img
-              src="/AppLogo-FlatFund Pro.jpg"
+              src="/flatfundpro-2-logo.jpeg"
               alt="FlatFund Pro"
               className="h-24 sm:h-28 md:h-32 mx-auto mb-4 object-contain drop-shadow-lg"
             />
