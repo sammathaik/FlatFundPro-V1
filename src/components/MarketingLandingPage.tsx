@@ -45,7 +45,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('marketing_leads')
         .insert([
           {
@@ -57,13 +57,18 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             message: formData.message || null,
             status: 'new'
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) {
         console.error('Error submitting form:', error);
         alert('There was an error submitting your request. Please try again.');
       } else {
         setSubmitted(true);
+
+        sendAcknowledgmentEmail(data);
+
         setFormData({ name: '', email: '', phone: '', apartment_name: '', city: '', message: '' });
       }
     } catch (error) {
@@ -71,6 +76,41 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
       alert('There was an error submitting your request. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendAcknowledgmentEmail = async (leadData: any) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-lead-acknowledgment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            email: leadData.email,
+            name: leadData.name,
+            apartment_name: leadData.apartment_name,
+            city: leadData.city,
+            phone: leadData.phone,
+            message: leadData.message,
+            submission_date: leadData.created_at || new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        console.log('Acknowledgment email sent successfully');
+      } else {
+        console.error('Failed to send acknowledgment email:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error sending acknowledgment email:', error);
     }
   };
 
