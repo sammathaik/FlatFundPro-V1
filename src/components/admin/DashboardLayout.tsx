@@ -3,6 +3,7 @@ import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarC
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 import AdminNotifications from './AdminNotifications';
+import SuperAdminNotifications from './SuperAdminNotifications';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -106,7 +107,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
             {/* Header Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {!isSuperAdmin && <AdminNotifications />}
+              {isSuperAdmin ? <SuperAdminNotifications /> : <AdminNotifications />}
               <a
                 href="/"
                 className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-blue-50 rounded-lg"
