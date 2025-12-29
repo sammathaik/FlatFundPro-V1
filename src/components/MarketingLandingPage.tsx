@@ -45,7 +45,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('marketing_leads')
         .insert([
           {
@@ -57,9 +57,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             message: formData.message || null,
             status: 'new'
           }
-        ])
-        .select()
-        .single();
+        ]);
 
       if (error) {
         console.error('Error submitting form:', error);
@@ -67,7 +65,15 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
       } else {
         setSubmitted(true);
 
-        sendAcknowledgmentEmail(data);
+        sendAcknowledgmentEmail({
+          email: formData.email,
+          name: formData.name,
+          apartment_name: formData.apartment_name,
+          city: formData.city,
+          phone: formData.phone || null,
+          message: formData.message || null,
+          created_at: new Date().toISOString()
+        });
 
         setFormData({ name: '', email: '', phone: '', apartment_name: '', city: '', message: '' });
       }
@@ -81,7 +87,6 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
 
   const sendAcknowledgmentEmail = async (leadData: any) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       const response = await fetch(
@@ -99,7 +104,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             city: leadData.city,
             phone: leadData.phone,
             message: leadData.message,
-            submission_date: leadData.created_at || new Date().toISOString(),
+            submission_date: leadData.created_at,
           }),
         }
       );
