@@ -112,25 +112,25 @@ export default function ChatBot({ userRole, userId, apartmentId }: ChatBotProps)
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-4 rounded-full shadow-lg transition-all transform hover:scale-110 z-50 flex items-center gap-2"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-3 sm:p-4 rounded-full shadow-lg transition-all transform hover:scale-110 z-50 flex items-center gap-2"
         aria-label="Open chat"
       >
-        <MessageCircle className="w-6 h-6" />
-        <span className="hidden sm:inline font-medium">Help</span>
+        <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span className="hidden sm:inline font-medium text-sm">Help</span>
       </button>
     );
   }
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
         <button
           onClick={() => setIsMinimized(false)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 hover:shadow-xl transition-all"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg shadow-lg flex items-center gap-2 hover:shadow-xl transition-all"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span className="font-medium">Chat Assistant</span>
-          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="font-medium text-sm">Chat</span>
+          <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">
             {messages.length}
           </span>
         </button>
@@ -139,51 +139,51 @@ export default function ChatBot({ userRole, userId, apartmentId }: ChatBotProps)
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border-2 border-blue-100">
+    <div className="fixed inset-x-4 bottom-4 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-96 h-[calc(100vh-2rem)] sm:h-[600px] max-h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-lg">
-            <MessageCircle className="w-5 h-5" />
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h3 className="font-bold">FlatFund Pro Assistant</h3>
-            <p className="text-xs text-blue-100">Always here to help</p>
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm sm:text-base truncate">FlatFund Pro Assistant</h3>
+            <p className="text-xs text-blue-100 hidden sm:block">Always here to help</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <button
             onClick={() => setIsMinimized(true)}
-            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-1 sm:p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             aria-label="Minimize"
           >
             <Minimize2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-1 sm:p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             aria-label="Close chat"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50 overscroll-contain">
         {messages.map((message, index) => (
           <div
             key={message.id || index}
             className={`flex ${message.message_type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+              className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 ${
                 message.message_type === 'user'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                   : 'bg-white border border-gray-200 text-gray-800 shadow-sm'
               }`}
             >
-              <p className="text-sm whitespace-pre-line break-words">{message.message_text}</p>
+              <p className="text-xs sm:text-sm whitespace-pre-line break-words">{message.message_text}</p>
               {message.message_type === 'bot' && message.confidence_score && message.confidence_score < 0.7 && (
                 <p className="text-xs text-gray-500 mt-2">Not sure? Let me know if this helps!</p>
               )}
@@ -206,14 +206,14 @@ export default function ChatBot({ userRole, userId, apartmentId }: ChatBotProps)
 
       {/* Suggestions */}
       {messages.length <= 1 && (
-        <div className="px-4 py-3 bg-blue-50 border-t border-blue-100">
+        <div className="px-3 py-2 sm:px-4 sm:py-3 bg-blue-50 border-t border-blue-100 flex-shrink-0">
           <p className="text-xs text-gray-600 mb-2 font-medium">Quick questions:</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {chatbotService.getSuggestedQuestions(userRole).slice(0, 3).map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="text-xs bg-white hover:bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 transition-colors"
+                className="text-xs bg-white hover:bg-blue-50 text-blue-700 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-blue-200 transition-colors"
               >
                 {suggestion}
               </button>
@@ -223,7 +223,7 @@ export default function ChatBot({ userRole, userId, apartmentId }: ChatBotProps)
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+      <div className="p-3 sm:p-4 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0">
         <div className="flex gap-2">
           <input
             type="text"
@@ -231,19 +231,19 @@ export default function ChatBot({ userRole, userId, apartmentId }: ChatBotProps)
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
             disabled={isLoading}
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-2.5 rounded-xl transition-all disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 text-white p-2 sm:p-2.5 rounded-xl transition-all disabled:cursor-not-allowed flex-shrink-0"
             aria-label="Send message"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
+        <p className="text-xs text-gray-500 mt-2 text-center hidden sm:block">
           Powered by AI • Context-aware assistant
         </p>
       </div>

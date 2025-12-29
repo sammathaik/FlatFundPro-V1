@@ -2,6 +2,7 @@ import { ArrowRight, Building2, CheckCircle, Coins, FileText, Shield, Users, Bar
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import QRCodeGenerator from './QRCodeGenerator';
+import ChatBot from './ChatBot';
 
 interface MarketingLandingPageProps {
   navigate?: (path: string) => void;
@@ -961,6 +962,9 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           </div>
         </div>
       </footer>
+
+      {/* Chatbot for marketing visitors */}
+      <ChatBot userRole="guest" />
     </div>
   );
 }

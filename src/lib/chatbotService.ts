@@ -21,8 +21,19 @@ export interface ConversationContext {
 }
 
 class ChatbotService {
+  private readonly TIMEOUT_MS = 10000;
+
   private generateSessionId(): string {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = this.TIMEOUT_MS): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+      )
+    ]);
   }
 
   async createConversation(
@@ -30,25 +41,32 @@ class ChatbotService {
     userId?: string | null,
     apartmentId?: string | null
   ): Promise<string> {
-    const sessionId = this.generateSessionId();
+    try {
+      const sessionId = this.generateSessionId();
 
-    const { data, error } = await supabase
-      .from('chatbot_conversations')
-      .insert({
-        user_id: userId,
-        user_role: userRole,
-        apartment_id: apartmentId,
-        session_id: sessionId,
-        metadata: {
-          user_agent: navigator.userAgent,
-          page: window.location.pathname
-        }
-      })
-      .select('id')
-      .single();
+      const { data, error } = await this.withTimeout(
+        supabase
+          .from('chatbot_conversations')
+          .insert({
+            user_id: userId,
+            user_role: userRole,
+            apartment_id: apartmentId,
+            session_id: sessionId,
+            metadata: {
+              user_agent: navigator.userAgent,
+              page: window.location.pathname
+            }
+          })
+          .select('id')
+          .single()
+      );
 
-    if (error) throw error;
-    return data.id;
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      return `offline_${this.generateSessionId()}`;
+    }
   }
 
   async searchKnowledgeBase(
@@ -61,27 +79,33 @@ class ChatbotService {
     answer: string;
     confidence_score: number;
   }>> {
-    const { data, error } = await supabase.rpc('search_knowledge_base', {
-      search_query: query,
-      user_role_param: userRole,
-      limit_count: 3
-    });
+    try {
+      const { data, error } = await this.withTimeout(
+        supabase.rpc('search_knowledge_base', {
+          search_query: query,
+          user_role_param: userRole,
+          limit_count: 3
+        }),
+        8000
+      );
 
-    if (error) {
-      console.error('Knowledge base search error:', error);
-      throw error;
+      if (error) {
+        console.error('Knowledge base search error:', error);
+        return [];
+      }
+
+      const results = (data || []).map(result => ({
+        ...result,
+        confidence_score: typeof result.confidence_score === 'string'
+          ? parseFloat(result.confidence_score)
+          : result.confidence_score
+      }));
+
+      return results;
+    } catch (error) {
+      console.error('Knowledge base search timeout or error:', error);
+      return [];
     }
-
-    console.log('Knowledge base search results:', data);
-
-    const results = (data || []).map(result => ({
-      ...result,
-      confidence_score: typeof result.confidence_score === 'string'
-        ? parseFloat(result.confidence_score)
-        : result.confidence_score
-    }));
-
-    return results;
   }
 
   async saveMessage(
@@ -91,17 +115,30 @@ class ChatbotService {
     responseSource?: string,
     confidenceScore?: number
   ): Promise<void> {
-    const { error } = await supabase
-      .from('chatbot_messages')
-      .insert({
-        conversation_id: conversationId,
-        message_type: messageType,
-        message_text: messageText,
-        response_source: responseSource,
-        confidence_score: confidenceScore
-      });
+    if (conversationId.startsWith('offline_')) {
+      return;
+    }
 
-    if (error) throw error;
+    try {
+      const { error } = await this.withTimeout(
+        supabase
+          .from('chatbot_messages')
+          .insert({
+            conversation_id: conversationId,
+            message_type: messageType,
+            message_text: messageText,
+            response_source: responseSource,
+            confidence_score: confidenceScore
+          }),
+        5000
+      );
+
+      if (error) {
+        console.error('Failed to save message:', error);
+      }
+    } catch (error) {
+      console.error('Message save timeout or error:', error);
+    }
   }
 
   async updateMessageFeedback(
