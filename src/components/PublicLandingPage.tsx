@@ -6,6 +6,7 @@ import HowItWorks from './HowItWorks';
 import StatsSection from './StatsSection';
 import DynamicPaymentForm from './DynamicPaymentForm';
 import PortalAccessSection from './PortalAccessSection';
+import ChatBot from './ChatBot';
 
 interface PublicLandingPageProps {
   onNavigate: (path: string) => void;
@@ -48,6 +49,9 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
           </div>
         </div>
       </footer>
+
+      {/* Chatbot for guests */}
+      <ChatBot userRole="guest" />
     </div>
   );
 }

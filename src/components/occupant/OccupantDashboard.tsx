@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import HelpCenter from './HelpCenter';
+import ChatBot from '../ChatBot';
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
@@ -517,6 +518,9 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
           </>
         )}
       </div>
+
+      {/* Occupant Chatbot */}
+      <ChatBot userRole="occupant" userId={occupant.user_id} apartmentId={apartmentInfo?.apartment_id} />
     </div>
   );
 }

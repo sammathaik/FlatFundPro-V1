@@ -12,6 +12,7 @@ import AnalyticsReports from './AnalyticsReports';
 import MaintenanceCollectionsActiveSummary from './MaintenanceCollectionsActiveSummary';
 import ClassificationAnalytics from './ClassificationAnalytics';
 import { useAuth } from '../../contexts/AuthContext';
+import ChatBot from '../ChatBot';
 
 export default function ApartmentAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -41,6 +42,9 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
       {activeTab === 'classification' && <ClassificationAnalytics />}
       {activeTab === 'faq' && <FAQManagement />}
+
+      {/* Admin Chatbot */}
+      <ChatBot userRole="admin" userId={adminData?.user_id} apartmentId={adminData?.apartment_id} />
     </DashboardLayout>
   );
 }
