@@ -21,7 +21,6 @@ Deno.serve(async (req: Request) => {
       SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? "SET (hidden)" : "NOT SET",
       GUPSHUP_API_KEY: Deno.env.get("GUPSHUP_API_KEY"),
       GUPSHUP_APP_NAME: Deno.env.get("GUPSHUP_APP_NAME"),
-      TEST_SECRET: Deno.env.get("TEST_SECRET"),
     };
 
     // Get detailed info about GUPSHUP_API_KEY
