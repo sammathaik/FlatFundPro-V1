@@ -42,6 +42,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'classification', label: 'AI Classification', icon: Brain },
     { id: 'whatsapp-notifications', label: 'WhatsApp Notifications', icon: MessageSquare },
+    { id: 'diagnostic', label: 'API Diagnostic', icon: Settings },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
 
