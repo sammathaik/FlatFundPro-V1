@@ -57,6 +57,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("TEST_SECRET found and available");
+
     // Gupshup Sandbox API credentials
     const gupshupApiKey = Deno.env.get("GUPSHUP_API_KEY");
     const gupshupAppName = Deno.env.get("GUPSHUP_APP_NAME") || "FlatFundPro";
