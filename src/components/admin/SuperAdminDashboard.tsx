@@ -9,6 +9,7 @@ import SystemSettings from './SystemSettings';
 import AuditLogs from './AuditLogs';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
+import WhatsAppNotifications from './WhatsAppNotifications';
 import ChatBot from '../ChatBot';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,6 +25,7 @@ export default function SuperAdminDashboard() {
       {activeTab === 'leads' && <LeadsManagement />}
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard />}
       {activeTab === 'analytics' && <SuperAdminExecutiveSummary />}
+      {activeTab === 'whatsapp-notifications' && <WhatsAppNotifications />}
       {activeTab === 'faq' && <FAQManagement />}
       {activeTab === 'settings' && <SystemSettings />}
       {activeTab === 'audit' && <AuditLogs />}
