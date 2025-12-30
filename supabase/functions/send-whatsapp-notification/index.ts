@@ -37,6 +37,26 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Processing WhatsApp notification ${id} for ${recipient_name} (${recipient_phone})`);
 
+    // Check for TEST_SECRET
+    const testSecret = Deno.env.get("TEST_SECRET");
+    if (!testSecret) {
+      console.log("TEST_SECRET not found");
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "TEST_SECRET_NOT_FOUND",
+          notification_id: id,
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     // Gupshup Sandbox API credentials
     const gupshupApiKey = Deno.env.get("GUPSHUP_API_KEY");
     const gupshupAppName = Deno.env.get("GUPSHUP_APP_NAME") || "FlatFundPro";
