@@ -14,6 +14,8 @@ import {
   Mail,
   Phone,
   HelpCircle,
+  Bell,
+  MessageCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import HelpCenter from './HelpCenter';
@@ -59,6 +61,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'help'>('dashboard');
+  const [whatsappOptIn, setWhatsappOptIn] = useState<boolean>(false);
+  const [updatingPreferences, setUpdatingPreferences] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -80,6 +84,18 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
       if (paymentsResult.data) {
         setPayments(paymentsResult.data);
+      }
+
+      // Load WhatsApp opt-in preference
+      const { data: flatMapping } = await supabase
+        .from('flat_email_mappings')
+        .select('whatsapp_opt_in')
+        .eq('flat_id', selectedFlatId)
+        .eq('email', occupant.email)
+        .maybeSingle();
+
+      if (flatMapping) {
+        setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
       }
 
       // Load apartment info for selected flat from occupant's flat list
@@ -129,6 +145,31 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
     setSwitchingFlat(true);
     setSelectedFlatId(flatId);
     setSwitchingFlat(false);
+  };
+
+  const handleWhatsAppOptInToggle = async () => {
+    setUpdatingPreferences(true);
+    try {
+      const newOptInValue = !whatsappOptIn;
+
+      const { error } = await supabase
+        .from('flat_email_mappings')
+        .update({ whatsapp_opt_in: newOptInValue })
+        .eq('flat_id', selectedFlatId)
+        .eq('email', occupant.email);
+
+      if (error) {
+        console.error('Error updating WhatsApp preference:', error);
+        alert('Failed to update notification preferences. Please try again.');
+      } else {
+        setWhatsappOptIn(newOptInValue);
+      }
+    } catch (error) {
+      console.error('Error updating WhatsApp preference:', error);
+      alert('Failed to update notification preferences. Please try again.');
+    } finally {
+      setUpdatingPreferences(false);
+    }
   };
 
   const categories = ['all', ...new Set(payments.map((p) => p.payment_type))];
@@ -359,6 +400,51 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                 <p className="text-sm text-gray-600">Mobile</p>
                 <p className="font-medium text-gray-800">{occupant.mobile || 'Not provided'}</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Bell className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Notification Preferences</h2>
+          </div>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <MessageCircle className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900">WhatsApp Payment Reminders</h3>
+                    {whatsappOptIn && (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Receive automated WhatsApp reminders at 7 days, 3 days, and 1 day before payment due dates.
+                    {!occupant.mobile && (
+                      <span className="block mt-2 text-amber-600 font-medium">
+                        Note: Please provide your mobile number in the payment form to receive WhatsApp notifications.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleWhatsAppOptInToggle}
+                disabled={updatingPreferences || !occupant.mobile}
+                className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  whatsappOptIn ? 'bg-green-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    whatsappOptIn ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>

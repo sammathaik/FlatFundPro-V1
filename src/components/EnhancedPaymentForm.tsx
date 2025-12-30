@@ -13,6 +13,7 @@ interface FormData {
   payment_date: string;
   screenshot: File | null;
   occupant_type: 'Owner' | 'Tenant' | '';
+  whatsapp_opt_in: boolean;
 }
 
 interface FormErrors {
@@ -42,6 +43,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     payment_date: '',
     screenshot: null,
     occupant_type: '',
+    whatsapp_opt_in: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -104,6 +106,11 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,6 +229,17 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         return;
       }
 
+      if (formData.contact_number && formData.contact_number.trim()) {
+        await supabase
+          .from('flat_email_mappings')
+          .update({
+            whatsapp_opt_in: formData.whatsapp_opt_in,
+            mobile: formData.contact_number.trim()
+          })
+          .eq('apartment_id', apartmentId)
+          .eq('flat_id', flatData.id);
+      }
+
       setUploadProgress(40);
 
       const screenshotUrl = await uploadScreenshot(formData.screenshot!);
@@ -274,6 +292,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         payment_date: '',
         screenshot: null,
         occupant_type: '',
+        whatsapp_opt_in: false,
       });
       setPreviewUrl(null);
 
@@ -552,6 +571,33 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   disabled={submissionState === 'loading'}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="whatsapp_opt_in"
+                    name="whatsapp_opt_in"
+                    checked={formData.whatsapp_opt_in}
+                    onChange={handleCheckboxChange}
+                    disabled={submissionState === 'loading'}
+                    className="mt-1 w-5 h-5 text-green-600 border-2 border-green-300 rounded focus:ring-2 focus:ring-green-500 cursor-pointer"
+                  />
+                  <label htmlFor="whatsapp_opt_in" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold text-gray-900">
+                        Enable WhatsApp Payment Reminders
+                      </span>
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                        Recommended
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Get timely WhatsApp reminders before payment due dates. We'll send you notifications at 7 days, 3 days, and 1 day before the due date to help you avoid late fees.
+                    </p>
+                  </label>
+                </div>
               </div>
 
               <div>
