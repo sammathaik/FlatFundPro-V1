@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Eye, X, Filter, Calendar, Phone, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { MessageSquare, Eye, X, Filter, Calendar, Phone, User, AlertCircle, CheckCircle, Send, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDateTime } from '../../lib/utils';
@@ -16,6 +16,9 @@ interface WhatsAppNotification {
   trigger_reason: string;
   status: string;
   created_at: string;
+  sent_at?: string;
+  failure_reason?: string;
+  delivery_attempts?: number;
 }
 
 export default function WhatsAppNotifications() {
@@ -25,6 +28,7 @@ export default function WhatsAppNotifications() {
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState<WhatsAppNotification | null>(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
+  const [sendingNotificationId, setSendingNotificationId] = useState<string | null>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -122,6 +126,45 @@ export default function WhatsAppNotifications() {
     setSelectedNotification(null);
   }
 
+  async function testSendNotification(notification: WhatsAppNotification) {
+    if (sendingNotificationId) return;
+
+    try {
+      setSendingNotificationId(notification.id);
+
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-whatsapp-notification`;
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          id: notification.id,
+          recipient_phone: notification.recipient_phone,
+          message_preview: notification.message_preview,
+          recipient_name: notification.recipient_name,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Message sent successfully via Gupshup Sandbox!');
+      } else {
+        alert(`Failed to send message: ${result.message || 'Unknown error'}`);
+      }
+
+      await loadNotifications();
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      alert('Error sending notification. Check console for details.');
+    } finally {
+      setSendingNotificationId(null);
+    }
+  }
+
   function getStatusBadge(status: string) {
     switch (status) {
       case 'SIMULATED':
@@ -131,18 +174,20 @@ export default function WhatsAppNotifications() {
             Simulated
           </span>
         );
+      case 'SANDBOX_SENT':
       case 'SENT':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
             <CheckCircle className="w-3.5 h-3.5" />
-            Sent
+            {status === 'SANDBOX_SENT' ? 'Sandbox Sent' : 'Sent'}
           </span>
         );
+      case 'SANDBOX_FAILED':
       case 'FAILED':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
             <X className="w-3.5 h-3.5" />
-            Failed
+            {status === 'SANDBOX_FAILED' ? 'Sandbox Failed' : 'Failed'}
           </span>
         );
       default:
@@ -191,11 +236,12 @@ export default function WhatsAppNotifications() {
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-blue-900 mb-1">
-                Sandbox Mode - Preview Only
+                Sandbox Mode - Testing Enabled
               </h3>
               <p className="text-sm text-blue-700">
                 All notifications shown here are in <strong>GUPSHUP_SANDBOX</strong> mode.
-                No actual WhatsApp messages are sent to users. This is for admin review, testing, and audit purposes only.
+                Use the <strong>Test Send</strong> button to attempt delivery via Gupshup Sandbox API.
+                Messages may not reach actual users. This is for testing, review, and audit purposes only.
               </p>
             </div>
           </div>
@@ -290,13 +336,13 @@ export default function WhatsAppNotifications() {
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="text-sm text-green-600 mb-1">Sent</div>
           <div className="text-2xl font-bold text-green-900">
-            {filteredNotifications.filter(n => n.status === 'SENT').length}
+            {filteredNotifications.filter(n => n.status === 'SENT' || n.status === 'SANDBOX_SENT').length}
           </div>
         </div>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="text-sm text-red-600 mb-1">Failed</div>
           <div className="text-2xl font-bold text-red-900">
-            {filteredNotifications.filter(n => n.status === 'FAILED').length}
+            {filteredNotifications.filter(n => n.status === 'FAILED' || n.status === 'SANDBOX_FAILED').length}
           </div>
         </div>
       </div>
@@ -393,13 +439,36 @@ export default function WhatsAppNotifications() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => openMessageModal(notification)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Message
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openMessageModal(notification)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View full message"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
+                        {notification.status === 'SIMULATED' && (
+                          <button
+                            onClick={() => testSendNotification(notification)}
+                            disabled={sendingNotificationId === notification.id}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Test send via Gupshup Sandbox"
+                          >
+                            {sendingNotificationId === notification.id ? (
+                              <>
+                                <Loader className="w-4 h-4 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4" />
+                                Test Send
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -530,11 +599,29 @@ export default function WhatsAppNotifications() {
                 </div>
 
                 {/* Metadata */}
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-gray-200 space-y-2">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Created: {formatDateTime(selectedNotification.created_at)}</span>
                   </div>
+                  {selectedNotification.sent_at && (
+                    <div className="flex items-center gap-2 text-xs text-green-600">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>Sent: {formatDateTime(selectedNotification.sent_at)}</span>
+                    </div>
+                  )}
+                  {selectedNotification.failure_reason && (
+                    <div className="flex items-start gap-2 text-xs text-red-600">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                      <span>Failure Reason: {selectedNotification.failure_reason}</span>
+                    </div>
+                  )}
+                  {selectedNotification.delivery_attempts && selectedNotification.delivery_attempts > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Delivery Attempts: {selectedNotification.delivery_attempts}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
