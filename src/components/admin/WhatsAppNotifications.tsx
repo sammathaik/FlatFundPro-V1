@@ -162,6 +162,8 @@ export default function WhatsAppNotifications() {
           type: 'success',
           message: 'Message sent successfully via Gupshup Sandbox!'
         });
+
+        await loadNotifications();
       } else {
         let errorMsg = result.message || 'Unknown error';
 
@@ -175,15 +177,16 @@ export default function WhatsAppNotifications() {
           type: 'error',
           message: errorMsg
         });
-      }
 
-      await loadNotifications();
+        await loadNotifications();
+      }
     } catch (error) {
       console.error('Error sending notification:', error);
       setStatusMessage({
         type: 'error',
         message: 'Error sending notification. Check console for details.'
       });
+      await loadNotifications();
     } finally {
       setSendingNotificationId(null);
     }
