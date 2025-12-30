@@ -168,7 +168,7 @@ Deno.serve(async (req: Request) => {
 
     console.log("Gupshup API parsed response:", JSON.stringify(responseData));
 
-    if (gupshupResponse.ok && responseData.status === "success") {
+    if (gupshupResponse.ok && (responseData.status === "success" || responseData.status === "submitted")) {
       console.log(`Successfully sent via Gupshup Sandbox. Message ID: ${responseData.messageId}`);
 
       await supabase
