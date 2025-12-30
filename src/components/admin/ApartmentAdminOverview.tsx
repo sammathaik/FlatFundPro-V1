@@ -135,12 +135,12 @@ export default function ApartmentAdminOverview() {
           .from('payment_submissions')
           .select('id', { count: 'exact', head: true })
           .eq('apartment_id', adminData.apartment_id)
-          .eq('fraud_detected', true),
+          .eq('is_fraud_flagged', true),
         supabase
           .from('payment_submissions')
           .select('id', { count: 'exact', head: true })
           .eq('apartment_id', adminData.apartment_id)
-          .not('document_type', 'is', null),
+          .not('ai_classification', 'is', null),
         supabase
           .from('flat_email_mappings')
           .select('id', { count: 'exact', head: true })
