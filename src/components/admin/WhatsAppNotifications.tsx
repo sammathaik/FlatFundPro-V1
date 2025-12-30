@@ -21,6 +21,11 @@ interface WhatsAppNotification {
   delivery_attempts?: number;
 }
 
+interface StatusMessage {
+  type: 'success' | 'error';
+  message: string;
+}
+
 export default function WhatsAppNotifications() {
   const { adminData, superAdminData, isSuperAdmin } = useAuth();
   const [notifications, setNotifications] = useState<WhatsAppNotification[]>([]);
@@ -29,6 +34,7 @@ export default function WhatsAppNotifications() {
   const [selectedNotification, setSelectedNotification] = useState<WhatsAppNotification | null>(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [sendingNotificationId, setSendingNotificationId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -131,6 +137,7 @@ export default function WhatsAppNotifications() {
 
     try {
       setSendingNotificationId(notification.id);
+      setStatusMessage(null);
 
       const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-whatsapp-notification`;
 
@@ -151,23 +158,32 @@ export default function WhatsAppNotifications() {
       const result = await response.json();
 
       if (result.success) {
-        alert('✅ Message sent successfully via Gupshup Sandbox!');
+        setStatusMessage({
+          type: 'success',
+          message: 'Message sent successfully via Gupshup Sandbox!'
+        });
       } else {
         let errorMsg = result.message || 'Unknown error';
 
         if (errorMsg.includes('API key')) {
           errorMsg += '\n\nPlease configure GUPSHUP_API_KEY in Supabase Edge Functions secrets.\nSee FIX_GUPSHUP_API_KEY_ERROR.md for detailed instructions.';
         } else if (errorMsg.includes('Portal User') || errorMsg.includes('account not found')) {
-          errorMsg = 'Invalid Gupshup API key or account not found.\n\nPlease check your GUPSHUP_API_KEY in Supabase.\nSee FIX_GUPSHUP_API_KEY_ERROR.md for help.';
+          errorMsg = 'Invalid Gupshup API key or account not found\n\nPlease configure GUPSHUP_API_KEY in Supabase Edge Functions secrets.\nSee FIX_GUPSHUP_API_KEY_ERROR.md for detailed instructions.';
         }
 
-        alert(`❌ Failed to send message:\n\n${errorMsg}`);
+        setStatusMessage({
+          type: 'error',
+          message: errorMsg
+        });
       }
 
       await loadNotifications();
     } catch (error) {
       console.error('Error sending notification:', error);
-      alert('Error sending notification. Check console for details.');
+      setStatusMessage({
+        type: 'error',
+        message: 'Error sending notification. Check console for details.'
+      });
     } finally {
       setSendingNotificationId(null);
     }
@@ -237,6 +253,43 @@ export default function WhatsAppNotifications() {
             Filters
           </button>
         </div>
+
+        {/* Status Message */}
+        {statusMessage && (
+          <div className={`mt-4 p-4 rounded-lg border ${
+            statusMessage.type === 'success'
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              {statusMessage.type === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <h3 className={`text-sm font-semibold mb-1 ${
+                  statusMessage.type === 'success' ? 'text-green-900' : 'text-red-900'
+                }`}>
+                  {statusMessage.type === 'success' ? 'Success!' : 'Failed to send message'}
+                </h3>
+                <p className={`text-sm whitespace-pre-line ${
+                  statusMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {statusMessage.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setStatusMessage(null)}
+                className={`${
+                  statusMessage.type === 'success' ? 'text-green-400 hover:text-green-600' : 'text-red-400 hover:text-red-600'
+                } transition-colors`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Info Banner */}
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
