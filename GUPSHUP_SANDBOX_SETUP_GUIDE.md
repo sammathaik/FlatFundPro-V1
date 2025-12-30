@@ -177,11 +177,44 @@ Instead of automatic triggering, test manually first:
 - Deploy the function: `supabase functions deploy send-whatsapp-notification`
 - Check function list: `supabase functions list`
 
-### Issue: API Key Error
+### Issue: Invalid API Key or "Portal User" Error
+**Symptoms:**
+- Error message: "Invalid Gupshup API key or account not found"
+- Error in console: "Unexpected token 'P', \"Portal Use\"... is not valid JSON"
+- Response contains "Portal User not found"
+
+**Cause:**
+- Gupshup API key is not configured in Supabase
+- API key is incorrect or expired
+- Wrong environment variable name
+
 **Solution:**
-- Verify GUPSHUP_API_KEY is set correctly
-- Check for extra spaces or quotes
-- Regenerate API key in Gupshup dashboard
+
+1. **Check if API key is set:**
+   - Go to Supabase Dashboard
+   - Navigate to: Project Settings → Edge Functions → Manage secrets
+   - Look for `GUPSHUP_API_KEY` in the list
+
+2. **Add or update the API key:**
+   - Variable name must be exactly: `GUPSHUP_API_KEY` (case-sensitive)
+   - Get your API key from [Gupshup Dashboard](https://www.gupshup.io/developer/home)
+   - Copy the key WITHOUT extra spaces or quotes
+   - Save the secret
+
+3. **Verify API key format:**
+   - Should be a long alphanumeric string
+   - No spaces at beginning or end
+   - No quotation marks
+
+4. **Redeploy the edge function:**
+   ```bash
+   supabase functions deploy send-whatsapp-notification
+   ```
+
+5. **Test again:**
+   - Wait 30 seconds after deploying
+   - Try Test Send button again
+   - Check edge function logs for confirmation
 
 ### Issue: Phone Number Format Error
 **Solution:**

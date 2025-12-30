@@ -151,9 +151,17 @@ export default function WhatsAppNotifications() {
       const result = await response.json();
 
       if (result.success) {
-        alert('Message sent successfully via Gupshup Sandbox!');
+        alert('✅ Message sent successfully via Gupshup Sandbox!');
       } else {
-        alert(`Failed to send message: ${result.message || 'Unknown error'}`);
+        let errorMsg = result.message || 'Unknown error';
+
+        if (errorMsg.includes('API key')) {
+          errorMsg += '\n\nPlease configure GUPSHUP_API_KEY in Supabase Edge Functions secrets.\nSee FIX_GUPSHUP_API_KEY_ERROR.md for detailed instructions.';
+        } else if (errorMsg.includes('Portal User') || errorMsg.includes('account not found')) {
+          errorMsg = 'Invalid Gupshup API key or account not found.\n\nPlease check your GUPSHUP_API_KEY in Supabase.\nSee FIX_GUPSHUP_API_KEY_ERROR.md for help.';
+        }
+
+        alert(`❌ Failed to send message:\n\n${errorMsg}`);
       }
 
       await loadNotifications();

@@ -97,8 +97,54 @@ Deno.serve(async (req: Request) => {
       body: formData.toString(),
     });
 
-    const responseData = await gupshupResponse.json();
-    console.log("Gupshup API response:", JSON.stringify(responseData));
+    // Get response as text first to handle non-JSON responses
+    const responseText = await gupshupResponse.text();
+    console.log(`Gupshup API response status: ${gupshupResponse.status}`);
+    console.log(`Gupshup API response text: ${responseText}`);
+
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      // Response is not valid JSON - likely an error page or plain text
+      const errorMessage = responseText.substring(0, 200);
+      console.error(`Gupshup returned non-JSON response: ${errorMessage}`);
+
+      let friendlyMessage = "Gupshup API returned an error";
+      if (responseText.toLowerCase().includes("portal user")) {
+        friendlyMessage = "Invalid Gupshup API key or account not found";
+      } else if (responseText.toLowerCase().includes("unauthorized")) {
+        friendlyMessage = "Gupshup API key is unauthorized";
+      } else if (responseText.toLowerCase().includes("not found")) {
+        friendlyMessage = "Gupshup API endpoint not found or app not configured";
+      }
+
+      await supabase
+        .from("notification_outbox")
+        .update({
+          status: "SANDBOX_FAILED",
+          failure_reason: `${friendlyMessage}: ${errorMessage}`.substring(0, 500),
+        })
+        .eq("id", id);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: friendlyMessage,
+          details: errorMessage,
+          notification_id: id,
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    console.log("Gupshup API parsed response:", JSON.stringify(responseData));
 
     if (gupshupResponse.ok && responseData.status === "success") {
       console.log(`Successfully sent via Gupshup Sandbox. Message ID: ${responseData.messageId}`);
@@ -144,6 +190,7 @@ Deno.serve(async (req: Request) => {
           notification_id: id,
         }),
         {
+          status: 400,
           headers: {
             ...corsHeaders,
             "Content-Type": "application/json",
