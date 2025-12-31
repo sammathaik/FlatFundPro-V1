@@ -12,6 +12,7 @@ import AnalyticsReports from './AnalyticsReports';
 import MaintenanceCollectionsActiveSummary from './MaintenanceCollectionsActiveSummary';
 import ClassificationAnalytics from './ClassificationAnalytics';
 import WhatsAppNotifications from './WhatsAppNotifications';
+import WhatsAppCommunicationAudit from './WhatsAppCommunicationAudit';
 import DiagnosticTest from './DiagnosticTest';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
 import NotificationsPage from './NotificationsPage';
@@ -47,6 +48,7 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'fraud-detection' && <FraudDetectionDashboard apartmentId={adminData?.apartment_id} />}
       {activeTab === 'classification' && <ClassificationAnalytics />}
       {activeTab === 'communications' && adminData?.apartment_id && <CommunicationAuditDashboard apartmentId={adminData.apartment_id} />}
+      {activeTab === 'whatsapp-audit' && <WhatsAppCommunicationAudit />}
       {activeTab === 'whatsapp-notifications' && <WhatsAppNotifications />}
       {activeTab === 'diagnostic' && <DiagnosticTest />}
       {activeTab === 'faq' && <FAQManagement />}

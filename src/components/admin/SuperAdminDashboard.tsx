@@ -10,6 +10,7 @@ import AuditLogs from './AuditLogs';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import WhatsAppNotifications from './WhatsAppNotifications';
+import WhatsAppCommunicationAudit from './WhatsAppCommunicationAudit';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
 import SuperAdminNotificationsPage from './SuperAdminNotificationsPage';
 import ChatBot from '../ChatBot';
@@ -37,6 +38,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
       )}
+      {activeTab === 'whatsapp-audit' && <WhatsAppCommunicationAudit />}
       {activeTab === 'whatsapp-notifications' && <WhatsAppNotifications />}
       {activeTab === 'faq' && <FAQManagement />}
       {activeTab === 'settings' && <SystemSettings />}
