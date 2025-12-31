@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 import AdminNotifications from './AdminNotifications';
@@ -24,6 +24,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
+    { id: 'communications', label: 'Communication Audit', icon: Mail },
     { id: 'whatsapp-notifications', label: 'WhatsApp Notifications', icon: MessageSquare },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
     { id: 'settings', label: 'System Settings', icon: Settings },
@@ -41,6 +42,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'classification', label: 'AI Classification', icon: Brain },
+    { id: 'communications', label: 'Communication Audit', icon: Mail },
     { id: 'whatsapp-notifications', label: 'WhatsApp Notifications', icon: MessageSquare },
     { id: 'diagnostic', label: 'API Diagnostic', icon: Settings },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },

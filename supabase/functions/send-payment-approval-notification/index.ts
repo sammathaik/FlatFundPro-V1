@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface ApprovalNotificationRequest {
   payment_submission_id: string;
+  apartment_id: string;
   recipient_email: string;
   recipient_name: string;
   recipient_mobile?: string;
@@ -17,6 +18,7 @@ interface ApprovalNotificationRequest {
   approved_amount: number;
   approved_date: string;
   whatsapp_opt_in?: boolean;
+  approved_by_user_id?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -41,6 +43,7 @@ Deno.serve(async (req: Request) => {
 
     const {
       payment_submission_id,
+      apartment_id,
       recipient_email,
       recipient_name,
       recipient_mobile,
@@ -49,6 +52,7 @@ Deno.serve(async (req: Request) => {
       approved_amount,
       approved_date,
       whatsapp_opt_in,
+      approved_by_user_id,
     } = body;
 
     const results = {
@@ -57,6 +61,9 @@ Deno.serve(async (req: Request) => {
       email_error: null as string | null,
       whatsapp_error: null as string | null,
     };
+
+    const emailSubject = `Payment Approved - ${apartment_name} - Flat ${flat_number}`;
+    const messagePreview = `Your maintenance payment for Flat ${flat_number} has been approved - ₹${Number(approved_amount).toLocaleString()}`;
 
     // 1. SEND EMAIL NOTIFICATION (MANDATORY)
     if (resendApiKey && recipient_email) {
@@ -152,10 +159,12 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: "FlatFund Pro <onboarding@resend.dev>",
             to: [recipient_email],
-            subject: `Payment Approved - ${apartment_name} - Flat ${flat_number}`,
+            subject: emailSubject,
             html: emailHtml,
           }),
         });
+
+        const resendResult = await resendResponse.json();
 
         if (resendResponse.ok) {
           results.email_sent = true;
@@ -165,11 +174,54 @@ Deno.serve(async (req: Request) => {
             .update({ approval_email_sent_at: new Date().toISOString() })
             .eq("id", payment_submission_id);
 
+          // Log to communication audit trail
+          await supabase.rpc('log_communication_event', {
+            p_apartment_id: apartment_id,
+            p_flat_number: flat_number,
+            p_recipient_name: recipient_name,
+            p_recipient_email: recipient_email,
+            p_recipient_mobile: null,
+            p_channel: 'EMAIL',
+            p_type: 'payment_approval',
+            p_payment_id: payment_submission_id,
+            p_subject: emailSubject,
+            p_preview: messagePreview,
+            p_full_data: {
+              approved_amount: approved_amount,
+              approved_date: approved_date,
+              email_id: resendResult.id,
+              html_length: emailHtml.length
+            },
+            p_status: 'DELIVERED',
+            p_triggered_by_user_id: approved_by_user_id || null,
+            p_triggered_by_event: 'payment_approved',
+            p_template_name: 'payment_approval_v1'
+          });
+
           console.log(`Email sent successfully to ${recipient_email}`);
         } else {
-          const errorData = await resendResponse.json();
-          results.email_error = JSON.stringify(errorData);
-          console.error("Email send failed:", errorData);
+          results.email_error = JSON.stringify(resendResult);
+          
+          // Log failed email
+          await supabase.rpc('log_communication_event', {
+            p_apartment_id: apartment_id,
+            p_flat_number: flat_number,
+            p_recipient_name: recipient_name,
+            p_recipient_email: recipient_email,
+            p_recipient_mobile: null,
+            p_channel: 'EMAIL',
+            p_type: 'payment_approval',
+            p_payment_id: payment_submission_id,
+            p_subject: emailSubject,
+            p_preview: messagePreview,
+            p_full_data: { error: results.email_error },
+            p_status: 'FAILED',
+            p_triggered_by_user_id: approved_by_user_id || null,
+            p_triggered_by_event: 'payment_approved',
+            p_template_name: 'payment_approval_v1'
+          });
+          
+          console.error("Email send failed:", resendResult);
         }
       } catch (emailError) {
         results.email_error = emailError instanceof Error ? emailError.message : "Unknown error";
@@ -187,7 +239,7 @@ Deno.serve(async (req: Request) => {
         const { data: notificationData, error: notificationError } = await supabase
           .from("notification_outbox")
           .insert({
-            apartment_id: null,
+            apartment_id: apartment_id,
             recipient_phone: recipient_mobile,
             recipient_name: recipient_name,
             message_type: "payment_approval",

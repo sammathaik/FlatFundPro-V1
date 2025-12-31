@@ -37,6 +37,46 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Processing WhatsApp notification ${id} for ${recipient_name} (${recipient_phone})`);
 
+    // Fetch notification details for audit logging
+    const { data: notificationData, error: notificationError } = await supabase
+      .from('notification_outbox')
+      .select('apartment_id, payment_submission_id, message_type, full_message_data')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (notificationError) {
+      console.error('Error fetching notification data:', notificationError);
+    }
+
+    // Get flat number from payment submission if available
+    let flatNumber = 'UNKNOWN';
+    let apartmentId = notificationData?.apartment_id;
+    let paymentId = notificationData?.payment_submission_id;
+
+    if (paymentId) {
+      const { data: paymentData } = await supabase
+        .from('payment_submissions')
+        .select('flat_id, flat_numbers(flat_number)')
+        .eq('id', paymentId)
+        .maybeSingle();
+
+      if (paymentData && paymentData.flat_numbers) {
+        flatNumber = paymentData.flat_numbers.flat_number;
+      }
+    } else if (apartmentId && recipient_phone) {
+      // Try to find flat from phone number
+      const { data: flatMapping } = await supabase
+        .from('flat_email_mappings')
+        .select('flat_number')
+        .eq('apartment_id', apartmentId)
+        .eq('mobile', recipient_phone)
+        .maybeSingle();
+
+      if (flatMapping) {
+        flatNumber = flatMapping.flat_number;
+      }
+    }
+
     // Gupshup Sandbox API credentials
     const gupshupApiKey = Deno.env.get("GUPSHUP_API_KEY");
     const gupshupAppName = Deno.env.get("GUPSHUP_APP_NAME") || "FlatFundPro";
@@ -51,6 +91,27 @@ Deno.serve(async (req: Request) => {
           failure_reason: "Gupshup API key not configured",
         })
         .eq("id", id);
+
+      // Log to communication audit trail
+      if (apartmentId) {
+        await supabase.rpc('log_communication_event', {
+          p_apartment_id: apartmentId,
+          p_flat_number: flatNumber,
+          p_recipient_name: recipient_name,
+          p_recipient_email: null,
+          p_recipient_mobile: recipient_phone,
+          p_channel: 'WHATSAPP',
+          p_type: notificationData?.message_type || 'notification',
+          p_payment_id: paymentId,
+          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_preview: message_preview,
+          p_full_data: { notification_outbox_id: id, error: 'Gupshup API key not configured' },
+          p_status: 'FAILED',
+          p_triggered_by_user_id: null,
+          p_triggered_by_event: 'whatsapp_notification',
+          p_whatsapp_opt_in: true
+        });
+      }
 
       return new Response(
         JSON.stringify({
@@ -67,7 +128,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Format phone number (remove any spaces, ensure + prefix)
+    // Format phone number
     let formattedPhone = recipient_phone.trim();
     if (!formattedPhone.startsWith("+")) {
       formattedPhone = "+" + formattedPhone;
@@ -97,7 +158,6 @@ Deno.serve(async (req: Request) => {
       body: formData.toString(),
     });
 
-    // Get response as text first to handle non-JSON responses
     const responseText = await gupshupResponse.text();
     console.log(`Gupshup API response status: ${gupshupResponse.status}`);
     console.log(`Gupshup API response text: ${responseText}`);
@@ -106,7 +166,6 @@ Deno.serve(async (req: Request) => {
     try {
       responseData = JSON.parse(responseText);
     } catch (parseError) {
-      // Response is not valid JSON - likely an error page or plain text
       const errorMessage = responseText.substring(0, 200);
       console.error(`Gupshup returned non-JSON response: ${errorMessage}`);
 
@@ -126,6 +185,27 @@ Deno.serve(async (req: Request) => {
           failure_reason: `${friendlyMessage}: ${errorMessage}`.substring(0, 500),
         })
         .eq("id", id);
+
+      // Log to communication audit trail
+      if (apartmentId) {
+        await supabase.rpc('log_communication_event', {
+          p_apartment_id: apartmentId,
+          p_flat_number: flatNumber,
+          p_recipient_name: recipient_name,
+          p_recipient_email: null,
+          p_recipient_mobile: recipient_phone,
+          p_channel: 'WHATSAPP',
+          p_type: notificationData?.message_type || 'notification',
+          p_payment_id: paymentId,
+          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_preview: message_preview,
+          p_full_data: { notification_outbox_id: id, error: friendlyMessage, error_details: errorMessage },
+          p_status: 'FAILED',
+          p_triggered_by_user_id: null,
+          p_triggered_by_event: 'whatsapp_notification',
+          p_whatsapp_opt_in: true
+        });
+      }
 
       return new Response(
         JSON.stringify({
@@ -157,6 +237,27 @@ Deno.serve(async (req: Request) => {
         })
         .eq("id", id);
 
+      // Log to communication audit trail
+      if (apartmentId) {
+        await supabase.rpc('log_communication_event', {
+          p_apartment_id: apartmentId,
+          p_flat_number: flatNumber,
+          p_recipient_name: recipient_name,
+          p_recipient_email: null,
+          p_recipient_mobile: recipient_phone,
+          p_channel: 'WHATSAPP',
+          p_type: notificationData?.message_type || 'notification',
+          p_payment_id: paymentId,
+          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_preview: message_preview,
+          p_full_data: { notification_outbox_id: id, gupshup_message_id: responseData.messageId },
+          p_status: 'DELIVERED',
+          p_triggered_by_user_id: null,
+          p_triggered_by_event: 'whatsapp_notification',
+          p_whatsapp_opt_in: true
+        });
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -182,6 +283,27 @@ Deno.serve(async (req: Request) => {
           failure_reason: failureReason.substring(0, 500),
         })
         .eq("id", id);
+
+      // Log to communication audit trail
+      if (apartmentId) {
+        await supabase.rpc('log_communication_event', {
+          p_apartment_id: apartmentId,
+          p_flat_number: flatNumber,
+          p_recipient_name: recipient_name,
+          p_recipient_email: null,
+          p_recipient_mobile: recipient_phone,
+          p_channel: 'WHATSAPP',
+          p_type: notificationData?.message_type || 'notification',
+          p_payment_id: paymentId,
+          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_preview: message_preview,
+          p_full_data: { notification_outbox_id: id, error: failureReason },
+          p_status: 'FAILED',
+          p_triggered_by_user_id: null,
+          p_triggered_by_event: 'whatsapp_notification',
+          p_whatsapp_opt_in: true
+        });
+      }
 
       return new Response(
         JSON.stringify({
