@@ -231,12 +231,73 @@ export default function PaymentManagement() {
         payment_name: selectedPayment.name,
       });
 
+      // Send notifications if status is changed to "Approved"
+      if (newStatus === 'Approved') {
+        try {
+          // Get flat email mapping for mobile and opt-in status
+          const { data: flatMapping } = await supabase
+            .from('flat_email_mappings')
+            .select('whatsapp_opt_in, mobile, name')
+            .eq('flat_id', selectedPayment.flat_id)
+            .eq('apartment_id', selectedPayment.apartment_id)
+            .maybeSingle();
+
+          // Get apartment name
+          const { data: apartmentData } = await supabase
+            .from('apartments')
+            .select('apartment_name')
+            .eq('id', selectedPayment.apartment_id)
+            .single();
+
+          // Prepare notification payload
+          const notificationPayload = {
+            payment_submission_id: selectedPayment.id,
+            recipient_email: selectedPayment.email,
+            recipient_name: flatMapping?.name || selectedPayment.name,
+            recipient_mobile: flatMapping?.mobile || selectedPayment.contact_number,
+            flat_number: selectedPayment.flat.flat_number,
+            apartment_name: apartmentData?.apartment_name || 'Your Apartment',
+            approved_amount: selectedPayment.payment_amount,
+            approved_date: selectedPayment.payment_date,
+            whatsapp_opt_in: flatMapping?.whatsapp_opt_in || false,
+          };
+
+          // Send notifications (non-blocking with timeout)
+          Promise.race([
+            fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-payment-approval-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify(notificationPayload),
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Notification timeout')), 10000)
+            ),
+          ]).then(async (response) => {
+            if (response && 'ok' in response && response.ok) {
+              const result = await response.json();
+              console.log('Notifications sent:', result);
+            }
+          }).catch(error => {
+            console.error('Notification send failed (non-blocking):', error);
+          });
+        } catch (notificationError) {
+          // Log but don't fail the status update
+          console.error('Error preparing notifications:', notificationError);
+        }
+      }
+
       setShowStatusModal(false);
       setSelectedPayment(null);
       await loadPayments();
 
       // Show success message
-      setSuccessMessage(`Payment status updated to "${newStatus}" successfully!`);
+      const successMsg = newStatus === 'Approved'
+        ? `Payment approved and notifications sent to ${selectedPayment.name}!`
+        : `Payment status updated to "${newStatus}" successfully!`;
+      setSuccessMessage(successMsg);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
       alert('Error updating status: ' + error.message);
