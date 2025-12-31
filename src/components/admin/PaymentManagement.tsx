@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
 import DocumentClassificationBadge from './DocumentClassificationBadge';
+import PaymentReviewPanel from './PaymentReviewPanel';
 
 interface PaymentWithDetails {
   id: string;
@@ -80,6 +81,8 @@ export default function PaymentManagement() {
   const [showFraudResultModal, setShowFraudResultModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
+  const [reviewingPaymentId, setReviewingPaymentId] = useState<string | null>(null);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -190,6 +193,20 @@ export default function PaymentManagement() {
     setNewStatus(payment.status);
     setShowStatusModal(true);
     setActionMenuOpen(null);
+  }
+
+  function openReviewPanel(paymentId: string) {
+    setReviewingPaymentId(paymentId);
+    setShowReviewPanel(true);
+    setActionMenuOpen(null);
+  }
+
+  function handleReviewSuccess() {
+    setShowReviewPanel(false);
+    setReviewingPaymentId(null);
+    loadPayments();
+    setSuccessMessage('Payment reviewed and action taken successfully');
+    setTimeout(() => setSuccessMessage(null), 5000);
   }
 
   async function updateStatus() {
@@ -692,6 +709,13 @@ export default function PaymentManagement() {
                                 View Details
                               </button>
                               <button
+                                onClick={() => openReviewPanel(payment.id)}
+                                className="w-full text-left px-4 py-2 text-sm text-blue-700 font-semibold hover:bg-blue-50 flex items-center gap-2"
+                              >
+                                <Shield className="w-4 h-4" />
+                                Committee Review
+                              </button>
+                              <button
                                 onClick={() => openStatusModal(payment)}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                               >
@@ -990,6 +1014,13 @@ export default function PaymentManagement() {
                         >
                           <Eye className="w-4 h-4" />
                           View Details
+                        </button>
+                        <button
+                          onClick={() => openReviewPanel(payment.id)}
+                          className="w-full text-left px-4 py-2 text-sm text-blue-700 font-semibold hover:bg-blue-50 flex items-center gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Committee Review
                         </button>
                         <button
                           onClick={() => openStatusModal(payment)}
@@ -1713,6 +1744,17 @@ export default function PaymentManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {showReviewPanel && reviewingPaymentId && (
+        <PaymentReviewPanel
+          paymentId={reviewingPaymentId}
+          onClose={() => {
+            setShowReviewPanel(false);
+            setReviewingPaymentId(null);
+          }}
+          onSuccess={handleReviewSuccess}
+        />
       )}
 
       {successMessage && (
