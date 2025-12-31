@@ -321,6 +321,9 @@ Deno.serve(async (req: Request) => {
 
         const resendData = await resendResponse.json();
 
+        const emailSubject = `[${urgencyClass}] Payment Reminder - ${flat.collection_name} - Flat ${flat.flat_number}`;
+        const emailPreview = `${urgencyMessage} Amount due: ₹${Number(flat.amount_due).toLocaleString()}`;
+
         if (resendResponse.ok) {
           await supabaseClient
             .from('email_reminders')
@@ -333,7 +336,38 @@ Deno.serve(async (req: Request) => {
               status: 'sent',
               created_by: user.id,
             });
-          
+
+          // Log to unified communication audit trail
+          await supabaseClient.rpc('log_communication_event', {
+            p_apartment_id: body.apartment_id,
+            p_flat_number: flat.flat_number,
+            p_recipient_name: flat.occupant_type,
+            p_recipient_email: flat.email,
+            p_recipient_mobile: flat.mobile,
+            p_channel: 'EMAIL',
+            p_type: 'payment_reminder',
+            p_payment_id: null,
+            p_subject: emailSubject,
+            p_preview: emailPreview,
+            p_full_data: {
+              collection_name: flat.collection_name,
+              payment_type: flat.payment_type,
+              amount_due: flat.amount_due,
+              due_date: flat.due_date,
+              daily_fine: flat.daily_fine,
+              urgency_class: urgencyClass,
+              urgency_message: urgencyMessage,
+              reminder_type: reminderType,
+              expected_collection_id: body.expected_collection_id,
+              email_id: resendData.id,
+              html_length: emailHtml.length
+            },
+            p_status: 'DELIVERED',
+            p_triggered_by_user_id: user.id,
+            p_triggered_by_event: 'manual_reminder',
+            p_template_name: 'payment_reminder_v1'
+          });
+
           sentCount++;
           results.push({ flat_number: flat.flat_number, email: flat.email, status: 'sent' });
         } else {
@@ -349,7 +383,33 @@ Deno.serve(async (req: Request) => {
               error_message: JSON.stringify(resendData),
               created_by: user.id,
             });
-          
+
+          // Log failed reminder to unified communication audit trail
+          await supabaseClient.rpc('log_communication_event', {
+            p_apartment_id: body.apartment_id,
+            p_flat_number: flat.flat_number,
+            p_recipient_name: flat.occupant_type,
+            p_recipient_email: flat.email,
+            p_recipient_mobile: flat.mobile,
+            p_channel: 'EMAIL',
+            p_type: 'payment_reminder',
+            p_payment_id: null,
+            p_subject: emailSubject,
+            p_preview: emailPreview,
+            p_full_data: {
+              error: JSON.stringify(resendData),
+              collection_name: flat.collection_name,
+              payment_type: flat.payment_type,
+              amount_due: flat.amount_due,
+              urgency_class: urgencyClass,
+              reminder_type: reminderType
+            },
+            p_status: 'FAILED',
+            p_triggered_by_user_id: user.id,
+            p_triggered_by_event: 'manual_reminder',
+            p_template_name: 'payment_reminder_v1'
+          });
+
           failedCount++;
           results.push({ flat_number: flat.flat_number, email: flat.email, status: 'failed', error: resendData });
         }

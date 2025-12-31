@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +26,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error("Missing Supabase environment variables");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
     const payload: LeadAcknowledgmentRequest = await req.json();
 
     const {
@@ -257,10 +267,62 @@ Powered by AI | Trusted by Communities
 
     if (!emailResponse.ok) {
       console.error('Failed to send email:', emailResult);
+
+      // Log failed email to communication audit trail
+      await supabase.rpc('log_communication_event', {
+        p_apartment_id: null,
+        p_flat_number: null,
+        p_recipient_name: name,
+        p_recipient_email: email,
+        p_recipient_mobile: phone || null,
+        p_channel: 'EMAIL',
+        p_type: 'lead_acknowledgment',
+        p_payment_id: null,
+        p_subject: `Thank You for Your Interest in FlatFund Pro | ${apartment_name}`,
+        p_preview: `Thank you for reaching out! We'll contact you within 24-48 hours.`,
+        p_full_data: {
+          error: JSON.stringify(emailResult),
+          apartment_name: apartment_name,
+          city: city,
+          message: message
+        },
+        p_status: 'FAILED',
+        p_triggered_by_user_id: null,
+        p_triggered_by_event: 'lead_submission',
+        p_template_name: 'lead_acknowledgment_v1'
+      });
+
       throw new Error(`Failed to send email: ${JSON.stringify(emailResult)}`);
     }
 
     console.log('Lead acknowledgment email sent successfully:', emailResult.id);
+
+    // Log successful email to unified communication audit trail
+    await supabase.rpc('log_communication_event', {
+      p_apartment_id: null,
+      p_flat_number: null,
+      p_recipient_name: name,
+      p_recipient_email: email,
+      p_recipient_mobile: phone || null,
+      p_channel: 'EMAIL',
+      p_type: 'lead_acknowledgment',
+      p_payment_id: null,
+      p_subject: `Thank You for Your Interest in FlatFund Pro | ${apartment_name}`,
+      p_preview: `Thank you for reaching out! We'll contact you within 24-48 hours.`,
+      p_full_data: {
+        apartment_name: apartment_name,
+        city: city,
+        phone: phone,
+        message: message,
+        submission_date: submission_date,
+        email_id: emailResult.id,
+        html_length: emailHtml.length
+      },
+      p_status: 'DELIVERED',
+      p_triggered_by_user_id: null,
+      p_triggered_by_event: 'lead_submission',
+      p_template_name: 'lead_acknowledgment_v1'
+    });
 
     return new Response(
       JSON.stringify({
