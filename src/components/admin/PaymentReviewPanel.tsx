@@ -79,6 +79,9 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAuditHistory, setShowAuditHistory] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const [selectedAction, setSelectedAction] = useState<CommitteeAction | null>(null);
   const [committeeReason, setCommitteeReason] = useState('');
@@ -141,6 +144,8 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
   const handleActionChange = (action: CommitteeAction) => {
     setSelectedAction(action);
     setCommitteeReason('');
+    setValidationErrors({});
+    setErrorMessage(null);
 
     if (action === 'approve_as_is') {
       setEditedPayment({
@@ -151,28 +156,45 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
   };
 
   const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
     if (!selectedAction) {
-      alert('Please select a committee action');
+      setErrorMessage('Please select a committee action before submitting');
       return false;
     }
 
     if (selectedAction !== 'approve_as_is' && !committeeReason.trim()) {
-      alert('Please provide a reason for this committee action');
-      return false;
+      errors.reason = 'Reason is required for this committee action';
     }
 
     if ((selectedAction === 'edit_and_approve' || selectedAction === 'submit_on_behalf')) {
       if (!editedPayment.payment_amount || parseFloat(editedPayment.payment_amount) <= 0) {
-        alert('Please enter a valid payment amount');
-        return false;
+        errors.amount = 'Please enter a valid payment amount';
       }
       if (!editedPayment.payment_date) {
-        alert('Please select a payment date');
-        return false;
+        errors.date = 'Please select a payment date';
       }
     }
 
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setErrorMessage('Please correct the errors below before submitting');
+      return false;
+    }
+
+    setErrorMessage(null);
     return true;
+  };
+
+  const handleSubmitClick = () => {
+    if (!validateForm()) return;
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
+    handleSubmit();
   };
 
   const handleSubmit = async () => {
@@ -252,14 +274,19 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
           whatsapp_opt_in: flatMapping?.whatsapp_opt_in || false,
         };
 
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-payment-approval-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify(notificationPayload),
-        }).catch(error => {
+        Promise.race([
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-payment-approval-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify(notificationPayload),
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Notification timeout')), 10000)
+          ),
+        ]).catch(error => {
           console.error('Notification send failed (non-blocking):', error);
         });
       }
@@ -268,7 +295,11 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
       onClose();
     } catch (error) {
       console.error('Error updating payment:', error);
-      alert('Failed to update payment. Please try again.');
+      setErrorMessage(
+        error instanceof Error
+          ? `Failed to update payment: ${error.message}`
+          : 'Failed to update payment. Please try again.'
+      );
     } finally {
       setSaving(false);
     }
@@ -491,11 +522,26 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
                   </label>
                   <textarea
                     value={committeeReason}
-                    onChange={(e) => setCommitteeReason(e.target.value)}
+                    onChange={(e) => {
+                      setCommitteeReason(e.target.value);
+                      if (validationErrors.reason) {
+                        const newErrors = { ...validationErrors };
+                        delete newErrors.reason;
+                        setValidationErrors(newErrors);
+                      }
+                    }}
                     placeholder="Example: Confirmed via bank statement, OCR extraction error, Resident confirmation received"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      validationErrors.reason ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     rows={3}
                   />
+                  {validationErrors.reason && (
+                    <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {validationErrors.reason}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500 mt-2">
                     This reason will be logged in the audit trail and is mandatory for governance.
                   </p>
@@ -518,9 +564,24 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
                     <input
                       type="date"
                       value={editedPayment.payment_date}
-                      onChange={(e) => setEditedPayment({ ...editedPayment, payment_date: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => {
+                        setEditedPayment({ ...editedPayment, payment_date: e.target.value });
+                        if (validationErrors.date) {
+                          const newErrors = { ...validationErrors };
+                          delete newErrors.date;
+                          setValidationErrors(newErrors);
+                        }
+                      }}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        validationErrors.date ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {validationErrors.date && (
+                      <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {validationErrors.date}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -531,10 +592,25 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
                       type="number"
                       step="0.01"
                       value={editedPayment.payment_amount}
-                      onChange={(e) => setEditedPayment({ ...editedPayment, payment_amount: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => {
+                        setEditedPayment({ ...editedPayment, payment_amount: e.target.value });
+                        if (validationErrors.amount) {
+                          const newErrors = { ...validationErrors };
+                          delete newErrors.amount;
+                          setValidationErrors(newErrors);
+                        }
+                      }}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        validationErrors.amount ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Enter amount"
                     />
+                    {validationErrors.amount && (
+                      <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {validationErrors.amount}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -622,37 +698,101 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
           </div>
         </div>
 
-        <div className="bg-gray-50 px-8 py-6 rounded-b-2xl border-t-2 border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            <p className="font-medium">Committee actions are logged for transparency</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={saving || !selectedAction}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Submit Committee Action
-                </>
-              )}
-            </button>
+        <div className="bg-gray-50 px-8 py-6 rounded-b-2xl border-t-2 border-gray-200">
+          {errorMessage && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-900">Error</p>
+                <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              <p className="font-medium">Committee actions are logged for transparency</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitClick}
+                disabled={saving || !selectedAction}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center gap-2"
+                title={!selectedAction ? 'Please select a committee action first' : ''}
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Submit Committee Action
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
+
+        {showConfirmDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60]">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Confirm Committee Action</h3>
+              </div>
+
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to proceed with this committee action?
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Action:</strong>{' '}
+                  {selectedAction === 'approve_as_is' && 'Approve as submitted'}
+                  {selectedAction === 'edit_and_approve' && 'Edit and approve'}
+                  {selectedAction === 'submit_on_behalf' && 'Submit on behalf of resident'}
+                  {selectedAction === 'rejected' && 'Mark as unverifiable'}
+                </p>
+                {committeeReason && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Reason:</strong> {committeeReason}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-500 mb-6">
+                This action will be logged in the audit trail and notifications will be sent to the resident.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmDialog(false)}
+                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmSubmit}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
