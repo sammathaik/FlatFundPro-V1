@@ -8,16 +8,18 @@ const corsHeaders = {
 };
 
 interface ApprovalNotificationRequest {
-  payment_submission_id: string;
+  payment_id: string;
   apartment_id: string;
-  recipient_email: string;
-  recipient_name: string;
-  recipient_mobile?: string;
+  email: string;
+  name: string;
+  mobile?: string;
   flat_number: string;
   apartment_name: string;
-  approved_amount: number;
+  payment_type: string;
+  payment_amount: number;
+  payment_quarter?: string;
   approved_date: string;
-  whatsapp_opt_in?: boolean;
+  whatsapp_optin?: boolean;
   approved_by_user_id?: string;
 }
 
@@ -42,16 +44,18 @@ Deno.serve(async (req: Request) => {
     const body: ApprovalNotificationRequest = await req.json();
 
     const {
-      payment_submission_id,
+      payment_id,
       apartment_id,
-      recipient_email,
-      recipient_name,
-      recipient_mobile,
+      email: recipient_email,
+      name: recipient_name,
+      mobile: recipient_mobile,
       flat_number,
       apartment_name,
-      approved_amount,
+      payment_type,
+      payment_amount,
+      payment_quarter,
       approved_date,
-      whatsapp_opt_in,
+      whatsapp_optin: whatsapp_opt_in,
       approved_by_user_id,
     } = body;
 
@@ -62,8 +66,14 @@ Deno.serve(async (req: Request) => {
       whatsapp_error: null as string | null,
     };
 
-    const emailSubject = `Payment Approved - ${apartment_name} - Flat ${flat_number}`;
-    const messagePreview = `Your maintenance payment for Flat ${flat_number} has been approved - ₹${Number(approved_amount).toLocaleString()}`;
+    const paymentTypeLabel = payment_type === 'maintenance' ? 'Maintenance'
+      : payment_type === 'contingency' ? 'Contingency Fund'
+      : payment_type === 'emergency' ? 'Emergency'
+      : payment_type;
+
+    const quarterInfo = payment_quarter ? ` (${payment_quarter})` : '';
+    const emailSubject = `Payment Approved - ${paymentTypeLabel}${quarterInfo} | Flat ${flat_number}`;
+    const messagePreview = `Your ${paymentTypeLabel.toLowerCase()} payment for Flat ${flat_number} has been approved - ₹${Number(payment_amount).toLocaleString()}`;
 
     // 1. SEND EMAIL NOTIFICATION (MANDATORY)
     if (resendApiKey && recipient_email) {
@@ -111,8 +121,12 @@ Deno.serve(async (req: Request) => {
                         <td colspan="2" style="padding: 12px 0; border-top: 1px solid #e5e7eb;"></td>
                       </tr>
                       <tr>
+                        <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Payment Type</td>
+                        <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600; text-align: right;">${paymentTypeLabel}${quarterInfo}</td>
+                      </tr>
+                      <tr>
                         <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Approved Amount</td>
-                        <td style="padding: 8px 0; font-size: 18px; color: #059669; font-weight: 700; text-align: right;">₹${Number(approved_amount).toLocaleString()}</td>
+                        <td style="padding: 8px 0; font-size: 18px; color: #059669; font-weight: 700; text-align: right;">₹${Number(payment_amount).toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Payment Date</td>
@@ -168,11 +182,11 @@ Deno.serve(async (req: Request) => {
 
         if (resendResponse.ok) {
           results.email_sent = true;
-          
+
           await supabase
             .from("payment_submissions")
             .update({ approval_email_sent_at: new Date().toISOString() })
-            .eq("id", payment_submission_id);
+            .eq("id", payment_id);
 
           // Log to communication audit trail
           await supabase.rpc('log_communication_event', {
@@ -183,11 +197,13 @@ Deno.serve(async (req: Request) => {
             p_recipient_mobile: null,
             p_channel: 'EMAIL',
             p_type: 'payment_approval',
-            p_payment_id: payment_submission_id,
+            p_payment_id: payment_id,
             p_subject: emailSubject,
             p_preview: messagePreview,
             p_full_data: {
-              approved_amount: approved_amount,
+              payment_type: payment_type,
+              payment_amount: payment_amount,
+              payment_quarter: payment_quarter,
               approved_date: approved_date,
               email_id: resendResult.id,
               html_length: emailHtml.length
@@ -211,7 +227,7 @@ Deno.serve(async (req: Request) => {
             p_recipient_mobile: null,
             p_channel: 'EMAIL',
             p_type: 'payment_approval',
-            p_payment_id: payment_submission_id,
+            p_payment_id: payment_id,
             p_subject: emailSubject,
             p_preview: messagePreview,
             p_full_data: { error: results.email_error },
@@ -234,21 +250,24 @@ Deno.serve(async (req: Request) => {
     // 2. SEND WHATSAPP NOTIFICATION (CONDITIONAL)
     if (whatsapp_opt_in && recipient_mobile && recipient_mobile.trim() !== "") {
       try {
-        const whatsappMessage = `Your maintenance payment for ${apartment_name} has been approved after committee verification. Thank you!\n\nFlat: ${flat_number}\nAmount: ₹${Number(approved_amount).toLocaleString()}\nDate: ${new Date(approved_date).toLocaleDateString('en-IN')}`;
+        const whatsappMessage = `Your ${paymentTypeLabel.toLowerCase()} payment for ${apartment_name} has been approved after committee verification. Thank you!\n\nFlat: ${flat_number}\nType: ${paymentTypeLabel}${quarterInfo}\nAmount: ₹${Number(payment_amount).toLocaleString()}\nDate: ${new Date(approved_date).toLocaleDateString('en-IN')}`;
 
         const { data: notificationData, error: notificationError } = await supabase
           .from("notification_outbox")
           .insert({
             apartment_id: apartment_id,
-            recipient_phone: recipient_mobile,
+            flat_number: flat_number,
+            recipient_mobile: recipient_mobile,
             recipient_name: recipient_name,
             message_type: "payment_approval",
             message_preview: whatsappMessage,
             full_message_data: {
-              payment_submission_id,
-              flat_number,
-              approved_amount,
-              approved_date,
+              payment_id: payment_id,
+              flat_number: flat_number,
+              payment_type: payment_type,
+              payment_amount: payment_amount,
+              payment_quarter: payment_quarter,
+              approved_date: approved_date,
             },
             status: "PENDING",
           })
@@ -276,19 +295,68 @@ Deno.serve(async (req: Request) => {
             }
           );
 
+          const whatsappResult = await whatsappResponse.json();
+
           if (whatsappResponse.ok) {
             results.whatsapp_sent = true;
-            
+
             await supabase
               .from("payment_submissions")
               .update({ approval_whatsapp_sent_at: new Date().toISOString() })
-              .eq("id", payment_submission_id);
+              .eq("id", payment_id);
+
+            // Log WhatsApp to communication audit trail
+            await supabase.rpc('log_communication_event', {
+              p_apartment_id: apartment_id,
+              p_flat_number: flat_number,
+              p_recipient_name: recipient_name,
+              p_recipient_email: null,
+              p_recipient_mobile: recipient_mobile,
+              p_channel: 'WHATSAPP',
+              p_type: 'payment_approval',
+              p_payment_id: payment_id,
+              p_subject: 'Payment Approved',
+              p_preview: whatsappMessage,
+              p_full_data: {
+                payment_type: payment_type,
+                payment_amount: payment_amount,
+                payment_quarter: payment_quarter,
+                approved_date: approved_date,
+                gupshup_message_id: whatsappResult.messageId || null,
+                notification_outbox_id: notificationData.id
+              },
+              p_status: 'DELIVERED',
+              p_triggered_by_user_id: approved_by_user_id || null,
+              p_triggered_by_event: 'payment_approved',
+              p_template_name: 'payment_approval_whatsapp_v1',
+              p_whatsapp_optin: true
+            });
 
             console.log(`WhatsApp sent successfully to ${recipient_mobile}`);
           } else {
-            const whatsappError = await whatsappResponse.json();
-            results.whatsapp_error = JSON.stringify(whatsappError);
-            console.error("WhatsApp send failed:", whatsappError);
+            results.whatsapp_error = JSON.stringify(whatsappResult);
+
+            // Log failed WhatsApp
+            await supabase.rpc('log_communication_event', {
+              p_apartment_id: apartment_id,
+              p_flat_number: flat_number,
+              p_recipient_name: recipient_name,
+              p_recipient_email: null,
+              p_recipient_mobile: recipient_mobile,
+              p_channel: 'WHATSAPP',
+              p_type: 'payment_approval',
+              p_payment_id: payment_id,
+              p_subject: 'Payment Approved',
+              p_preview: whatsappMessage,
+              p_full_data: { error: results.whatsapp_error },
+              p_status: 'FAILED',
+              p_triggered_by_user_id: approved_by_user_id || null,
+              p_triggered_by_event: 'payment_approved',
+              p_template_name: 'payment_approval_whatsapp_v1',
+              p_whatsapp_optin: true
+            });
+
+            console.error("WhatsApp send failed:", whatsappResult);
           }
         }
       } catch (whatsappError) {
@@ -302,7 +370,7 @@ Deno.serve(async (req: Request) => {
     await supabase
       .from("payment_submissions")
       .update({ approval_notification_sent: results.email_sent })
-      .eq("id", payment_submission_id);
+      .eq("id", payment_id);
 
     return new Response(
       JSON.stringify({

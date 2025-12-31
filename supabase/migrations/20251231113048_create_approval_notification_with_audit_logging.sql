@@ -1,0 +1,154 @@
+/*
+  # Create Payment Approval Notification with Communication Audit Logging
+  
+  1. Overview
+    - Sends email and WhatsApp notifications when payment is approved
+    - Logs all communications to the unified audit trail
+    - Non-blocking - never fails payment approval
+  
+  2. Changes
+    - Creates trigger function send_payment_approval_notification()
+    - Fires on UPDATE when status changes to 'approved'
+    - Calls edge function to send notifications and log to audit
+  
+  3. Communication Logging
+    - Logs to communication_logs table via edge function
+    - Records both email and WhatsApp (if opted in)
+    - Includes all metadata for audit compliance
+*/
+
+CREATE OR REPLACE FUNCTION send_payment_approval_notification()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_email TEXT;
+  v_mobile TEXT;
+  v_name TEXT;
+  v_occupant_type TEXT;
+  v_whatsapp_optin BOOLEAN;
+  v_flat_number TEXT;
+  v_apartment_id UUID;
+  v_apartment_name TEXT;
+  v_payment_type TEXT;
+  v_payment_amount NUMERIC;
+  v_payment_quarter TEXT;
+  v_approved_date TIMESTAMPTZ;
+  v_supabase_url TEXT;
+  v_supabase_anon_key TEXT;
+  v_request_id BIGINT;
+BEGIN
+  -- Only trigger when status changes from non-approved to approved
+  IF OLD.status != 'approved' AND NEW.status = 'approved' THEN
+    BEGIN
+      -- Get email, mobile, name, and WhatsApp opt-in from flat_email_mappings
+      SELECT 
+        email, 
+        mobile, 
+        name, 
+        occupant_type,
+        whatsapp_notifications_enabled
+      INTO 
+        v_email, 
+        v_mobile, 
+        v_name, 
+        v_occupant_type,
+        v_whatsapp_optin
+      FROM flat_email_mappings
+      WHERE flat_id = NEW.flat_id
+      LIMIT 1;
+      
+      -- If no email found, exit gracefully
+      IF v_email IS NULL THEN
+        RAISE NOTICE 'No email found for flat_id: %, skipping approval notification', NEW.flat_id;
+        RETURN NEW;
+      END IF;
+      
+      -- Prioritize name from payment submission, then flat_email_mappings, then occupant_type
+      IF NEW.name IS NOT NULL AND NEW.name != '' THEN
+        v_name := NEW.name;
+      ELSIF v_name IS NULL OR v_name = '' THEN
+        IF v_occupant_type IS NOT NULL THEN
+          v_name := v_occupant_type;
+        ELSE
+          v_name := 'Resident';
+        END IF;
+      END IF;
+      
+      -- Get flat number, apartment details, and apartment_id
+      SELECT 
+        fn.flat_number,
+        a.id,
+        a.apartment_name
+      INTO v_flat_number, v_apartment_id, v_apartment_name
+      FROM flat_numbers fn
+      JOIN buildings_blocks_phases bbp ON fn.block_id = bbp.id
+      JOIN apartments a ON bbp.apartment_id = a.id
+      WHERE fn.id = NEW.flat_id;
+      
+      -- Set payment details
+      v_payment_type := NEW.payment_type;
+      v_payment_amount := NEW.payment_amount;
+      v_payment_quarter := NEW.payment_quarter;
+      v_approved_date := NEW.updated_at;
+      
+      -- Get Supabase configuration
+      SELECT value INTO v_supabase_url FROM system_config WHERE key = 'supabase_url';
+      SELECT value INTO v_supabase_anon_key FROM system_config WHERE key = 'supabase_anon_key';
+      
+      -- If not configured, skip notification (don't fail)
+      IF v_supabase_url IS NULL THEN
+        RAISE NOTICE 'Supabase URL not configured, skipping approval notification for payment_id: %', NEW.id;
+        RETURN NEW;
+      END IF;
+      
+      -- Make async HTTP request to edge function
+      SELECT net.http_post(
+        url := v_supabase_url || '/functions/v1/send-payment-approval-notification',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || COALESCE(v_supabase_anon_key, '')
+        ),
+        body := jsonb_build_object(
+          'email', v_email,
+          'mobile', v_mobile,
+          'name', v_name,
+          'flat_number', v_flat_number,
+          'apartment_id', v_apartment_id,
+          'apartment_name', v_apartment_name,
+          'payment_id', NEW.id,
+          'payment_type', v_payment_type,
+          'payment_amount', v_payment_amount,
+          'payment_quarter', v_payment_quarter,
+          'approved_date', v_approved_date,
+          'whatsapp_optin', COALESCE(v_whatsapp_optin, false)
+        )
+      ) INTO v_request_id;
+      
+      RAISE NOTICE 'Payment approval notification queued for payment_id: %, request_id: %', NEW.id, v_request_id;
+      
+    EXCEPTION WHEN OTHERS THEN
+      -- Log error but NEVER fail the payment approval
+      RAISE WARNING 'Failed to send approval notification for payment_id: %. Error: %', NEW.id, SQLERRM;
+    END;
+  END IF;
+  
+  -- Always return NEW to allow payment approval to succeed
+  RETURN NEW;
+END;
+$$;
+
+-- Create trigger for payment approval notifications
+DROP TRIGGER IF EXISTS trigger_send_payment_approval_notification ON payment_submissions;
+
+CREATE TRIGGER trigger_send_payment_approval_notification
+  AFTER UPDATE ON payment_submissions
+  FOR EACH ROW
+  EXECUTE FUNCTION send_payment_approval_notification();
+
+COMMENT ON FUNCTION send_payment_approval_notification() IS 
+'Sends email and WhatsApp notifications when payment is approved. Logs all communications to unified audit trail. Non-blocking - never fails payment approval.';
+
+COMMENT ON TRIGGER trigger_send_payment_approval_notification ON payment_submissions IS
+'Triggers approval notifications (email + WhatsApp) when payment status changes to approved. Logs to communication audit trail.';
