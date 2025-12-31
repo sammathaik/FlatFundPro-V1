@@ -22,6 +22,7 @@ interface Occupant {
   name: string | null;
   occupant_name: string | null;
   occupant_type: 'Owner' | 'Tenant';
+  whatsapp_opt_in: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -109,6 +110,7 @@ export default function OccupantManagement() {
           mobile,
           name,
           occupant_type,
+          whatsapp_opt_in,
           created_at,
           updated_at,
           apartments!inner(apartment_name),
@@ -152,6 +154,7 @@ export default function OccupantManagement() {
         name: item.name,
         occupant_name: nameByFlatId[item.flat_id] || null,
         occupant_type: item.occupant_type,
+        whatsapp_opt_in: item.whatsapp_opt_in,
         created_at: item.created_at,
         updated_at: item.updated_at,
       }));
@@ -245,6 +248,7 @@ export default function OccupantManagement() {
         name: null,
         occupant_name: null,
         occupant_type: 'Owner',
+        whatsapp_opt_in: null,
         created_at: '',
         updated_at: '',
       },
@@ -563,6 +567,9 @@ export default function OccupantManagement() {
                           Type
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          WhatsApp Opt-in
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -630,6 +637,21 @@ export default function OccupantManagement() {
                               }`}>
                                 {occupant.occupant_type}
                               </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {occupant.whatsapp_opt_in === true ? (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                  ✓ Opted In
+                                </span>
+                              ) : occupant.whatsapp_opt_in === false ? (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                  Not Opted In
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-400">
+                                  Unknown
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center gap-2">
@@ -906,6 +928,30 @@ export default function OccupantManagement() {
                   <option value="Owner">Owner</option>
                   <option value="Tenant">Tenant</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp Opt-in Status
+                </label>
+                <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 flex items-center">
+                  {editModal.occupant.whatsapp_opt_in === true ? (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                      ✓ Opted In
+                    </span>
+                  ) : editModal.occupant.whatsapp_opt_in === false ? (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">
+                      Not Opted In
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-500">
+                      Unknown
+                    </span>
+                  )}
+                  <span className="ml-3 text-xs text-gray-500 italic">
+                    (Set by occupant via their portal)
+                  </span>
+                </div>
               </div>
             </div>
 
