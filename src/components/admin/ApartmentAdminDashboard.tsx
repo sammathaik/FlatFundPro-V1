@@ -14,6 +14,7 @@ import ClassificationAnalytics from './ClassificationAnalytics';
 import WhatsAppNotifications from './WhatsAppNotifications';
 import DiagnosticTest from './DiagnosticTest';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
+import NotificationsPage from './NotificationsPage';
 import { useAuth } from '../../contexts/AuthContext';
 import ChatBot from '../ChatBot';
 
@@ -26,6 +27,7 @@ export default function ApartmentAdminDashboard() {
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab} isSuperAdmin={false}>
       {activeTab === 'overview' && <ApartmentAdminOverview />}
+      {activeTab === 'notifications' && <NotificationsPage />}
       {activeTab === 'buildings' && <BuildingManagement />}
       {activeTab === 'occupants' && <OccupantManagement />}
       {activeTab === 'payments' && <PaymentManagement />}

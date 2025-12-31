@@ -16,7 +16,11 @@ interface SuperAdminNotification {
   created_at: string;
 }
 
-export default function SuperAdminNotifications() {
+interface SuperAdminNotificationsProps {
+  onNavigateToNotifications?: () => void;
+}
+
+export default function SuperAdminNotifications({ onNavigateToNotifications }: SuperAdminNotificationsProps) {
   const { superAdminData } = useAuth();
   const [notifications, setNotifications] = useState<SuperAdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -212,6 +216,9 @@ export default function SuperAdminNotifications() {
                 <button
                   onClick={() => {
                     setShowDropdown(false);
+                    if (onNavigateToNotifications) {
+                      onNavigateToNotifications();
+                    }
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >

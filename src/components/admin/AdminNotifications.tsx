@@ -16,7 +16,11 @@ interface Notification {
   created_at: string;
 }
 
-export default function AdminNotifications() {
+interface AdminNotificationsProps {
+  onNavigateToNotifications?: () => void;
+}
+
+export default function AdminNotifications({ onNavigateToNotifications }: AdminNotificationsProps) {
   const { adminData } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -213,6 +217,9 @@ export default function AdminNotifications() {
                 <button
                   onClick={() => {
                     setShowDropdown(false);
+                    if (onNavigateToNotifications) {
+                      onNavigateToNotifications();
+                    }
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >

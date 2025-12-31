@@ -11,6 +11,7 @@ import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import WhatsAppNotifications from './WhatsAppNotifications';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
+import SuperAdminNotificationsPage from './SuperAdminNotificationsPage';
 import ChatBot from '../ChatBot';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -21,6 +22,7 @@ export default function SuperAdminDashboard() {
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab} isSuperAdmin={true}>
       {activeTab === 'overview' && <SuperAdminOverview />}
+      {activeTab === 'notifications' && <SuperAdminNotificationsPage />}
       {activeTab === 'apartments' && <ApartmentManagement />}
       {activeTab === 'admins' && <AdminManagement />}
       {activeTab === 'leads' && <LeadsManagement />}

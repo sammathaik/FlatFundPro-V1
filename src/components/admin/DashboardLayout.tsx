@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 import AdminNotifications from './AdminNotifications';
@@ -19,6 +19,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
   const superAdminTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'apartments', label: 'Apartments', icon: Building2 },
     { id: 'admins', label: 'Admins', icon: Users },
     { id: 'leads', label: 'Lead Generation', icon: UserPlus },
@@ -33,6 +34,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
   const adminTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
     { id: 'occupants', label: 'Occupants', icon: Users },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
@@ -112,7 +114,11 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
             {/* Header Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {isSuperAdmin ? <SuperAdminNotifications /> : <AdminNotifications />}
+              {isSuperAdmin ? (
+                <SuperAdminNotifications onNavigateToNotifications={() => onTabChange('notifications')} />
+              ) : (
+                <AdminNotifications onNavigateToNotifications={() => onTabChange('notifications')} />
+              )}
               <a
                 href="/"
                 className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 hover:bg-blue-50 rounded-lg"
