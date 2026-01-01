@@ -1,7 +1,7 @@
-# Mobile Number Input Fix - Summary
+# Mobile Number Input Fix - Summary (CORRECTED)
 
 ## Issue Reported
-Users were unable to enter mobile numbers properly in the new mobile-first payment submission form. The validation error "Mobile number must be exactly 10 digits" was appearing immediately while typing, making the input field frustrating to use.
+The mobile number input field was showing "+91" (country code) INSIDE the text input box instead of keeping it separate in the country code dropdown. For example, when typing "9191", the field would display "+919191" instead of just "9191".
 
 ---
 

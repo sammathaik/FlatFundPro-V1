@@ -39,15 +39,20 @@ export default function MobileNumberInput({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [wasNormalized, setWasNormalized] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (value) {
+    if (!isInitialized && value) {
       const normalized = normalizeMobileNumber(value);
       setCountryCode(normalized.countryCode);
       setLocalNumber(normalized.localNumber);
       setWasNormalized(normalized.wasNormalized);
+      setIsInitialized(true);
+    } else if (!value && isInitialized) {
+      setLocalNumber('');
+      setIsInitialized(false);
     }
-  }, [value]);
+  }, [value, isInitialized]);
 
   const handleCountryCodeChange = (newCode: string) => {
     setCountryCode(newCode);
@@ -65,6 +70,7 @@ export default function MobileNumberInput({
     if (cleaned.length <= 10) {
       setLocalNumber(cleaned);
       setWasNormalized(false);
+      setIsInitialized(true);
       onChange(formatMobileForStorage(countryCode, cleaned));
     }
   };

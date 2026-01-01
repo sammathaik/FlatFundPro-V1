@@ -38,7 +38,7 @@ export function normalizeMobileNumber(input: string | null | undefined): Normali
 
   const cleaned = input.replace(/[\s\-()]/g, '');
 
-  const numericOnly = cleaned.replace(/[^\d+]/g, '');
+  const numericOnly = cleaned.replace(/\D/g, '');
 
   if (numericOnly.startsWith('+91')) {
     const localPart = numericOnly.substring(3);
