@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload, Info, CheckCircle, AlertCircle, Loader2, Sparkles, ImageIcon } from 'lucide-react';
 import { supabase, PaymentSubmission } from '../lib/supabase';
 import { analyzePaymentImage } from '../lib/fraudDetection';
+import MobileNumberInput from './MobileNumberInput';
 
 interface FormData {
   name: string;
@@ -524,18 +525,12 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="contact_number" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="contact_number"
-                    name="contact_number"
+                  <MobileNumberInput
                     value={formData.contact_number}
-                    onChange={handleInputChange}
+                    onChange={(value) => setFormData({ ...formData, contact_number: value })}
+                    label="Contact Number"
                     disabled={submissionState === 'loading'}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="+91 98765 43210"
+                    showValidation={false}
                   />
                 </div>
 

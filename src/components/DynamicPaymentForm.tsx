@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, Info, CheckCircle, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase, Apartment, BuildingBlockPhase, FlatNumber, PaymentSubmission } from '../lib/supabase';
+import MobileNumberInput from './MobileNumberInput';
 
 interface FormData {
   apartmentId: string;
@@ -961,18 +962,12 @@ export default function DynamicPaymentForm() {
               </div>
 
               <div>
-                <label htmlFor="contact_number" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Number
-                </label>
-                <input
-                  type="tel"
-                  id="contact_number"
-                  name="contact_number"
+                <MobileNumberInput
                   value={formData.contact_number}
-                  onChange={handleInputChange}
+                  onChange={(value) => setFormData({ ...formData, contact_number: value })}
+                  label="Contact Number"
                   disabled={submissionState === 'loading'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="+91 98765 43210"
+                  showValidation={false}
                 />
               </div>
 

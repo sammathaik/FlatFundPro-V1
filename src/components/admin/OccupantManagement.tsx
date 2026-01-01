@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Edit2, Trash2, Plus, ChevronDown, ChevronUp, X, Save, Building, Mail, Phone, User, Home, Download, Search, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import MobileNumberInput from '../MobileNumberInput';
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
@@ -891,20 +892,16 @@ export default function OccupantManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile Number
-                </label>
-                <input
-                  type="tel"
+                <MobileNumberInput
                   value={editModal.occupant.mobile || ''}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setEditModal({
                       ...editModal,
-                      occupant: { ...editModal.occupant, mobile: e.target.value },
+                      occupant: { ...editModal.occupant, mobile: value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+91 XXXXXXXXXX"
+                  label="Mobile Number"
+                  showValidation={false}
                 />
               </div>
 
