@@ -180,7 +180,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     try {
       const { data, error: rpcError } = await supabase.rpc('generate_mobile_otp', {
         mobile_number: mobileNumber,
-        flat_id: flat.flat_id
+        p_flat_id: flat.flat_id
       });
 
       if (rpcError) {
