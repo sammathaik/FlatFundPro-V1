@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface PaymentAcknowledgmentRequest {
   email: string;
+  mobile?: string;
   name: string;
   flat_number: string;
   apartment_name: string;
@@ -18,6 +19,7 @@ interface PaymentAcknowledgmentRequest {
   payment_amount: number;
   payment_quarter?: string;
   submission_date: string;
+  whatsapp_optin?: boolean;
 }
 
 Deno.serve(async (req: Request) => {
@@ -33,6 +35,7 @@ Deno.serve(async (req: Request) => {
 
     const {
       email,
+      mobile,
       name,
       flat_number,
       apartment_name,
@@ -41,7 +44,8 @@ Deno.serve(async (req: Request) => {
       payment_type,
       payment_amount,
       payment_quarter,
-      submission_date
+      submission_date,
+      whatsapp_optin
     } = payload;
 
     const paymentTypeLabel = payment_type === 'maintenance' ? 'Maintenance'
@@ -176,7 +180,7 @@ Deno.serve(async (req: Request) => {
       console.error('Error sending email:', emailError);
     }
 
-    // Log to unified communication audit trail
+    // Log EMAIL to unified communication audit trail
     try {
       await supabase.rpc('log_communication_event', {
         p_apartment_id: apartment_id,
@@ -202,10 +206,132 @@ Deno.serve(async (req: Request) => {
         p_triggered_by_event: 'payment_submitted',
         p_template_name: 'payment_acknowledgment_v1'
       });
-      console.log('Communication logged to audit trail');
+      console.log('EMAIL communication logged to audit trail');
     } catch (logError) {
-      console.error('Failed to log communication:', logError);
+      console.error('Failed to log email communication:', logError);
       // Non-blocking - continue even if logging fails
+    }
+
+    // Send WhatsApp notification if opted in
+    const results = {
+      email_sent: emailStatus === 'DELIVERED',
+      whatsapp_sent: false,
+      email_error: errorMessage,
+      whatsapp_error: null as string | null,
+    };
+
+    if (whatsapp_optin && mobile && mobile.trim() !== "") {
+      try {
+        const whatsappMessage = `Your ${paymentTypeLabel.toLowerCase()} payment for ${apartment_name} has been received and is under review. Thank you!\n\nFlat: ${flat_number}\nType: ${paymentTypeLabel}${quarterInfo}\nAmount: ${formattedAmount}\nSubmitted: ${formattedDate}\n\nYou will receive a confirmation once your payment is approved by the committee.`;
+
+        const { data: notificationData, error: notificationError } = await supabase
+          .from("notification_outbox")
+          .insert({
+            apartment_id: apartment_id,
+            flat_number: flat_number,
+            recipient_mobile: mobile,
+            recipient_name: name,
+            message_type: "payment_acknowledgment",
+            message_preview: whatsappMessage,
+            full_message_data: {
+              payment_id: payment_id,
+              flat_number: flat_number,
+              payment_type: payment_type,
+              payment_amount: payment_amount,
+              payment_quarter: payment_quarter,
+              submission_date: submission_date,
+            },
+            status: "PENDING",
+          })
+          .select("id")
+          .single();
+
+        if (notificationError) {
+          results.whatsapp_error = notificationError.message;
+          console.error("WhatsApp queue error:", notificationError);
+        } else {
+          const whatsappResponse = await fetch(
+            `${supabaseUrl}/functions/v1/send-whatsapp-notification`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              },
+              body: JSON.stringify({
+                id: notificationData.id,
+                recipient_phone: mobile,
+                recipient_name: name,
+                message_preview: whatsappMessage,
+              }),
+            }
+          );
+
+          const whatsappResult = await whatsappResponse.json();
+
+          if (whatsappResponse.ok) {
+            results.whatsapp_sent = true;
+
+            // Log WhatsApp to communication audit trail
+            await supabase.rpc('log_communication_event', {
+              p_apartment_id: apartment_id,
+              p_flat_number: flat_number,
+              p_recipient_name: name,
+              p_recipient_email: null,
+              p_recipient_mobile: mobile,
+              p_channel: 'WHATSAPP',
+              p_type: 'payment_acknowledgment',
+              p_payment_id: payment_id,
+              p_subject: 'Payment Received',
+              p_preview: whatsappMessage,
+              p_full_data: {
+                payment_type: payment_type,
+                payment_amount: payment_amount,
+                payment_quarter: payment_quarter,
+                submission_date: submission_date,
+                gupshup_message_id: whatsappResult.messageId || null,
+                notification_outbox_id: notificationData.id
+              },
+              p_status: 'DELIVERED',
+              p_triggered_by_user_id: null,
+              p_triggered_by_event: 'payment_submitted',
+              p_template_name: 'payment_acknowledgment_whatsapp_v1',
+              p_whatsapp_optin: true
+            });
+
+            console.log(`WhatsApp sent successfully to ${mobile}`);
+          } else {
+            results.whatsapp_error = JSON.stringify(whatsappResult);
+
+            // Log failed WhatsApp
+            await supabase.rpc('log_communication_event', {
+              p_apartment_id: apartment_id,
+              p_flat_number: flat_number,
+              p_recipient_name: name,
+              p_recipient_email: null,
+              p_recipient_mobile: mobile,
+              p_channel: 'WHATSAPP',
+              p_type: 'payment_acknowledgment',
+              p_payment_id: payment_id,
+              p_subject: 'Payment Received',
+              p_preview: whatsappMessage,
+              p_full_data: { error: results.whatsapp_error },
+              p_status: 'FAILED',
+              p_triggered_by_user_id: null,
+              p_triggered_by_event: 'payment_submitted',
+              p_template_name: 'payment_acknowledgment_whatsapp_v1',
+              p_whatsapp_optin: true
+            });
+
+            console.error("WhatsApp send failed:", whatsappResult);
+          }
+        }
+      } catch (whatsappError) {
+        results.whatsapp_error = whatsappError instanceof Error ? whatsappError.message : "Unknown error";
+        console.error("WhatsApp send error:", whatsappError);
+      }
+    } else {
+      results.whatsapp_error = "WhatsApp opted out or mobile not provided";
     }
 
     if (emailStatus === 'FAILED') {
@@ -215,8 +341,9 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Payment acknowledgment email sent successfully',
+        message: 'Payment acknowledgment notifications sent',
         emailId: emailId,
+        results,
       }),
       {
         status: 200,
