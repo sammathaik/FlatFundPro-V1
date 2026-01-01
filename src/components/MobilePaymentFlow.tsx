@@ -148,8 +148,10 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       if (result.count === 1) {
         // Auto-select the single flat and proceed to OTP
         setSelectedFlat(result.flats[0]);
-        await generateOtp(result.flats[0]);
-        setStep('otp');
+        const success = await generateOtp(result.flats[0]);
+        if (success) {
+          setStep('otp');
+        }
       } else {
         // Multiple flats found, show selection screen
         setStep('flat-selection');
@@ -163,9 +165,11 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   };
 
   // Step 2: Generate OTP for selected flat
-  const generateOtp = async (flat: FlatInfo) => {
+  const generateOtp = async (flat: FlatInfo): Promise<boolean> => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
+    setGeneratedOtp(''); // Clear previous OTP
 
     try {
       const { data, error: rpcError } = await supabase.rpc('generate_mobile_otp', {
@@ -173,24 +177,34 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         flat_id: flat.flat_id
       });
 
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        console.error('RPC Error:', rpcError);
+        throw rpcError;
+      }
 
-      const result = data as { success: boolean; otp?: string; message: string };
+      if (!data) {
+        throw new Error('No data returned from generate_mobile_otp');
+      }
+
+      const result = data as { success: boolean; otp?: string; message: string; error?: string };
 
       if (!result.success) {
-        setError(result.message);
-        return;
+        setError(result.message || result.error || 'Failed to generate OTP');
+        return false;
       }
 
       // Store OTP for testing (remove in production)
       if (result.otp) {
         setGeneratedOtp(result.otp);
+        console.log('OTP generated successfully:', result.otp);
       }
 
-      setSuccessMessage('OTP sent successfully! Please check your messages.');
-    } catch (err) {
+      setSuccessMessage('OTP sent successfully!');
+      return true;
+    } catch (err: any) {
       console.error('Error generating OTP:', err);
-      setError('Failed to generate OTP. Please try again.');
+      setError(err.message || 'Failed to generate OTP. Please try again.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -386,8 +400,14 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   const handleSelectFlat = async (flat: FlatInfo) => {
     setSelectedFlat(flat);
     setError(null);
-    await generateOtp(flat);
-    setStep('otp'); // Set step after OTP is generated so useEffect can focus
+    setSuccessMessage(null);
+
+    const success = await generateOtp(flat);
+
+    // Only proceed to OTP step if OTP was generated successfully
+    if (success) {
+      setStep('otp'); // Set step after OTP is generated so useEffect can focus
+    }
   };
 
   const renderFlatSelection = () => (
@@ -436,7 +456,11 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     <div className="space-y-6">
       <div>
         <button
-          onClick={() => setStep(discoveredFlats.length > 1 ? 'flat-selection' : 'mobile')}
+          onClick={() => {
+            setError(null);
+            setSuccessMessage(null);
+            setStep(discoveredFlats.length > 1 ? 'flat-selection' : 'mobile');
+          }}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -448,10 +472,24 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         </p>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-green-800">{successMessage}</p>
+        </div>
+      )}
+
       {generatedOtp && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-800">
-            <strong>Test Mode:</strong> Your OTP is <strong>{generatedOtp}</strong>
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+          <p className="text-blue-800 font-semibold text-center text-lg">
+            Development Mode: Your OTP is <span className="text-2xl font-bold tracking-wider">{generatedOtp}</span>
           </p>
         </div>
       )}
@@ -471,20 +509,6 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-green-800">{successMessage}</p>
-          </div>
-        )}
 
         <button
           onClick={handleVerifyOtp}
