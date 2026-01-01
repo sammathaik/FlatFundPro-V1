@@ -4,7 +4,7 @@ import HeroSection from './HeroSection';
 import AboutFlatFundPro from './AboutFlatFundPro';
 import HowItWorks from './HowItWorks';
 import StatsSection from './StatsSection';
-import DynamicPaymentForm from './DynamicPaymentForm';
+import ResidentPaymentGateway from './ResidentPaymentGateway';
 import PortalAccessSection from './PortalAccessSection';
 import ChatBot from './ChatBot';
 
@@ -34,7 +34,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <HowItWorks />
       <StatsSection />
       <div ref={formRef as React.RefObject<HTMLDivElement>}>
-        <DynamicPaymentForm />
+        <ResidentPaymentGateway />
       </div>
 
       {/* Portal Access Section - New dedicated section */}
