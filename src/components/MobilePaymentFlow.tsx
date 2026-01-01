@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MobileNumberInput from './MobileNumberInput';
+import { normalizeMobileNumber } from '../lib/mobileNumberUtils';
 
 type FlowStep = 'mobile' | 'flat-selection' | 'otp' | 'payment' | 'history' | 'success';
 
@@ -99,8 +100,10 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
 
   // Step 1: Discover flats by mobile number
   const handleDiscoverFlats = async () => {
-    if (!mobileNumber || mobileNumber.length < 10) {
-      setError('Please enter a valid mobile number');
+    const normalized = normalizeMobileNumber(mobileNumber);
+
+    if (!normalized.localNumber || normalized.localNumber.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
       return;
     }
 
@@ -321,9 +324,11 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       <div className="space-y-4">
         <MobileNumberInput
           value={mobileNumber}
-          onChange={setMobileNumber}
+          onChange={(value) => {
+            setMobileNumber(value);
+            setError(null);
+          }}
           onSubmit={handleDiscoverFlats}
-          error={error || undefined}
         />
 
         {error && (
@@ -343,7 +348,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
 
         <button
           onClick={handleDiscoverFlats}
-          disabled={loading || !mobileNumber || mobileNumber.length < 10}
+          disabled={loading || !mobileNumber || normalizeMobileNumber(mobileNumber).localNumber.length !== 10}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
         >
           {loading ? (

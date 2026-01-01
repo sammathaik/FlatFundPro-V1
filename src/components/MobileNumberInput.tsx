@@ -11,23 +11,27 @@ import {
 interface MobileNumberInputProps {
   value?: string;
   onChange: (fullNumber: string) => void;
+  onSubmit?: () => void;
   label?: string;
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
   showValidation?: boolean;
   className?: string;
+  error?: string;
 }
 
 export default function MobileNumberInput({
   value,
   onChange,
+  onSubmit,
   label = 'Mobile Number',
   required = false,
   disabled = false,
   placeholder = 'Enter 10-digit mobile number',
   showValidation = true,
   className = '',
+  error,
 }: MobileNumberInputProps) {
   const [countryCode, setCountryCode] = useState<string>('+91');
   const [localNumber, setLocalNumber] = useState<string>('');
@@ -61,8 +65,13 @@ export default function MobileNumberInput({
     if (cleaned.length <= 10) {
       setLocalNumber(cleaned);
       setWasNormalized(false);
-      setTouched(true);
       onChange(formatMobileForStorage(countryCode, cleaned));
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onSubmit && validation.isValid) {
+      onSubmit();
     }
   };
 
@@ -150,11 +159,12 @@ export default function MobileNumberInput({
               value={localNumber}
               onChange={handleLocalNumberChange}
               onBlur={() => setTouched(true)}
+              onKeyPress={handleKeyPress}
               placeholder={placeholder}
               disabled={disabled}
               maxLength={10}
               className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 disabled:bg-gray-50 disabled:cursor-not-allowed ${
-                showError
+                showError || error
                   ? 'border-red-300 focus:ring-red-500'
                   : showSuccess
                   ? 'border-green-300 focus:ring-green-500'
@@ -178,14 +188,21 @@ export default function MobileNumberInput({
         </div>
       )}
 
-      {showError && validation.error && (
+      {error && (
+        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {!error && showError && validation.error && (
         <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-red-700">{validation.error}</p>
         </div>
       )}
 
-      {!showError && !wasNormalized && (
+      {!error && !showError && !wasNormalized && (
         <p className="text-xs text-gray-500">Enter 10-digit mobile number</p>
       )}
     </div>
