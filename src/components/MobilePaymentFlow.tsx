@@ -91,9 +91,15 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Debug: Log step changes
+  useEffect(() => {
+    console.log('🔄 STEP CHANGED TO:', step);
+  }, [step]);
+
   // Auto-focus OTP input when step changes to 'otp'
   useEffect(() => {
     if (step === 'otp' && otpInputRef.current) {
+      console.log('🎯 OTP step detected, focusing input...');
       setTimeout(() => {
         otpInputRef.current?.focus();
         otpInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -398,16 +404,32 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   );
 
   const handleSelectFlat = async (flat: FlatInfo) => {
+    console.log('🎯 ===== FLAT CLICKED =====');
+    console.log('Current loading state:', loading);
+    console.log('Flat data:', {
+      flat_number: flat.flat_number,
+      apartment: flat.apartment_name,
+      flat_id: flat.flat_id,
+      mobile: flat.mobile
+    });
+
     setSelectedFlat(flat);
     setError(null);
     setSuccessMessage(null);
 
+    console.log('🔐 About to call generateOtp...');
     const success = await generateOtp(flat);
+    console.log('📊 generateOtp returned:', success);
 
     // Only proceed to OTP step if OTP was generated successfully
     if (success) {
+      console.log('✅ Success! Changing step to "otp"');
       setStep('otp'); // Set step after OTP is generated so useEffect can focus
+      console.log('✅ Step changed to:', 'otp');
+    } else {
+      console.error('❌ Failed! Not changing step');
     }
+    console.log('🎯 ===== FLAT CLICK COMPLETE =====');
   };
 
   const renderFlatSelection = () => (
@@ -428,7 +450,11 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         {discoveredFlats.map((flat) => (
           <button
             key={flat.flat_id}
-            onClick={() => handleSelectFlat(flat)}
+            onClick={() => {
+              console.log('🖱️ BUTTON CLICKED for flat:', flat.flat_number);
+              console.log('Button disabled?', loading);
+              handleSelectFlat(flat);
+            }}
             disabled={loading}
             className="w-full bg-white border-2 border-gray-200 hover:border-blue-500 rounded-lg p-4 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
