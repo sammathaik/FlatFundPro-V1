@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
     // Fetch notification details for audit logging
     const { data: notificationData, error: notificationError } = await supabase
       .from('notification_outbox')
-      .select('apartment_id, payment_submission_id, message_type, full_message_data')
+      .select('payment_submission_id, template_name')
       .eq('id', id)
       .maybeSingle();
 
@@ -48,34 +48,42 @@ Deno.serve(async (req: Request) => {
       console.error('Error fetching notification data:', notificationError);
     }
 
-    // Get flat number from payment submission if available
+    // Get flat number and apartment_id from payment submission
     let flatNumber = 'UNKNOWN';
-    let apartmentId = notificationData?.apartment_id;
+    let apartmentId: string | null = null;
     let paymentId = notificationData?.payment_submission_id;
+    const templateName = notificationData?.template_name || 'notification';
 
     if (paymentId) {
       const { data: paymentData } = await supabase
         .from('payment_submissions')
-        .select('flat_id, flat_numbers(flat_number)')
+        .select('apartment_id, flat_id, flat_numbers(flat_number)')
         .eq('id', paymentId)
         .maybeSingle();
 
-      if (paymentData && paymentData.flat_numbers) {
-        flatNumber = paymentData.flat_numbers.flat_number;
+      if (paymentData) {
+        apartmentId = paymentData.apartment_id;
+        if (paymentData.flat_numbers) {
+          flatNumber = paymentData.flat_numbers.flat_number;
+        }
       }
-    } else if (apartmentId && recipient_phone) {
-      // Try to find flat from phone number
+    }
+
+    // If we still don't have apartment_id, try to find it from phone number
+    if (!apartmentId && recipient_phone) {
       const { data: flatMapping } = await supabase
         .from('flat_email_mappings')
-        .select('flat_number')
-        .eq('apartment_id', apartmentId)
+        .select('flat_number, apartment_id')
         .eq('mobile', recipient_phone)
         .maybeSingle();
 
       if (flatMapping) {
         flatNumber = flatMapping.flat_number;
+        apartmentId = flatMapping.apartment_id;
       }
     }
+
+    console.log(`Resolved apartment_id: ${apartmentId}, flat_number: ${flatNumber}`);
 
     // Gupshup Sandbox API credentials
     const gupshupApiKey = Deno.env.get("GUPSHUP_API_KEY");
@@ -101,9 +109,9 @@ Deno.serve(async (req: Request) => {
           p_recipient_email: null,
           p_recipient_mobile: recipient_phone,
           p_channel: 'WHATSAPP',
-          p_type: notificationData?.message_type || 'notification',
+          p_type: templateName,
           p_payment_id: paymentId,
-          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_subject: templateName,
           p_preview: message_preview,
           p_full_data: { notification_outbox_id: id, error: 'Gupshup API key not configured' },
           p_status: 'FAILED',
@@ -111,6 +119,8 @@ Deno.serve(async (req: Request) => {
           p_triggered_by_event: 'whatsapp_notification',
           p_whatsapp_opt_in: true
         });
+      } else {
+        console.warn(`Cannot log to communication audit: apartment_id is null for notification ${id}`);
       }
 
       return new Response(
@@ -195,9 +205,9 @@ Deno.serve(async (req: Request) => {
           p_recipient_email: null,
           p_recipient_mobile: recipient_phone,
           p_channel: 'WHATSAPP',
-          p_type: notificationData?.message_type || 'notification',
+          p_type: templateName,
           p_payment_id: paymentId,
-          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_subject: templateName,
           p_preview: message_preview,
           p_full_data: { notification_outbox_id: id, error: friendlyMessage, error_details: errorMessage },
           p_status: 'FAILED',
@@ -205,6 +215,8 @@ Deno.serve(async (req: Request) => {
           p_triggered_by_event: 'whatsapp_notification',
           p_whatsapp_opt_in: true
         });
+      } else {
+        console.warn(`Cannot log to communication audit: apartment_id is null for notification ${id}`);
       }
 
       return new Response(
@@ -246,9 +258,9 @@ Deno.serve(async (req: Request) => {
           p_recipient_email: null,
           p_recipient_mobile: recipient_phone,
           p_channel: 'WHATSAPP',
-          p_type: notificationData?.message_type || 'notification',
+          p_type: templateName,
           p_payment_id: paymentId,
-          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_subject: templateName,
           p_preview: message_preview,
           p_full_data: { notification_outbox_id: id, gupshup_message_id: responseData.messageId },
           p_status: 'DELIVERED',
@@ -256,6 +268,8 @@ Deno.serve(async (req: Request) => {
           p_triggered_by_event: 'whatsapp_notification',
           p_whatsapp_opt_in: true
         });
+      } else {
+        console.warn(`Cannot log to communication audit: apartment_id is null for notification ${id}`);
       }
 
       return new Response(
@@ -293,9 +307,9 @@ Deno.serve(async (req: Request) => {
           p_recipient_email: null,
           p_recipient_mobile: recipient_phone,
           p_channel: 'WHATSAPP',
-          p_type: notificationData?.message_type || 'notification',
+          p_type: templateName,
           p_payment_id: paymentId,
-          p_subject: notificationData?.message_type || 'WhatsApp Notification',
+          p_subject: templateName,
           p_preview: message_preview,
           p_full_data: { notification_outbox_id: id, error: failureReason },
           p_status: 'FAILED',
@@ -303,6 +317,8 @@ Deno.serve(async (req: Request) => {
           p_triggered_by_event: 'whatsapp_notification',
           p_whatsapp_opt_in: true
         });
+      } else {
+        console.warn(`Cannot log to communication audit: apartment_id is null for notification ${id}`);
       }
 
       return new Response(
