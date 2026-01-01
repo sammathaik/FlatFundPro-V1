@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft,
   Smartphone,
@@ -75,6 +75,8 @@ interface MobilePaymentFlowProps {
 }
 
 export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
   const [step, setStep] = useState<FlowStep>('mobile');
   const [mobileNumber, setMobileNumber] = useState('');
   const [discoveredFlats, setDiscoveredFlats] = useState<FlatInfo[]>([]);
@@ -88,6 +90,16 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Auto-focus OTP input when step changes to 'otp'
+  useEffect(() => {
+    if (step === 'otp' && otpInputRef.current) {
+      setTimeout(() => {
+        otpInputRef.current?.focus();
+        otpInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [step]);
 
   // Payment form state
   const [selectedCollectionId, setSelectedCollectionId] = useState('');
@@ -371,6 +383,13 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     </div>
   );
 
+  const handleSelectFlat = async (flat: FlatInfo) => {
+    setSelectedFlat(flat);
+    setError(null);
+    await generateOtp(flat);
+    setStep('otp'); // Set step after OTP is generated so useEffect can focus
+  };
+
   const renderFlatSelection = () => (
     <div className="space-y-6">
       <div>
@@ -389,12 +408,9 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         {discoveredFlats.map((flat) => (
           <button
             key={flat.flat_id}
-            onClick={() => {
-              setSelectedFlat(flat);
-              generateOtp(flat);
-              setStep('otp');
-            }}
-            className="w-full bg-white border-2 border-gray-200 hover:border-blue-500 rounded-lg p-4 text-left transition-colors"
+            onClick={() => handleSelectFlat(flat)}
+            disabled={loading}
+            className="w-full bg-white border-2 border-gray-200 hover:border-blue-500 rounded-lg p-4 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -443,6 +459,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       <div className="space-y-4">
         <div>
           <input
+            ref={otpInputRef}
             type="text"
             maxLength={6}
             value={otpCode}
