@@ -318,6 +318,11 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
 
       if (uploadError) throw uploadError;
 
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('payment-proofs')
+        .getPublicUrl(fileName);
+
       // Submit payment using secure RPC function (bypasses RLS issues)
       const { data: submitResult, error: submitError } = await supabase
         .rpc('submit_mobile_payment', {
@@ -329,7 +334,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
           p_contact_number: session.mobile,
           p_payment_amount: parseFloat(paymentAmount),
           p_payment_date: paymentDate,
-          p_screenshot_url: uploadData.path,
+          p_screenshot_url: publicUrl,
           p_screenshot_filename: fileName,
           p_transaction_reference: transactionRef || null,
           p_expected_collection_id: selectedCollectionId,
