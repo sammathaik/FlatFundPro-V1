@@ -300,10 +300,44 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       return;
     }
 
+    if (!selectedCollectionId) {
+      setError('Please select a collection type');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
     try {
+      // Check for duplicate payment
+      const { data: duplicateCheck, error: duplicateError } = await supabase
+        .rpc('check_payment_duplicate', {
+          p_block_id: session.block_id,
+          p_flat_id: session.flat_id,
+          p_expected_collection_id: selectedCollectionId,
+          p_payment_date: paymentDate,
+          p_submission_date: new Date().toISOString()
+        });
+
+      if (duplicateError) {
+        console.error('Error checking duplicate:', duplicateError);
+        throw new Error('Failed to verify payment. Please try again.');
+      }
+
+      if (duplicateCheck && duplicateCheck.length > 0 && duplicateCheck[0].is_duplicate) {
+        const existing = duplicateCheck[0];
+        const existingDate = existing.existing_payment_date
+          ? new Date(existing.existing_payment_date).toLocaleDateString('en-IN')
+          : 'Unknown date';
+
+        setError(
+          `A payment for ${existing.existing_collection_name || 'this collection'} has already been submitted on ${existingDate}. ` +
+          `Duplicate submissions for the same collection are not allowed.`
+        );
+        setSubmitting(false);
+        return;
+      }
+
       // Upload screenshot
       const fileExt = screenshot.name.split('.').pop();
       const fileName = `${session.flat_id}_${Date.now()}.${fileExt}`;
@@ -314,7 +348,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       if (uploadError) throw uploadError;
 
       // Submit payment
-      const { error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('payment_submissions')
         .insert({
           apartment_id: session.apartment_id,
@@ -333,14 +367,56 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
           payment_source: 'Mobile Submission',
           submission_source: 'resident',
           status: 'Received'
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
+      // Get WhatsApp opt-in status and send acknowledgment
+      try {
+        const { data: flatMapping } = await supabase
+          .from('flat_email_mappings')
+          .select('whatsapp_opt_in')
+          .eq('apartment_id', session.apartment_id)
+          .eq('flat_number', session.flat_number)
+          .maybeSingle();
+
+        const whatsappOptIn = flatMapping?.whatsapp_opt_in || false;
+
+        // Find the selected collection for details
+        const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+
+        // Call acknowledgment function
+        const acknowledgmentPayload = {
+          email: session.email || '',
+          mobile: session.mobile,
+          name: session.name || 'Resident',
+          flat_number: session.flat_number,
+          apartment_name: session.apartment_name,
+          apartment_id: session.apartment_id,
+          payment_id: insertData.id,
+          payment_type: selectedCollection?.collection_name || 'Payment',
+          payment_amount: parseFloat(paymentAmount),
+          payment_quarter: null,
+          submission_date: insertData.created_at,
+          whatsapp_optin: whatsappOptIn
+        };
+
+        const { data: ackResponse } = await supabase.functions.invoke('send-payment-acknowledgment', {
+          body: acknowledgmentPayload
+        });
+
+        console.log('Acknowledgment sent:', ackResponse);
+      } catch (ackError) {
+        console.error('Error sending acknowledgment (non-blocking):', ackError);
+        // Non-blocking - continue even if acknowledgment fails
+      }
+
       setStep('success');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting payment:', err);
-      setError('Failed to submit payment. Please try again.');
+      setError(err.message || 'Failed to submit payment. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -819,10 +895,17 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
       </div>
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Payment Submitted!</h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-3">
           Your payment has been received and is under review.
-          You'll be notified once it's approved.
         </p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-left">
+          <p className="text-sm text-green-800 mb-2 font-medium">
+            Confirmation emails and WhatsApp messages have been sent.
+          </p>
+          <p className="text-xs text-green-700">
+            You'll be notified once the committee approves your payment.
+          </p>
+        </div>
       </div>
       <div className="bg-blue-50 rounded-lg p-4">
         <p className="text-sm text-blue-800">
