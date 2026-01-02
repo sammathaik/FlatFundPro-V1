@@ -377,9 +377,9 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
           apartment_name: session.apartment_name,
           apartment_id: session.apartment_id,
           payment_id: insertData.id,
-          payment_type: selectedCollection?.collection_name || 'Payment',
+          payment_type: selectedCollection?.payment_type || 'maintenance',
           payment_amount: parseFloat(paymentAmount),
-          payment_quarter: null,
+          payment_quarter: selectedCollection?.collection_name || null,
           submission_date: insertData.created_at,
           whatsapp_optin: whatsappOptIn
         };
