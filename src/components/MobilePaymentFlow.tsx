@@ -115,6 +115,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   const [paymentMode, setPaymentMode] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Step 1: Discover flats by mobile number
   const handleDiscoverFlats = async () => {
@@ -319,16 +320,18 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
           apartment_id: session.apartment_id,
           block_id: session.block_id,
           flat_id: session.flat_id,
-          submitter_name: session.name || 'Resident',
-          submitter_email: session.email,
+          name: session.name || 'Resident',
+          email: session.email,
           contact_number: session.mobile,
           payment_amount: parseFloat(paymentAmount),
           payment_date: paymentDate,
-          payment_proof_url: uploadData.path,
-          payment_type: activeCollections.find(c => c.id === selectedCollectionId)?.payment_type || 'maintenance',
+          screenshot_url: uploadData.path,
+          screenshot_filename: fileName,
+          transaction_reference: transactionRef || null,
           expected_collection_id: selectedCollectionId || null,
           occupant_type: session.occupant_type,
           payment_source: 'Mobile Submission',
+          submission_source: 'mobile_app',
           status: 'Received'
         });
 
@@ -744,7 +747,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
             )}
 
             <button
-              onClick={handleSubmitPayment}
+              onClick={() => setShowConfirmation(true)}
               disabled={submitting || !screenshot || !paymentAmount}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
@@ -757,6 +760,52 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                 'Submit Payment'
               )}
             </button>
+
+            {/* Confirmation Dialog */}
+            {showConfirmation && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-800">Confirm Payment Submission</h3>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p className="font-medium text-gray-800">Please review your payment details:</p>
+                    <div className="bg-gray-50 rounded p-3 space-y-1">
+                      <p><span className="font-medium">Flat:</span> {session?.flat_number}</p>
+                      <p><span className="font-medium">Building:</span> {session?.apartment_name}</p>
+                      <p><span className="font-medium">Amount:</span> ₹{paymentAmount}</p>
+                      <p><span className="font-medium">Date:</span> {new Date(paymentDate).toLocaleDateString()}</p>
+                      {transactionRef && <p><span className="font-medium">Reference:</span> {transactionRef}</p>}
+                    </div>
+                    <p className="text-xs text-gray-500 pt-2">
+                      Once submitted, you will receive a confirmation notification.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowConfirmation(false)}
+                      disabled={submitting}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowConfirmation(false);
+                        handleSubmitPayment();
+                      }}
+                      disabled={submitting}
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      Confirm & Submit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
