@@ -309,36 +309,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     setError(null);
 
     try {
-      // Check for duplicate payment
-      const { data: duplicateCheck, error: duplicateError } = await supabase
-        .rpc('check_payment_duplicate', {
-          p_block_id: session.block_id,
-          p_flat_id: session.flat_id,
-          p_expected_collection_id: selectedCollectionId,
-          p_payment_date: paymentDate,
-          p_submission_date: new Date().toISOString()
-        });
-
-      if (duplicateError) {
-        console.error('Error checking duplicate:', duplicateError);
-        throw new Error('Failed to verify payment. Please try again.');
-      }
-
-      if (duplicateCheck && duplicateCheck.length > 0 && duplicateCheck[0].is_duplicate) {
-        const existing = duplicateCheck[0];
-        const existingDate = existing.existing_payment_date
-          ? new Date(existing.existing_payment_date).toLocaleDateString('en-IN')
-          : 'Unknown date';
-
-        setError(
-          `A payment for ${existing.existing_collection_name || 'this collection'} has already been submitted on ${existingDate}. ` +
-          `Duplicate submissions for the same collection are not allowed.`
-        );
-        setSubmitting(false);
-        return;
-      }
-
-      // Upload screenshot
+      // Upload screenshot first
       const fileExt = screenshot.name.split('.').pop();
       const fileName = `${session.flat_id}_${Date.now()}.${fileExt}`;
       const { error: uploadError, data: uploadData } = await supabase.storage
@@ -347,31 +318,41 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
 
       if (uploadError) throw uploadError;
 
-      // Submit payment
-      const { data: insertData, error: insertError } = await supabase
-        .from('payment_submissions')
-        .insert({
-          apartment_id: session.apartment_id,
-          block_id: session.block_id,
-          flat_id: session.flat_id,
-          name: session.name || 'Resident',
-          email: session.email,
-          contact_number: session.mobile,
-          payment_amount: parseFloat(paymentAmount),
-          payment_date: paymentDate,
-          screenshot_url: uploadData.path,
-          screenshot_filename: fileName,
-          transaction_reference: transactionRef || null,
-          expected_collection_id: selectedCollectionId || null,
-          occupant_type: session.occupant_type,
-          payment_source: 'Mobile Submission',
-          submission_source: 'resident',
-          status: 'Received'
-        })
-        .select()
-        .single();
+      // Submit payment using secure RPC function (bypasses RLS issues)
+      const { data: submitResult, error: submitError } = await supabase
+        .rpc('submit_mobile_payment', {
+          p_apartment_id: session.apartment_id,
+          p_block_id: session.block_id,
+          p_flat_id: session.flat_id,
+          p_name: session.name || 'Resident',
+          p_email: session.email || '',
+          p_contact_number: session.mobile,
+          p_payment_amount: parseFloat(paymentAmount),
+          p_payment_date: paymentDate,
+          p_screenshot_url: uploadData.path,
+          p_screenshot_filename: fileName,
+          p_transaction_reference: transactionRef || null,
+          p_expected_collection_id: selectedCollectionId,
+          p_occupant_type: session.occupant_type || 'Owner',
+          p_payment_source: 'Mobile Submission'
+        });
 
-      if (insertError) throw insertError;
+      if (submitError) {
+        console.error('RPC Error:', submitError);
+        throw new Error(submitError.message || 'Failed to submit payment');
+      }
+
+      if (!submitResult || !submitResult.success) {
+        const errorMsg = submitResult?.error || 'Payment submission failed';
+        setError(errorMsg);
+        setSubmitting(false);
+        return;
+      }
+
+      const insertData = {
+        id: submitResult.payment_id,
+        created_at: new Date().toISOString()
+      };
 
       // Get WhatsApp opt-in status and send acknowledgment
       try {
