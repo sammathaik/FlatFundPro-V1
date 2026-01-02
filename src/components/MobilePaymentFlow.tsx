@@ -130,9 +130,25 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     setError(null);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('discover_flats_by_mobile', {
+      // Try with full number first, then with local number only
+      let data, rpcError;
+
+      // First attempt with the full number format
+      const result1 = await supabase.rpc('discover_flats_by_mobile', {
         mobile_number: mobileNumber
       });
+
+      if (result1.error || (result1.data as any)?.count === 0) {
+        // Try with just the local number (without country code)
+        const result2 = await supabase.rpc('discover_flats_by_mobile', {
+          mobile_number: normalized.localNumber
+        });
+        data = result2.data;
+        rpcError = result2.error;
+      } else {
+        data = result1.data;
+        rpcError = result1.error;
+      }
 
       if (rpcError) throw rpcError;
 
@@ -179,8 +195,13 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     setGeneratedOtp(''); // Clear previous OTP
 
     try {
+      const normalized = normalizeMobileNumber(mobileNumber);
+
+      // Use the mobile number from the flat data to ensure consistency
+      const mobileToUse = flat.mobile || normalized.localNumber;
+
       const { data, error: rpcError } = await supabase.rpc('generate_mobile_otp', {
-        mobile_number: mobileNumber,
+        mobile_number: mobileToUse,
         p_flat_id: flat.flat_id
       });
 
@@ -228,8 +249,12 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     setError(null);
 
     try {
+      const normalized = normalizeMobileNumber(mobileNumber);
+      // Use the mobile number from selected flat to ensure consistency
+      const mobileToUse = selectedFlat?.mobile || normalized.localNumber;
+
       const { data, error: rpcError } = await supabase.rpc('verify_mobile_otp_for_payment', {
-        mobile_number: mobileNumber,
+        mobile_number: mobileToUse,
         otp_code: otpCode
       });
 
