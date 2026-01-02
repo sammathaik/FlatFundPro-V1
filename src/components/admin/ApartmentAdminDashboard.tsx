@@ -16,6 +16,7 @@ import WhatsAppCommunicationAudit from './WhatsAppCommunicationAudit';
 import DiagnosticTest from './DiagnosticTest';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
 import NotificationsPage from './NotificationsPage';
+import BudgetPlanningDashboard from './BudgetPlanningDashboard';
 import { useAuth } from '../../contexts/AuthContext';
 import ChatBot from '../ChatBot';
 
@@ -34,6 +35,12 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'collections' && <MaintenanceCollectionsActiveSummary />}
+      {activeTab === 'budget-planning' && adminData?.user && (
+        <BudgetPlanningDashboard
+          user={adminData.user}
+          apartments={adminData.apartment ? [adminData.apartment] : []}
+        />
+      )}
       {activeTab === 'payment-status' && <AdminPaymentStatusTab />}
       {activeTab === 'analytics' && (
         adminData?.apartment_id ? (

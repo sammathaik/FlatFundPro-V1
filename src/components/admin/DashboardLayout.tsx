@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail, Bell } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail, Bell, Calculator } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 import AdminNotifications from './AdminNotifications';
@@ -38,6 +38,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
     { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
     { id: 'collections', label: 'Collections', icon: DollarSign },
+    { id: 'budget-planning', label: 'Budget Planning', icon: Calculator },
     { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
     { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
