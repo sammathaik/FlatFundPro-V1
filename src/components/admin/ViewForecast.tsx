@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Edit, Trash2, Send, CheckCircle, Archive, Download, Printer, FileText, Calendar, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Send, CheckCircle, Archive, Download, Printer, FileText, Calendar, TrendingUp, BarChart3 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import BudgetVsActualDashboard from './BudgetVsActualDashboard';
 
 interface ViewForecastProps {
   forecastId: string;
@@ -54,6 +55,7 @@ const ViewForecast: React.FC<ViewForecastProps> = ({ forecastId, user, onClose }
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
+  const [showActualsTracking, setShowActualsTracking] = useState(false);
 
   useEffect(() => {
     loadForecast();
@@ -189,6 +191,17 @@ const ViewForecast: React.FC<ViewForecastProps> = ({ forecastId, user, onClose }
     );
   }
 
+  if (showActualsTracking) {
+    return (
+      <BudgetVsActualDashboard
+        forecastId={forecastId}
+        forecastName={forecast.forecast_name}
+        user={user}
+        onBack={() => setShowActualsTracking(false)}
+      />
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -222,6 +235,15 @@ const ViewForecast: React.FC<ViewForecastProps> = ({ forecastId, user, onClose }
             </div>
 
             <div className="flex items-center gap-2">
+              {(forecast.status === 'proposed' || forecast.status === 'approved') && (
+                <button
+                  onClick={() => setShowActualsTracking(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Track Actuals
+                </button>
+              )}
               <button
                 onClick={exportToPDF}
                 className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
