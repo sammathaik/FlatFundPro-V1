@@ -8,7 +8,7 @@ import {
   Home,
   Upload,
   Calendar,
-  DollarSign,
+  IndianRupee,
   User,
   Building,
   MapPin,
@@ -331,7 +331,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
           expected_collection_id: selectedCollectionId || null,
           occupant_type: session.occupant_type,
           payment_source: 'Mobile Submission',
-          submission_source: 'mobile_app',
+          submission_source: 'resident',
           status: 'Received'
         });
 
@@ -690,7 +690,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                 Payment Amount
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="number"
                   value={paymentAmount}
