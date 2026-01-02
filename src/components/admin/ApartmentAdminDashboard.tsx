@@ -35,9 +35,9 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'collections' && <MaintenanceCollectionsActiveSummary />}
-      {activeTab === 'budget-planning' && adminData?.user && (
+      {activeTab === 'budget-planning' && adminData?.user_id && (
         <BudgetPlanningDashboard
-          user={adminData.user}
+          user={{ id: adminData.user_id }}
           apartments={adminData.apartment ? [adminData.apartment] : []}
         />
       )}
