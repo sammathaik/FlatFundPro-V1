@@ -36,23 +36,31 @@ export function normalizeMobileNumber(input: string | null | undefined): Normali
     return defaultResult;
   }
 
+  // Remove spaces, dashes, and parentheses but keep + for country code detection
   const cleaned = input.replace(/[\s\-()]/g, '');
 
-  const numericOnly = cleaned.replace(/\D/g, '');
+  // Check for country codes BEFORE stripping the + sign
+  for (const country of COUNTRY_CODES) {
+    if (cleaned.startsWith(country.dialCode)) {
+      const localPart = cleaned.substring(country.dialCode.length).replace(/\D/g, '');
+      const expectedLength = country.dialCode === '+91' ? 10 : 10;
 
-  if (numericOnly.startsWith('+91')) {
-    const localPart = numericOnly.substring(3);
-    if (localPart.length === 10) {
-      return {
-        countryCode: '+91',
-        localNumber: localPart,
-        fullNumber: `+91${localPart}`,
-        wasNormalized: input !== `+91${localPart}`,
-        originalValue: input,
-      };
+      if (localPart.length === expectedLength) {
+        return {
+          countryCode: country.dialCode,
+          localNumber: localPart,
+          fullNumber: `${country.dialCode}${localPart}`,
+          wasNormalized: input !== `${country.dialCode}${localPart}`,
+          originalValue: input,
+        };
+      }
     }
   }
 
+  // Now strip all non-digits for remaining checks
+  const numericOnly = cleaned.replace(/\D/g, '');
+
+  // Check for India number without + (e.g., "919876543210")
   if (numericOnly.startsWith('91') && numericOnly.length === 12) {
     const localPart = numericOnly.substring(2);
     return {
@@ -64,25 +72,7 @@ export function normalizeMobileNumber(input: string | null | undefined): Normali
     };
   }
 
-  if (numericOnly.startsWith('+') && numericOnly.length > 11) {
-    for (const country of COUNTRY_CODES) {
-      if (numericOnly.startsWith(country.dialCode)) {
-        const localPart = numericOnly.substring(country.dialCode.length);
-        const expectedLength = country.dialCode === '+91' ? 10 : 10;
-
-        if (localPart.length === expectedLength) {
-          return {
-            countryCode: country.dialCode,
-            localNumber: localPart,
-            fullNumber: `${country.dialCode}${localPart}`,
-            wasNormalized: true,
-            originalValue: input,
-          };
-        }
-      }
-    }
-  }
-
+  // Check for plain 10-digit number (assume India)
   if (/^\d{10}$/.test(numericOnly)) {
     return {
       countryCode: '+91',
@@ -93,6 +83,7 @@ export function normalizeMobileNumber(input: string | null | undefined): Normali
     };
   }
 
+  // If more than 10 digits, take last 10 and assume India
   if (numericOnly.length > 10) {
     const localPart = numericOnly.slice(-10);
     return {
@@ -104,6 +95,7 @@ export function normalizeMobileNumber(input: string | null | undefined): Normali
     };
   }
 
+  // Return whatever we have (partial entry)
   return {
     countryCode: '+91',
     localNumber: numericOnly,
