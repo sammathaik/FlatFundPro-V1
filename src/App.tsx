@@ -10,13 +10,14 @@ import MarketingLandingPage from './components/MarketingLandingPage';
 import QRCodePrintPage from './components/QRCodePrintPage';
 import OccupantLoginPage from './components/occupant/OccupantLoginPage';
 import OccupantDashboard from './components/occupant/OccupantDashboard';
+import RoleSelectionScreen from './components/RoleSelectionScreen';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import PublicPaymentStatusPage from './components/admin/PublicPaymentStatusPage';
 import { DiagnosticPage } from './components/DiagnosticPage';
 import { isSupabaseConfigured } from './lib/supabase';
 
 function App() {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, userRoles, loading } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [occupant, setOccupant] = useState<any>(null);
 
@@ -215,6 +216,19 @@ function App() {
           setOccupant(null);
           navigate('/');
         }}
+      />
+    );
+  }
+
+  if (currentPath === '/role-selection') {
+    if (!user) {
+      navigate('/');
+      return null;
+    }
+    return (
+      <RoleSelectionScreen
+        availableRoles={userRoles}
+        onSelectRole={(path) => navigate(path)}
       />
     );
   }

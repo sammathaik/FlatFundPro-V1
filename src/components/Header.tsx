@@ -1,11 +1,13 @@
-import { Building2, Menu, X, ChevronDown } from 'lucide-react';
+import { Building2, Menu, X, ChevronDown, LogIn, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 interface HeaderProps {
   onLogoClick?: () => void;
+  onLoginClick?: () => void;
+  onDemoClick?: () => void;
 }
 
-export default function Header({ onLogoClick }: HeaderProps) {
+export default function Header({ onLogoClick, onLoginClick, onDemoClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
 
@@ -76,12 +78,22 @@ export default function Header({ onLogoClick }: HeaderProps) {
             </div>
           </nav>
 
-          {/* Tagline Badge - Hidden on mobile */}
-          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2 rounded-full shadow-lg flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              <span className="font-bold text-sm">Smart Society Management</span>
-            </div>
+          {/* Action Buttons */}
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={onDemoClick}
+              className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Request Demo
+            </button>
+            <button
+              onClick={onLoginClick}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-md"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -140,6 +152,29 @@ export default function Header({ onLogoClick }: HeaderProps) {
                 </button>
               </div>
             )}
+
+            <div className="pt-4 border-t border-gray-200 space-y-2">
+              <button
+                onClick={() => {
+                  onDemoClick?.();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-4 py-3 text-blue-600 hover:bg-blue-50 font-medium rounded-lg transition-colors"
+              >
+                <MessageSquare className="w-5 h-5" />
+                Request Demo
+              </button>
+              <button
+                onClick={() => {
+                  onLoginClick?.();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <LogIn className="w-5 h-5" />
+                Login
+              </button>
+            </div>
           </nav>
         )}
       </div>

@@ -7,6 +7,7 @@ type UserRole = 'super_admin' | 'admin' | null;
 interface AuthContextType {
   user: User | null;
   userRole: UserRole;
+  userRoles: string[];
   adminData: Admin | null;
   superAdminData: SuperAdmin | null;
   loading: boolean;
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [adminData, setAdminData] = useState<Admin | null>(null);
   const [superAdminData, setSuperAdminData] = useState<SuperAdmin | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadUserRole(userId: string) {
     try {
+      const roles: string[] = [];
+
       const { data: superAdmin } = await supabase
         .from('super_admins')
         .select('*')
@@ -82,11 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (superAdmin) {
-        setUserRole('super_admin');
+        roles.push('super_admin');
         setSuperAdminData(superAdmin);
-        setAdminData(null);
-        setLoading(false);
-        return;
       }
 
       const { data: admin } = await supabase
@@ -97,16 +98,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (admin) {
-        setUserRole('admin');
+        roles.push('admin');
         setAdminData(admin);
-        setSuperAdminData(null);
-        setLoading(false);
-        return;
       }
 
-      setUserRole(null);
-      setAdminData(null);
-      setSuperAdminData(null);
+      setUserRoles(roles);
+
+      if (roles.length > 0) {
+        setUserRole(roles.includes('super_admin') ? 'super_admin' : 'admin');
+      } else {
+        setUserRole(null);
+        setAdminData(null);
+        setSuperAdminData(null);
+      }
     } catch (error) {
       console.error('Error loading user role:', error);
     } finally {
@@ -133,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
+    setUserRoles([]);
     setAdminData(null);
     setSuperAdminData(null);
   }
@@ -140,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     userRole,
+    userRoles,
     adminData,
     superAdminData,
     loading,
