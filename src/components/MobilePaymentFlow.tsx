@@ -116,6 +116,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
 
   // Step 1: Discover flats by mobile number
   const handleDiscoverFlats = async () => {
@@ -384,16 +385,14 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         created_at: new Date().toISOString()
       };
 
-      // Get WhatsApp opt-in status and send acknowledgment
+      // Update WhatsApp opt-in and send acknowledgment
       try {
-        const { data: flatMapping } = await supabase
+        // Update WhatsApp opt-in preference
+        await supabase
           .from('flat_email_mappings')
-          .select('whatsapp_opt_in')
+          .update({ whatsapp_opt_in: whatsappOptIn })
           .eq('apartment_id', session.apartment_id)
-          .eq('flat_number', session.flat_number)
-          .maybeSingle();
-
-        const whatsappOptIn = flatMapping?.whatsapp_opt_in || false;
+          .eq('flat_number', session.flat_number);
 
         // Find the selected collection for details
         const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
@@ -800,6 +799,26 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                   onChange={(e) => setPaymentDate(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="whatsapp_opt_in_mobile"
+                  checked={whatsappOptIn}
+                  onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-green-600 border-2 border-green-300 rounded focus:ring-2 focus:ring-green-500 cursor-pointer"
+                />
+                <label htmlFor="whatsapp_opt_in_mobile" className="flex-1 cursor-pointer">
+                  <span className="text-sm font-semibold text-gray-900 block mb-1">
+                    Send me payment updates on WhatsApp
+                  </span>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    You can change this anytime. WhatsApp messages are informational only.
+                  </p>
+                </label>
               </div>
             </div>
 

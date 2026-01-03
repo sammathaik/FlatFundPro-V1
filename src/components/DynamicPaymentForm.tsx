@@ -16,6 +16,7 @@ interface FormData {
   payment_type: string;
   occupant_type: 'Owner' | 'Tenant' | '';
   expected_collection_id?: string;
+  whatsapp_opt_in: boolean;
 }
 
 interface FormErrors {
@@ -67,6 +68,7 @@ export default function DynamicPaymentForm() {
     payment_type: '',
     occupant_type: '',
     expected_collection_id: undefined,
+    whatsapp_opt_in: true,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -76,6 +78,15 @@ export default function DynamicPaymentForm() {
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{ date: string; quarter: string; collection_name?: string } | null>(null);
   const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
+  const [showMobileMismatchModal, setShowMobileMismatchModal] = useState(false);
+  const [mobileMismatchData, setMobileMismatchData] = useState<{
+    stored: string;
+    entered: string;
+    apartmentId: string;
+    blockId: string;
+    flatId: string;
+  } | null>(null);
+  const [mobileUpdateChoice, setMobileUpdateChoice] = useState<'permanent' | 'one-time' | null>(null);
 
   useEffect(() => {
     loadApartments();
@@ -346,6 +357,24 @@ export default function DynamicPaymentForm() {
     return emailRegex.test(email);
   };
 
+  const normalizeMobile = (mobile: string): string => {
+    // Remove all non-digit characters
+    const digits = mobile.replace(/\D/g, '');
+    // If starts with country code, keep only last 10 digits
+    if (digits.length > 10) {
+      return digits.slice(-10);
+    }
+    return digits;
+  };
+
+  const maskMobile = (mobile: string): string => {
+    const normalized = normalizeMobile(mobile);
+    if (normalized.length >= 4) {
+      return `******${normalized.slice(-4)}`;
+    }
+    return '******';
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -410,6 +439,11 @@ export default function DynamicPaymentForm() {
     if (errors.apartment) {
       setErrors(prev => ({ ...prev, apartment: undefined }));
     }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -609,6 +643,33 @@ export default function DynamicPaymentForm() {
         return;
       }
 
+      // Check for mobile number mismatch
+      if (formData.contact_number && formData.contact_number.trim()) {
+        const { data: existingMapping } = await supabase
+          .from('flat_email_mappings')
+          .select('mobile')
+          .eq('apartment_id', formData.apartmentId)
+          .eq('flat_id', formData.flatId)
+          .maybeSingle();
+
+        const enteredMobile = normalizeMobile(formData.contact_number.trim());
+        const storedMobile = existingMapping?.mobile ? normalizeMobile(existingMapping.mobile) : '';
+
+        // If stored mobile exists and doesn't match entered mobile
+        if (storedMobile && storedMobile !== enteredMobile && !mobileUpdateChoice) {
+          setSubmissionState('idle');
+          setMobileMismatchData({
+            stored: storedMobile,
+            entered: enteredMobile,
+            apartmentId: formData.apartmentId,
+            blockId: formData.blockId,
+            flatId: formData.flatId
+          });
+          setShowMobileMismatchModal(true);
+          return;
+        }
+      }
+
       const duplicateCheck = await checkForDuplicate();
 
       if (duplicateCheck.isDuplicate) {
@@ -646,7 +707,52 @@ export default function DynamicPaymentForm() {
     setUploadProgress(0);
 
     try {
-      setUploadProgress(30);
+      setUploadProgress(20);
+
+      // Handle mobile number and WhatsApp opt-in
+      if (formData.contact_number && formData.contact_number.trim()) {
+        const { data: existingMapping } = await supabase
+          .from('flat_email_mappings')
+          .select('mobile')
+          .eq('apartment_id', formData.apartmentId)
+          .eq('flat_id', formData.flatId)
+          .maybeSingle();
+
+        const storedMobile = existingMapping?.mobile ? normalizeMobile(existingMapping.mobile) : '';
+
+        // Update mobile and WhatsApp opt-in based on user choice
+        if (mobileUpdateChoice === 'permanent' || !storedMobile) {
+          // Update permanently if user chose permanent OR if no mobile was stored
+          await supabase
+            .from('flat_email_mappings')
+            .update({
+              whatsapp_opt_in: formData.whatsapp_opt_in,
+              mobile: formData.contact_number.trim()
+            })
+            .eq('apartment_id', formData.apartmentId)
+            .eq('flat_id', formData.flatId);
+        } else if (mobileUpdateChoice === 'one-time') {
+          // Only update WhatsApp opt-in, keep existing mobile
+          await supabase
+            .from('flat_email_mappings')
+            .update({
+              whatsapp_opt_in: formData.whatsapp_opt_in
+            })
+            .eq('apartment_id', formData.apartmentId)
+            .eq('flat_id', formData.flatId);
+        }
+      } else {
+        // No contact number entered, just update WhatsApp opt-in
+        await supabase
+          .from('flat_email_mappings')
+          .update({
+            whatsapp_opt_in: formData.whatsapp_opt_in
+          })
+          .eq('apartment_id', formData.apartmentId)
+          .eq('flat_id', formData.flatId);
+      }
+
+      setUploadProgress(40);
 
       const screenshotUrl = await uploadScreenshot(formData.screenshot!);
 
@@ -685,6 +791,8 @@ export default function DynamicPaymentForm() {
       setSubmissionState('success');
 
       setSelectedCollectionId(''); // Reset collection selection
+      setMobileUpdateChoice(null);
+      setMobileMismatchData(null);
       setFormData({
         apartmentId: formData.apartmentId,
         name: '',
@@ -698,6 +806,7 @@ export default function DynamicPaymentForm() {
         payment_type: '',
         occupant_type: '',
         expected_collection_id: undefined,
+        whatsapp_opt_in: true,
       });
 
       const fileInput = document.getElementById('screenshot') as HTMLInputElement;
@@ -710,6 +819,18 @@ export default function DynamicPaymentForm() {
         submit: 'Failed to submit payment proof. Please try again.',
       });
     }
+  };
+
+  const handleMobileMismatchChoice = (choice: 'permanent' | 'one-time') => {
+    setMobileUpdateChoice(choice);
+    setShowMobileMismatchModal(false);
+    // Re-trigger submission with the choice made
+    setTimeout(() => {
+      const form = document.querySelector('form');
+      if (form) {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }, 100);
   };
 
   const getSelectedBlockName = () => {
@@ -727,6 +848,9 @@ export default function DynamicPaymentForm() {
     setErrors({});
     setUploadProgress(0);
     setShowEmailMismatchModal(false);
+    setShowMobileMismatchModal(false);
+    setMobileUpdateChoice(null);
+    setMobileMismatchData(null);
   };
 
   if (loadingData) {
@@ -971,6 +1095,28 @@ export default function DynamicPaymentForm() {
                 />
               </div>
 
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="whatsapp_opt_in"
+                    name="whatsapp_opt_in"
+                    checked={formData.whatsapp_opt_in}
+                    onChange={handleCheckboxChange}
+                    disabled={submissionState === 'loading'}
+                    className="mt-1 w-5 h-5 text-green-600 border-2 border-green-300 rounded focus:ring-2 focus:ring-green-500 cursor-pointer"
+                  />
+                  <label htmlFor="whatsapp_opt_in" className="flex-1 cursor-pointer">
+                    <span className="text-sm font-semibold text-gray-900 block mb-1">
+                      Receive payment updates on WhatsApp
+                    </span>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      You can change this anytime. WhatsApp messages are informational only.
+                    </p>
+                  </label>
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="payment_type" className="block text-sm font-semibold text-gray-700 mb-2">
                   What is this payment for? <span className="text-red-500">*</span>
@@ -1211,6 +1357,61 @@ export default function DynamicPaymentForm() {
                 {submissionState === 'loading' ? 'Uploading...' : 'Upload & Submit'}
               </button>
             </form>
+
+            {showMobileMismatchModal && mobileMismatchData && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                      <AlertCircle className="w-10 h-10 text-blue-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                      Mobile Number Mismatch Detected
+                    </h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                      The mobile number you entered is different from the number currently saved for this flat.
+                    </p>
+
+                    <div className="w-full bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Existing number:</span>
+                          <span className="font-semibold text-gray-900">{maskMobile(mobileMismatchData.stored)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Entered number:</span>
+                          <span className="font-semibold text-gray-900">{maskMobile(mobileMismatchData.entered)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full space-y-3">
+                      <button
+                        onClick={() => handleMobileMismatchChoice('permanent')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-left flex items-start gap-3"
+                      >
+                        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-bold">Yes, update the mobile number for this flat</div>
+                          <div className="text-xs text-blue-100 mt-1">Replace stored mobile number. Use new number for future communication.</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => handleMobileMismatchChoice('one-time')}
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-left flex items-start gap-3"
+                      >
+                        <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-bold">No, use this number only for this payment</div>
+                          <div className="text-xs text-gray-600 mt-1">Do not update stored number. Use entered number only for this submission.</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {showEmailMismatchModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

@@ -44,7 +44,7 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     payment_date: '',
     screenshot: null,
     occupant_type: '',
-    whatsapp_opt_in: false,
+    whatsapp_opt_in: true,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -52,10 +52,37 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
+  const [showMobileMismatchModal, setShowMobileMismatchModal] = useState(false);
+  const [mobileMismatchData, setMobileMismatchData] = useState<{
+    stored: string;
+    entered: string;
+    apartmentId: string;
+    blockId: string;
+    flatId: string;
+  } | null>(null);
+  const [mobileUpdateChoice, setMobileUpdateChoice] = useState<'permanent' | 'one-time' | null>(null);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const normalizeMobile = (mobile: string): string => {
+    // Remove all non-digit characters
+    const digits = mobile.replace(/\D/g, '');
+    // If starts with country code, keep only last 10 digits
+    if (digits.length > 10) {
+      return digits.slice(-10);
+    }
+    return digits;
+  };
+
+  const maskMobile = (mobile: string): string => {
+    const normalized = normalizeMobile(mobile);
+    if (normalized.length >= 4) {
+      return `******${normalized.slice(-4)}`;
+    }
+    return '******';
   };
 
   const validateForm = (): boolean => {
@@ -230,12 +257,71 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         return;
       }
 
+      // Handle mobile number and WhatsApp opt-in
       if (formData.contact_number && formData.contact_number.trim()) {
+        // Check for mobile mismatch
+        const { data: existingMapping } = await supabase
+          .from('flat_email_mappings')
+          .select('mobile')
+          .eq('apartment_id', apartmentId)
+          .eq('flat_id', flatData.id)
+          .maybeSingle();
+
+        const enteredMobile = normalizeMobile(formData.contact_number.trim());
+        const storedMobile = existingMapping?.mobile ? normalizeMobile(existingMapping.mobile) : '';
+
+        // If stored mobile exists and doesn't match entered mobile
+        if (storedMobile && storedMobile !== enteredMobile && !mobileUpdateChoice) {
+          setSubmissionState('idle');
+          setUploadProgress(0);
+          setMobileMismatchData({
+            stored: storedMobile,
+            entered: enteredMobile,
+            apartmentId,
+            blockId: blockData.id,
+            flatId: flatData.id
+          });
+          setShowMobileMismatchModal(true);
+          return;
+        }
+
+        // Update mobile and WhatsApp opt-in based on user choice
+        if (mobileUpdateChoice === 'permanent' || !storedMobile) {
+          // Update permanently if user chose permanent OR if no mobile was stored
+          await supabase
+            .from('flat_email_mappings')
+            .update({
+              whatsapp_opt_in: formData.whatsapp_opt_in,
+              mobile: formData.contact_number.trim()
+            })
+            .eq('apartment_id', apartmentId)
+            .eq('flat_id', flatData.id);
+        } else if (mobileUpdateChoice === 'one-time') {
+          // Only update WhatsApp opt-in, keep existing mobile
+          await supabase
+            .from('flat_email_mappings')
+            .update({
+              whatsapp_opt_in: formData.whatsapp_opt_in
+            })
+            .eq('apartment_id', apartmentId)
+            .eq('flat_id', flatData.id);
+        } else if (!existingMapping?.mobile) {
+          // No existing mobile, save the new one
+          await supabase
+            .from('flat_email_mappings')
+            .update({
+              whatsapp_opt_in: formData.whatsapp_opt_in,
+              mobile: formData.contact_number.trim()
+            })
+            .eq('apartment_id', apartmentId)
+            .eq('flat_id', flatData.id);
+        }
+      } else {
+        // No contact number entered, just update WhatsApp opt-in
         await supabase
           .from('flat_email_mappings')
           .update({
-            whatsapp_opt_in: formData.whatsapp_opt_in,
-            mobile: formData.contact_number.trim()
+            whatsapp_opt_in: formData.whatsapp_opt_in
           })
           .eq('apartment_id', apartmentId)
           .eq('flat_id', flatData.id);
@@ -293,9 +379,11 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
         payment_date: '',
         screenshot: null,
         occupant_type: '',
-        whatsapp_opt_in: false,
+        whatsapp_opt_in: true,
       });
       setPreviewUrl(null);
+      setMobileUpdateChoice(null);
+      setMobileMismatchData(null);
 
       const fileInput = document.getElementById('screenshot') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
@@ -317,6 +405,21 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
     setErrors({});
     setUploadProgress(0);
     setShowEmailMismatchModal(false);
+    setShowMobileMismatchModal(false);
+    setMobileUpdateChoice(null);
+    setMobileMismatchData(null);
+  };
+
+  const handleMobileMismatchChoice = (choice: 'permanent' | 'one-time') => {
+    setMobileUpdateChoice(choice);
+    setShowMobileMismatchModal(false);
+    // Re-trigger submission with the choice made
+    setTimeout(() => {
+      const form = document.querySelector('form');
+      if (form) {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }, 100);
   };
 
   if (submissionState === 'success') {
@@ -353,6 +456,61 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
   return (
     <>
+      {showMobileMismatchModal && mobileMismatchData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Mobile Number Mismatch Detected
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                The mobile number you entered is different from the number currently saved for this flat.
+              </p>
+
+              <div className="w-full bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Existing number:</span>
+                    <span className="font-semibold text-gray-900">{maskMobile(mobileMismatchData.stored)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Entered number:</span>
+                    <span className="font-semibold text-gray-900">{maskMobile(mobileMismatchData.entered)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full space-y-3">
+                <button
+                  onClick={() => handleMobileMismatchChoice('permanent')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-left flex items-start gap-3"
+                >
+                  <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-bold">Yes, update the mobile number for this flat</div>
+                    <div className="text-xs text-blue-100 mt-1">Replace stored mobile number. Use new number for future communication.</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleMobileMismatchChoice('one-time')}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-left flex items-start gap-3"
+                >
+                  <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-bold">No, use this number only for this payment</div>
+                    <div className="text-xs text-gray-600 mt-1">Do not update stored number. Use entered number only for this submission.</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showEmailMismatchModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
@@ -582,14 +740,11 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
                   <label htmlFor="whatsapp_opt_in" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900">
-                        Enable WhatsApp Payment Reminders
-                      </span>
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                        Recommended
+                        Receive payment updates on WhatsApp
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      Get timely WhatsApp reminders before payment due dates. We'll send you notifications at 7 days, 3 days, and 1 day before the due date to help you avoid late fees.
+                      You can change this anytime. WhatsApp messages are informational only.
                     </p>
                   </label>
                 </div>
