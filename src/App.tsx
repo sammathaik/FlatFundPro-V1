@@ -30,10 +30,10 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Load occupant session from sessionStorage on mount
+  // Load occupant session from sessionStorage on mount and when path changes to occupant
   useEffect(() => {
     const storedSession = sessionStorage.getItem('occupant_session');
-    if (storedSession) {
+    if (storedSession && (currentPath === '/occupant/dashboard' || currentPath === '/occupant')) {
       try {
         const occupantData = JSON.parse(storedSession);
         setOccupant(occupantData);
@@ -42,7 +42,7 @@ function App() {
         sessionStorage.removeItem('occupant_session');
       }
     }
-  }, []);
+  }, [currentPath]);
 
   const navigate = (path: string) => {
     window.history.pushState({}, '', path);

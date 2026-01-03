@@ -207,21 +207,29 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
 
       if (rpcError) throw rpcError;
 
-      const result = data as { success: boolean; message: string; session_token?: string };
+      const result = data as { success: boolean; message: string; session?: any };
 
       if (!result.success) {
         setError(result.message);
         return;
       }
 
-      // Create occupant session data
+      // Extract session data from nested structure returned by database
+      const sessionData = result.session || {};
+
+      // Create occupant session data with all required fields
       const occupantData = {
-        flat_id: selectedFlat.flat_id,
-        apartment_id: selectedFlat.apartment_id,
-        mobile: mobileToUse,
-        sessionToken: result.session_token || `mobile_${Date.now()}`,
+        flat_id: sessionData.flat_id || selectedFlat.flat_id,
+        apartment_id: sessionData.apartment_id || selectedFlat.apartment_id,
+        mobile: sessionData.mobile || mobileToUse,
+        email: sessionData.email,
+        name: sessionData.name,
+        occupant_type: sessionData.occupant_type,
+        sessionToken: `mobile_${Date.now()}`,
         all_flats: discoveredFlats
       };
+
+      console.log('Created occupant data:', occupantData);
 
       // Store in sessionStorage for persistence
       sessionStorage.setItem('occupant_session', JSON.stringify(occupantData));
