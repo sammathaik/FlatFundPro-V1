@@ -73,6 +73,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [flatEmail, setFlatEmail] = useState<string>(occupant.email);
+  const [flatOccupantName, setFlatOccupantName] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -96,10 +97,10 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         setPayments(paymentsResult.data);
       }
 
-      // Load WhatsApp opt-in preference and flat's registered email
+      // Load WhatsApp opt-in preference and flat's registered email and name
       const { data: flatMapping } = await supabase
         .from('flat_email_mappings')
-        .select('whatsapp_opt_in, email')
+        .select('whatsapp_opt_in, email, name, occupant_type')
         .eq('flat_id', selectedFlatId)
         .eq('mobile', occupant.mobile)
         .maybeSingle();
@@ -107,6 +108,12 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       if (flatMapping) {
         setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
         setFlatEmail(flatMapping.email || occupant.email);
+        setFlatOccupantName(flatMapping.name || null);
+
+        // Update occupant object with flat-specific data
+        occupant.email = flatMapping.email || occupant.email;
+        occupant.name = flatMapping.name || null;
+        occupant.occupant_type = flatMapping.occupant_type || occupant.occupant_type;
       }
 
       // Load apartment info for selected flat from occupant's flat list
@@ -379,7 +386,12 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
           />
         ) : activeTab === 'profile' ? (
           <OccupantProfile
-            occupant={occupant}
+            occupant={{
+              ...occupant,
+              email: flatEmail,
+              name: flatOccupantName,
+              flat_id: selectedFlatId
+            }}
             apartmentInfo={apartmentInfo}
             onProfileUpdate={loadData}
           />
