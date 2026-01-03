@@ -47,6 +47,9 @@ interface Payment {
   comments: string | null;
   created_at: string;
   status: string;
+  amount_due: number | null;
+  collection_name: string | null;
+  payment_frequency: string | null;
 }
 
 interface ApartmentInfo {
@@ -63,7 +66,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [allFlats, setAllFlats] = useState<any[]>([]);
   const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'help'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'pending' | 'help'>('dashboard');
   const [whatsappOptIn, setWhatsappOptIn] = useState<boolean>(false);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -226,9 +229,11 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
     const headers = [
       'Date',
+      'Collection Name',
       'Payment Type',
-      'Quarter',
-      'Amount',
+      'Frequency',
+      'Amount Due',
+      'Amount Paid',
       'Platform',
       'Transaction Reference',
       'Status',
@@ -238,8 +243,10 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       payment.payment_date
         ? new Date(payment.payment_date).toLocaleDateString()
         : new Date(payment.created_at).toLocaleDateString(),
+      payment.collection_name || payment.payment_quarter || '-',
       payment.payment_type,
-      payment.payment_quarter,
+      payment.payment_frequency || 'quarterly',
+      payment.amount_due || '-',
       payment.payment_amount || 0,
       payment.platform || '',
       payment.transaction_reference || '',
@@ -318,6 +325,17 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               Dashboard
             </button>
             <button
+              onClick={() => setActiveTab('pending')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                activeTab === 'pending'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+              }`}
+            >
+              <AlertCircle className="w-4 h-4" />
+              Pending Payments
+            </button>
+            <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
                 activeTab === 'profile'
@@ -346,24 +364,20 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'help' ? (
           <HelpCenter />
+        ) : activeTab === 'pending' ? (
+          <PendingPayments
+            flatId={selectedFlatId}
+            onPayNow={(collection) => {
+              setSelectedCollection(collection);
+              setShowPaymentModal(true);
+            }}
+          />
         ) : activeTab === 'profile' ? (
-          <>
-            <OccupantProfile
-              occupant={occupant}
-              apartmentInfo={apartmentInfo}
-              onProfileUpdate={loadData}
-            />
-
-            <div className="mt-6">
-              <PendingPayments
-                flatId={selectedFlatId}
-                onPayNow={(collection) => {
-                  setSelectedCollection(collection);
-                  setShowPaymentModal(true);
-                }}
-              />
-            </div>
-          </>
+          <OccupantProfile
+            occupant={occupant}
+            apartmentInfo={apartmentInfo}
+            onProfileUpdate={loadData}
+          />
         ) : (
           <>
         {allFlats.length > 1 && (
@@ -562,13 +576,34 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                       Date
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Payment Type
+                      Collection
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Quarter
+                      <div className="flex items-center gap-1 group relative">
+                        <span>Frequency</span>
+                        <Info className="w-3 h-3 text-gray-400" />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 bg-gray-900 text-white text-xs rounded-lg p-2 z-10">
+                          Monthly, Quarterly, or One-time collection
+                        </div>
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Amount
+                      <div className="flex items-center gap-1 group relative">
+                        <span>Amount Due</span>
+                        <Info className="w-3 h-3 text-gray-400" />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 bg-gray-900 text-white text-xs rounded-lg p-2 z-10">
+                          Expected contribution as per collection
+                        </div>
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <div className="flex items-center gap-1 group relative">
+                        <span>Amount Paid</span>
+                        <Info className="w-3 h-3 text-gray-400" />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 bg-gray-900 text-white text-xs rounded-lg p-2 z-10">
+                          Your actual payment amount
+                        </div>
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Platform
@@ -594,18 +629,33 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
-                        </span>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            {payment.collection_name || payment.payment_quarter || '-'}
+                          </div>
+                          <div className="text-xs text-gray-500 capitalize">
+                            {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{payment.payment_quarter}</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full capitalize">
+                          {payment.payment_frequency || 'Quarterly'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1">
                           <IndianRupee className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-gray-700">
+                            {payment.amount_due ? payment.amount_due.toLocaleString() : '-'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <IndianRupee className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-bold text-green-700">
                             {payment.payment_amount?.toLocaleString() || 0}
                           </span>
                         </div>

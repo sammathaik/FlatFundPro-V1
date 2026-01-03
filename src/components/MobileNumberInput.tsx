@@ -42,17 +42,20 @@ export default function MobileNumberInput({
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isInitialized && value) {
+    if (value) {
       const normalized = normalizeMobileNumber(value);
-      setCountryCode(normalized.countryCode);
-      setLocalNumber(normalized.localNumber);
-      setWasNormalized(normalized.wasNormalized);
-      setIsInitialized(true);
+      if (!isInitialized || normalized.countryCode !== countryCode || normalized.localNumber !== localNumber) {
+        setCountryCode(normalized.countryCode);
+        setLocalNumber(normalized.localNumber);
+        setWasNormalized(normalized.wasNormalized);
+        setIsInitialized(true);
+      }
     } else if (!value && isInitialized) {
+      setCountryCode('+91');
       setLocalNumber('');
       setIsInitialized(false);
     }
-  }, [value, isInitialized]);
+  }, [value]);
 
   const handleCountryCodeChange = (newCode: string) => {
     setCountryCode(newCode);

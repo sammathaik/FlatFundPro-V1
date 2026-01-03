@@ -10,6 +10,8 @@ interface PendingPayment {
   amount_due: number;
   balance: number;
   due_date: string;
+  late_fee: number;
+  overdue_days: number;
 }
 
 interface QuickPaymentModalProps {
@@ -47,7 +49,8 @@ export default function QuickPaymentModal({
 
   useEffect(() => {
     if (collection) {
-      setPaymentAmount(collection.balance.toString());
+      const totalPayable = collection.balance + (collection.late_fee || 0);
+      setPaymentAmount(totalPayable.toString());
     }
   }, [collection]);
 
@@ -216,10 +219,10 @@ export default function QuickPaymentModal({
             </div>
           )}
 
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Balance Amount</p>
+                <p className="text-sm text-gray-600">Base Amount</p>
                 <p className="text-2xl font-bold text-gray-900">₹{collection.balance.toLocaleString()}</p>
               </div>
               <div className="text-right">
@@ -230,6 +233,41 @@ export default function QuickPaymentModal({
                     month: 'short',
                     year: 'numeric'
                   })}
+                </p>
+              </div>
+            </div>
+
+            {collection.late_fee > 0 && (
+              <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                      <p className="text-sm font-semibold text-amber-900">Late Fee Applied</p>
+                    </div>
+                    <p className="text-xs text-amber-700">
+                      Payment is {collection.overdue_days} day{collection.overdue_days !== 1 ? 's' : ''} overdue.
+                      Late fee has been added as per society rules.
+                    </p>
+                  </div>
+                  <p className="text-lg font-bold text-amber-900">+₹{collection.late_fee.toLocaleString()}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-3">
+              <div className="flex items-center justify-between text-white">
+                <div>
+                  <p className="text-sm opacity-90">Total Payable</p>
+                  <p className="text-xs opacity-75 mt-0.5">
+                    {collection.late_fee > 0
+                      ? `Base (₹${collection.balance.toLocaleString()}) + Late Fee (₹${collection.late_fee.toLocaleString()})`
+                      : 'Outstanding balance'
+                    }
+                  </p>
+                </div>
+                <p className="text-2xl font-bold">
+                  ₹{(collection.balance + (collection.late_fee || 0)).toLocaleString()}
                 </p>
               </div>
             </div>
