@@ -72,6 +72,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
+  const [flatEmail, setFlatEmail] = useState<string>(occupant.email);
 
   useEffect(() => {
     loadData();
@@ -95,16 +96,17 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         setPayments(paymentsResult.data);
       }
 
-      // Load WhatsApp opt-in preference
+      // Load WhatsApp opt-in preference and flat's registered email
       const { data: flatMapping } = await supabase
         .from('flat_email_mappings')
-        .select('whatsapp_opt_in')
+        .select('whatsapp_opt_in, email')
         .eq('flat_id', selectedFlatId)
-        .eq('email', occupant.email)
+        .eq('mobile', occupant.mobile)
         .maybeSingle();
 
       if (flatMapping) {
         setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
+        setFlatEmail(flatMapping.email || occupant.email);
       }
 
       // Load apartment info for selected flat from occupant's flat list
@@ -704,7 +706,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         flatId={selectedFlatId}
         apartmentId={apartmentInfo?.apartment_id || occupant.apartment_id}
         blockId={occupant.block_id || (allFlats.find(f => f.flat_id === selectedFlatId)?.block_id)}
-        occupantEmail={occupant.email}
+        flatEmail={flatEmail}
         occupantMobile={occupant.mobile}
         onSuccess={() => {
           loadData();

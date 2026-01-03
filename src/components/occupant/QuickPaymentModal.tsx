@@ -21,7 +21,7 @@ interface QuickPaymentModalProps {
   flatId: string;
   apartmentId: string;
   blockId?: string;
-  occupantEmail: string;
+  flatEmail: string;
   occupantMobile?: string;
   onSuccess?: () => void;
 }
@@ -33,7 +33,7 @@ export default function QuickPaymentModal({
   flatId,
   apartmentId,
   blockId,
-  occupantEmail,
+  flatEmail,
   occupantMobile,
   onSuccess
 }: QuickPaymentModalProps) {
@@ -140,8 +140,8 @@ export default function QuickPaymentModal({
           block_id: effectiveBlockId,
           flat_id: flatId,
           expected_collection_id: collection.collection_id,
-          name: occupantEmail,
-          email: occupantEmail,
+          name: flatEmail,
+          email: flatEmail,
           contact_number: occupantMobile || null,
           payment_amount: parseFloat(paymentAmount),
           payment_date: paymentDate,
