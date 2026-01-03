@@ -20,6 +20,7 @@ interface QuickPaymentModalProps {
   collection: PendingPayment | null;
   flatId: string;
   apartmentId: string;
+  blockId?: string;
   occupantEmail: string;
   occupantMobile?: string;
   onSuccess?: () => void;
@@ -31,6 +32,7 @@ export default function QuickPaymentModal({
   collection,
   flatId,
   apartmentId,
+  blockId,
   occupantEmail,
   occupantMobile,
   onSuccess
@@ -116,15 +118,31 @@ export default function QuickPaymentModal({
         screenshotUrl = publicUrl;
       }
 
+      // Get block_id if not provided
+      let effectiveBlockId = blockId;
+      if (!effectiveBlockId) {
+        const { data: flatData } = await supabase
+          .from('flat_numbers')
+          .select('block_id')
+          .eq('id', flatId)
+          .maybeSingle();
+        effectiveBlockId = flatData?.block_id;
+      }
+
+      if (!effectiveBlockId) {
+        throw new Error('Could not determine building block');
+      }
+
       const { error: insertError } = await supabase
         .from('payment_submissions')
         .insert({
           apartment_id: apartmentId,
+          block_id: effectiveBlockId,
           flat_id: flatId,
           expected_collection_id: collection.collection_id,
           name: occupantEmail,
           email: occupantEmail,
-          mobile: occupantMobile || null,
+          contact_number: occupantMobile || null,
           payment_amount: parseFloat(paymentAmount),
           payment_date: paymentDate,
           payment_type: collection.payment_type,
@@ -132,9 +150,9 @@ export default function QuickPaymentModal({
           transaction_reference: transactionRef || null,
           platform: paymentMode,
           screenshot_url: screenshotUrl,
-          whatsapp_opt_in: whatsappOptIn,
+          screenshot_filename: screenshot?.name || 'payment-proof',
           status: 'Received',
-          comments: `Payment for ${collection.collection_name}`
+          comments: `Payment for ${collection.collection_name}${whatsappOptIn ? ' (WhatsApp notifications enabled)' : ''}`
         });
 
       if (insertError) throw insertError;
