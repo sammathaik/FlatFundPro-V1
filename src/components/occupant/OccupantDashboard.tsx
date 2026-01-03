@@ -20,6 +20,9 @@ import {
 import { supabase } from '../../lib/supabase';
 import HelpCenter from './HelpCenter';
 import ChatBot from '../ChatBot';
+import OccupantProfile from './OccupantProfile';
+import PendingPayments from './PendingPayments';
+import QuickPaymentModal from './QuickPaymentModal';
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
@@ -60,9 +63,11 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [allFlats, setAllFlats] = useState<any[]>([]);
   const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'help'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'help'>('dashboard');
   const [whatsappOptIn, setWhatsappOptIn] = useState<boolean>(false);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -300,12 +305,12 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             </button>
           </div>
 
-          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 overflow-x-auto">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
                 activeTab === 'dashboard'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
               }`}
             >
@@ -313,10 +318,21 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               Dashboard
             </button>
             <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                activeTab === 'profile'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </button>
+            <button
               onClick={() => setActiveTab('help')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
                 activeTab === 'help'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700'
               }`}
             >
@@ -330,6 +346,24 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'help' ? (
           <HelpCenter />
+        ) : activeTab === 'profile' ? (
+          <>
+            <OccupantProfile
+              occupant={occupant}
+              apartmentInfo={apartmentInfo}
+              onProfileUpdate={loadData}
+            />
+
+            <div className="mt-6">
+              <PendingPayments
+                flatId={selectedFlatId}
+                onPayNow={(collection) => {
+                  setSelectedCollection(collection);
+                  setShowPaymentModal(true);
+                }}
+              />
+            </div>
+          </>
         ) : (
           <>
         {allFlats.length > 1 && (
@@ -607,6 +641,23 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
       {/* Occupant Chatbot */}
       <ChatBot userRole="occupant" userId={occupant.user_id} apartmentId={apartmentInfo?.apartment_id} />
+
+      {/* Quick Payment Modal */}
+      <QuickPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setSelectedCollection(null);
+        }}
+        collection={selectedCollection}
+        flatId={selectedFlatId}
+        apartmentId={apartmentInfo?.apartment_id || occupant.apartment_id}
+        occupantEmail={occupant.email}
+        occupantMobile={occupant.mobile}
+        onSuccess={() => {
+          loadData();
+        }}
+      />
     </div>
   );
 }
