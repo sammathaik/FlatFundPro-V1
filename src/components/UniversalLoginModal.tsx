@@ -88,7 +88,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
         const { data: admin } = await supabase
           .from('admins')
           .select('id')
-          .eq('email', user.email)
+          .eq('admin_email', user.email)
           .eq('status', 'active')
           .maybeSingle();
 
