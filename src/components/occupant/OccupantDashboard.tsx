@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Bell,
   MessageCircle,
+  Info,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import HelpCenter from './HelpCenter';
