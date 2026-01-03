@@ -99,6 +99,26 @@ export default function QuickPaymentModal({
     setSubmitting(true);
 
     try {
+      // Check for duplicate payment using the RPC function
+      const { data: duplicateCheck, error: duplicateError } = await supabase.rpc(
+        'check_duplicate_payment',
+        {
+          p_flat_id: flatId,
+          p_expected_collection_id: collection.collection_id,
+          p_email: flatEmail,
+          p_mobile: occupantMobile || null
+        }
+      );
+
+      if (duplicateError) {
+        console.error('Error checking for duplicates:', duplicateError);
+      }
+
+      if (duplicateCheck && duplicateCheck > 0) {
+        setError('A payment for this collection has already been submitted from this flat. Please check your transaction history or contact the administrator.');
+        setSubmitting(false);
+        return;
+      }
       let screenshotUrl = null;
 
       if (screenshot) {
@@ -219,6 +239,9 @@ export default function QuickPaymentModal({
           <div>
             <h2 className="text-2xl font-bold">Submit Payment</h2>
             <p className="text-blue-100 text-sm mt-1">{collection.collection_name}</p>
+            <p className="text-blue-200 text-xs mt-2">
+              Submitting as: <span className="font-semibold">{flatEmail}</span>
+            </p>
           </div>
           <button
             onClick={handleClose}

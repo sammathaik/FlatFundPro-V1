@@ -18,17 +18,19 @@ interface PendingPayment {
 
 interface PendingPaymentsProps {
   flatId: string;
+  email: string;
+  mobile?: string;
   onPayNow: (collection: PendingPayment) => void;
 }
 
-export default function PendingPayments({ flatId, onPayNow }: PendingPaymentsProps) {
+export default function PendingPayments({ flatId, email, mobile, onPayNow }: PendingPaymentsProps) {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPendingPayments();
-  }, [flatId]);
+  }, [flatId, email, mobile]);
 
   const loadPendingPayments = async () => {
     setLoading(true);
@@ -36,7 +38,9 @@ export default function PendingPayments({ flatId, onPayNow }: PendingPaymentsPro
 
     try {
       const { data, error: rpcError } = await supabase.rpc('get_pending_payments_for_flat', {
-        p_flat_id: flatId
+        p_flat_id: flatId,
+        p_email: email,
+        p_mobile: mobile || null
       });
 
       if (rpcError) throw rpcError;

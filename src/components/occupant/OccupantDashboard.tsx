@@ -370,6 +370,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         ) : activeTab === 'pending' ? (
           <PendingPayments
             flatId={selectedFlatId}
+            email={flatEmail}
+            mobile={occupant.mobile}
             onPayNow={(collection) => {
               setSelectedCollection(collection);
               setShowPaymentModal(true);
