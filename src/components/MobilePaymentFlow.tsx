@@ -698,7 +698,7 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         payment.status === 'Approved' ? 'bg-green-100 text-green-700' :
                         payment.status === 'Received' ? 'bg-blue-100 text-blue-700' :
-                        'bg-yellow-100 text-yellow-700'
+                        'bg-blue-100 text-blue-700'
                       }`}>
                         {payment.status}
                       </span>
