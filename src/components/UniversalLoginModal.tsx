@@ -437,7 +437,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
         </div>
 
         <div className="p-6">
-          {loginMethod === 'email' && mobileStep === 'discover' && (
+          {mobileStep === 'discover' && (
             <>
               <div className="flex gap-2 mb-6">
                 <button

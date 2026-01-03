@@ -37,8 +37,7 @@ export default function DemoRequestModal({ isOpen, onClose }: DemoRequestModalPr
           phone: formData.phone,
           apartment_name: formData.apartment_name,
           city: formData.city,
-          role: formData.role,
-          lead_source: 'Demo Request',
+          message: `Demo Request - Role: ${formData.role}`,
           status: 'new'
         }]);
 
