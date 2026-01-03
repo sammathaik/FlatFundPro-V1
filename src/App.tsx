@@ -30,6 +30,20 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Load occupant session from sessionStorage on mount
+  useEffect(() => {
+    const storedSession = sessionStorage.getItem('occupant_session');
+    if (storedSession) {
+      try {
+        const occupantData = JSON.parse(storedSession);
+        setOccupant(occupantData);
+      } catch (error) {
+        console.error('Error loading occupant session:', error);
+        sessionStorage.removeItem('occupant_session');
+      }
+    }
+  }, []);
+
   const navigate = (path: string) => {
     window.history.pushState({}, '', path);
     setCurrentPath(path);
@@ -194,6 +208,7 @@ function App() {
         <OccupantLoginPage
           onLoginSuccess={(occupantData) => {
             setOccupant(occupantData);
+            sessionStorage.setItem('occupant_session', JSON.stringify(occupantData));
             navigate('/occupant/dashboard');
           }}
           onBack={() => navigate('/')}
@@ -214,6 +229,7 @@ function App() {
         occupant={occupant}
         onLogout={() => {
           setOccupant(null);
+          sessionStorage.removeItem('occupant_session');
           navigate('/');
         }}
       />

@@ -8,7 +8,7 @@ import { normalizeMobileNumber } from '../lib/mobileNumberUtils';
 interface UniversalLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess?: (roles: string[]) => void;
+  onLoginSuccess?: (roles: string[], occupantData?: any) => void;
 }
 
 type LoginMethod = 'email' | 'mobile';
@@ -188,6 +188,11 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
       return;
     }
 
+    if (!selectedFlat) {
+      setError('No flat selected');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -202,14 +207,26 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
 
       if (rpcError) throw rpcError;
 
-      const result = data as { success: boolean; message: string };
+      const result = data as { success: boolean; message: string; session_token?: string };
 
       if (!result.success) {
         setError(result.message);
         return;
       }
 
-      onLoginSuccess?.(['resident']);
+      // Create occupant session data
+      const occupantData = {
+        flat_id: selectedFlat.flat_id,
+        apartment_id: selectedFlat.apartment_id,
+        mobile: mobileToUse,
+        sessionToken: result.session_token || `mobile_${Date.now()}`,
+        all_flats: discoveredFlats
+      };
+
+      // Store in sessionStorage for persistence
+      sessionStorage.setItem('occupant_session', JSON.stringify(occupantData));
+
+      onLoginSuccess?.(['resident'], occupantData);
     } catch (err) {
       console.error('Error verifying OTP:', err);
       setError('Failed to verify OTP');

@@ -66,7 +66,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <UniversalLoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onLoginSuccess={(roles) => {
+        onLoginSuccess={(roles, occupantData) => {
           setShowLoginModal(false);
           if (roles.length === 1) {
             const roleMap: Record<string, string> = {
@@ -74,6 +74,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
               admin: '/admin',
               resident: '/occupant/dashboard'
             };
+            // For resident login, the occupant data is already stored in sessionStorage
             onNavigate(roleMap[roles[0]] || '/');
           } else {
             onNavigate('/role-selection');
