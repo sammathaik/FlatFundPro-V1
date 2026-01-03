@@ -140,6 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRoles([]);
     setAdminData(null);
     setSuperAdminData(null);
+
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
   }
 
   const value = {

@@ -70,7 +70,39 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
       setError('Invalid email or password');
       setLoading(false);
     } else {
-      onLoginSuccess?.(['admin']);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const roles: string[] = [];
+
+        const { data: superAdmin } = await supabase
+          .from('super_admins')
+          .select('id')
+          .eq('email', user.email)
+          .maybeSingle();
+
+        if (superAdmin) {
+          roles.push('super_admin');
+        }
+
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('email', user.email)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (admin) {
+          roles.push('admin');
+        }
+
+        if (roles.length > 0) {
+          onLoginSuccess?.(roles);
+        } else {
+          setError('No active roles found for this account');
+          setLoading(false);
+        }
+      }
     }
   };
 
