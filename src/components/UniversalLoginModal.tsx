@@ -27,7 +27,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
   const { signIn } = useAuth();
   const otpInputRef = useRef<HTMLInputElement>(null);
 
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>('email');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('mobile');
   const [mobileStep, setMobileStep] = useState<MobileStep>('discover');
 
   const [email, setEmail] = useState('');
@@ -257,7 +257,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
         email: sessionData.email,
         name: sessionData.name,
         occupant_type: sessionData.occupant_type,
-        sessionToken: `mobile_${Date.now()}`,
+        sessionToken: result.session_token,
         all_flats: discoveredFlats
       };
 
