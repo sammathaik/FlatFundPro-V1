@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, Coins, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Bell, Save, X, Calendar, Coins, AlertCircle, CheckCircle, Loader2, Share2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
+import ShareCollectionStatusModal from './ShareCollectionStatusModal';
 
 interface Collection {
   id: string;
@@ -71,6 +72,8 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [selectedCollectionForReminder, setSelectedCollectionForReminder] = useState<string | null>(null);
   const [apartmentMode, setApartmentMode] = useState<'A' | 'B' | 'C'>('A');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedCollectionForShare, setSelectedCollectionForShare] = useState<Collection | null>(null);
 
   const [formData, setFormData] = useState<CollectionFormData>({
     payment_type: 'maintenance',
@@ -166,6 +169,16 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
   function closeReminderConfirm() {
     setShowReminderConfirm(false);
     setSelectedCollectionForReminder(null);
+  }
+
+  function openShareModal(collection: Collection) {
+    setSelectedCollectionForShare(collection);
+    setShowShareModal(true);
+  }
+
+  function closeShareModal() {
+    setShowShareModal(false);
+    setSelectedCollectionForShare(null);
   }
 
   async function handleSendReminders() {
@@ -621,18 +634,27 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
 
                 <div className="flex items-center gap-2 ml-4">
                   {collection.is_active && (
-                    <button
-                      onClick={() => openReminderConfirm(collection.id)}
-                      disabled={sendingReminders === collection.id}
-                      className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Send Reminder"
-                    >
-                      {sendingReminders === collection.id ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Bell className="w-5 h-5" />
-                      )}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => openShareModal(collection)}
+                        className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+                        title="Share Collection Status"
+                      >
+                        <Share2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => openReminderConfirm(collection.id)}
+                        disabled={sendingReminders === collection.id}
+                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Send Reminder"
+                      >
+                        {sendingReminders === collection.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Bell className="w-5 h-5" />
+                        )}
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => toggleActive(collection)}
@@ -1002,6 +1024,18 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Collection Status Modal */}
+      {showShareModal && selectedCollectionForShare && (
+        <ShareCollectionStatusModal
+          isOpen={showShareModal}
+          onClose={closeShareModal}
+          collectionId={selectedCollectionForShare.id}
+          collectionName={selectedCollectionForShare.collection_name}
+          apartmentId={apartmentId}
+          apartmentName={apartmentName}
+        />
       )}
     </div>
   );

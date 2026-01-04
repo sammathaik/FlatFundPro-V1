@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import PublicLandingPage from './components/PublicLandingPage';
 import LearnMorePage from './components/LearnMorePage';
+import PublicCollectionStatusPage from './components/PublicCollectionStatusPage';
 import AdminLandingPage from './components/admin/AdminLandingPage';
 import SuperAdminLandingPage from './components/admin/SuperAdminLandingPage';
 import LoginPage from './components/LoginPage';
@@ -259,6 +260,12 @@ function App() {
         }}
       />
     );
+  }
+
+  // Collection status public view
+  if (currentPath.startsWith('/collection-status/')) {
+    const shareCode = currentPath.split('/collection-status/')[1];
+    return <PublicCollectionStatusPage shareCode={shareCode} />;
   }
 
   return <PublicLandingPage onNavigate={navigate} />;
