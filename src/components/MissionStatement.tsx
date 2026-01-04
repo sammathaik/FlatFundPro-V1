@@ -9,7 +9,7 @@ export default function MissionStatement() {
             What is FlatFund Pro?
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A payment governance and integrity platform purpose-built for housing societies
+            A governance continuity backbone for unregulated and semi-regulated housing societies
           </p>
         </div>
 
@@ -18,20 +18,19 @@ export default function MissionStatement() {
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full mb-6">
                 <Target className="w-4 h-4" />
-                <span className="font-semibold text-sm">Our Mission</span>
+                <span className="font-semibold text-sm">Built for Real Societies</span>
               </div>
               <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                Treating Payments as Financial Records, Not Just Transactions
+                Designed for Committees That Change and Residents Who Move
               </h3>
               <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                FlatFund Pro was built to solve a critical problem in housing society management:
-                inaccurate or unverifiable payment submissions that lead to manual reconciliation errors,
-                disputes, and lack of accountability.
+                Most housing societies face committee turnover, owner and tenant churn, and WhatsApp-based
+                communication that scatters important financial information. FlatFund Pro was built to work
+                <strong> despite these realities</strong>, not assuming perfect stability.
               </p>
               <p className="text-lg text-gray-700 leading-relaxed">
-                We believe payments should be verifiable, traceable, and accurate from submission to approval.
-                FlatFund Pro is not a general-purpose society app—it's a specialized verification engine
-                where accuracy and accountability matter.
+                We preserve governance continuity across people changes. Payment records, communication history,
+                and institutional knowledge survive beyond individuals. Incoming committees inherit clarity, not chaos.
               </p>
             </div>
 
@@ -42,10 +41,10 @@ export default function MissionStatement() {
                     <Shield className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Built for Verification</h4>
+                    <h4 className="font-bold text-gray-900 mb-2">Preserves Continuity</h4>
                     <p className="text-gray-600 text-sm">
-                      OCR-based document understanding, business-rule validation, and automated
-                      inconsistency detection ensure payment accuracy.
+                      Complete financial and communication records survive committee handovers.
+                      Governance doesn't reset when people change.
                     </p>
                   </div>
                 </div>
@@ -57,20 +56,20 @@ export default function MissionStatement() {
                     <TrendingUp className="w-6 h-6 text-indigo-600" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Governance First</h4>
+                    <h4 className="font-bold text-gray-900 mb-2">Works With Real Behavior</h4>
                     <p className="text-gray-600 text-sm">
-                      Committee review workflows, approval tracking, and comprehensive audit trails
-                      provide transparency and dispute resolution.
+                      Accepts screenshots, works without app installation, structures WhatsApp communication.
+                      Meets residents where they are.
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
-                <p className="font-semibold mb-2">Not for everyone</p>
+                <p className="font-semibold mb-2">Not a general society app</p>
                 <p className="text-sm text-blue-100">
-                  FlatFund Pro is designed for societies that prioritize payment accuracy,
-                  committee oversight, and financial accountability.
+                  FlatFund Pro is a payment integrity and governance backbone.
+                  Built for societies that need continuity beyond individuals.
                 </p>
               </div>
             </div>

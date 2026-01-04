@@ -20,15 +20,15 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
         </div>
 
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-          Submit Your Maintenance <br />
+          Housing Society Payments<br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-            Payment Proof in Seconds
+            That Survive People Changes
           </span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-          Just upload your payment screenshot with your name and flat number.
-          <span className="font-semibold text-gray-800"> Our system automatically detects your transaction ID</span> and updates the society's offline records.
+          A payment governance backbone designed for committees that change, residents who move,
+          and WhatsApp-based societies.<span className="font-semibold text-gray-800"> Built for continuity, not perfection.</span>
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
@@ -48,26 +48,26 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
-              <Zap className="w-6 h-6 text-white" />
+              <Shield className="w-6 h-6 text-white" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Auto-Detect</h3>
-            <p className="text-sm text-gray-600">Automatically extracts transaction details from your screenshot</p>
+            <h3 className="font-bold text-gray-900 mb-2">Governance Continuity</h3>
+            <p className="text-sm text-gray-600">Records survive committee changes and resident churn</p>
           </div>
 
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
-              <Shield className="w-6 h-6 text-white" />
+              <Zap className="w-6 h-6 text-white" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Secure Storage</h3>
-            <p className="text-sm text-gray-600">Your data is encrypted and stored safely in our database</p>
+            <h3 className="font-bold text-gray-900 mb-2">Works With Real Behavior</h3>
+            <p className="text-sm text-gray-600">Accepts screenshots, no app installation required for residents</p>
           </div>
 
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
               <Clock className="w-6 h-6 text-white" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Instant Updates</h3>
-            <p className="text-sm text-gray-600">Society records updated within 2 business days</p>
+            <h3 className="font-bold text-gray-900 mb-2">Less Time, More Clarity</h3>
+            <p className="text-sm text-gray-600">Automated validation and async workflows respect committee time</p>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import Header from './Header';
 import HeroSection from './HeroSection';
 import MissionStatement from './MissionStatement';
+import WhyFlatFundPro from './WhyFlatFundPro';
 import KeyAdvantages from './KeyAdvantages';
 import AboutFlatFundPro from './AboutFlatFundPro';
 import HowItWorks from './HowItWorks';
@@ -37,13 +38,14 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
         onLogoClick={scrollToTop}
         onLoginClick={() => setShowLoginModal(true)}
         onDemoClick={() => setShowDemoModal(true)}
+        onLearnMoreClick={() => onNavigate('/learn-more')}
       />
       <div ref={heroRef as React.RefObject<HTMLDivElement>} className="pt-20">
         <HeroSection onGetStarted={scrollToForm} />
       </div>
       <MissionStatement />
+      <WhyFlatFundPro />
       <KeyAdvantages />
-      <AboutFlatFundPro />
       <HowItWorks />
       <StatsSection />
       <div ref={formRef as React.RefObject<HTMLDivElement>}>

@@ -5,9 +5,10 @@ interface HeaderProps {
   onLogoClick?: () => void;
   onLoginClick?: () => void;
   onDemoClick?: () => void;
+  onLearnMoreClick?: () => void;
 }
 
-export default function Header({ onLogoClick, onLoginClick, onDemoClick }: HeaderProps) {
+export default function Header({ onLogoClick, onLoginClick, onDemoClick, onLearnMoreClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
 
@@ -45,37 +46,29 @@ export default function Header({ onLogoClick, onLoginClick, onDemoClick }: Heade
               Home
             </button>
             <button
-              onClick={() => scrollToSection('about')}
+              onClick={() => scrollToSection('why-flatfund-pro')}
               className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
-              About
+              Why FlatFund Pro
             </button>
-            <div className="relative group">
-              <button className="flex items-center gap-1 text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                Learn More
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-blue-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <button
-                  onClick={() => scrollToSection('features')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                >
-                  Features
-                </button>
-                <button
-                  onClick={() => scrollToSection('how-it-works')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                >
-                  How It Works
-                </button>
-                <button
-                  onClick={() => scrollToSection('benefits')}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                >
-                  Benefits
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={onLearnMoreClick}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+            >
+              Learn More
+            </button>
+            <button
+              onClick={() => scrollToSection('how-it-works')}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+            >
+              How It Works
+            </button>
+            <button
+              onClick={() => scrollToSection('benefits')}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+            >
+              Key Benefits
+            </button>
           </nav>
 
           {/* Action Buttons */}
@@ -118,40 +111,32 @@ export default function Header({ onLogoClick, onLoginClick, onDemoClick }: Heade
               Home
             </button>
             <button
-              onClick={() => scrollToSection('about')}
+              onClick={() => scrollToSection('why-flatfund-pro')}
               className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
             >
-              About
+              Why FlatFund Pro
             </button>
             <button
-              onClick={() => setLearnMoreOpen(!learnMoreOpen)}
-              className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
+              onClick={() => {
+                onLearnMoreClick?.();
+                setMobileMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
             >
               Learn More
-              <ChevronDown className={`w-4 h-4 transition-transform ${learnMoreOpen ? 'rotate-180' : ''}`} />
             </button>
-            {learnMoreOpen && (
-              <div className="pl-4 space-y-1">
-                <button
-                  onClick={() => scrollToSection('features')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                >
-                  Features
-                </button>
-                <button
-                  onClick={() => scrollToSection('how-it-works')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                >
-                  How It Works
-                </button>
-                <button
-                  onClick={() => scrollToSection('benefits')}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                >
-                  Benefits
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => scrollToSection('how-it-works')}
+              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
+            >
+              How It Works
+            </button>
+            <button
+              onClick={() => scrollToSection('benefits')}
+              className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-medium rounded-lg transition-colors"
+            >
+              Key Benefits
+            </button>
 
             <div className="pt-4 border-t border-gray-200 space-y-2">
               <button

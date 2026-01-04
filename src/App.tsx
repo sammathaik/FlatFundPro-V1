@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import PublicLandingPage from './components/PublicLandingPage';
+import LearnMorePage from './components/LearnMorePage';
 import AdminLandingPage from './components/admin/AdminLandingPage';
 import SuperAdminLandingPage from './components/admin/SuperAdminLandingPage';
 import LoginPage from './components/LoginPage';
@@ -245,6 +246,17 @@ function App() {
       <RoleSelectionScreen
         availableRoles={userRoles}
         onSelectRole={(path) => navigate(path)}
+      />
+    );
+  }
+
+  if (currentPath === '/learn-more') {
+    return (
+      <LearnMorePage
+        onNavigate={navigate}
+        onRequestDemo={() => {
+          navigate('/#demo');
+        }}
       />
     );
   }
