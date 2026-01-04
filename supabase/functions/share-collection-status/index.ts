@@ -22,20 +22,38 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  console.log("=== Share Collection Status: Function Entry ===");
+
   try {
     const payload: ShareCollectionRequest = await req.json();
     const { collection_id, apartment_id, share_code, share_url } = payload;
 
+    console.log("Request payload:", { collection_id, apartment_id, share_code });
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("Missing authorization header");
       throw new Error("Missing authorization header");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const gupshupApiKey = Deno.env.get("GUPSHUP_API_KEY");
+    const gupshupAppName = Deno.env.get("GUPSHUP_APP_NAME");
+
+    console.log("Environment check:", {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceRoleKey: !!serviceRoleKey,
+      hasResendKey: !!resendApiKey,
+      hasGupshupKey: !!gupshupApiKey,
+      hasGupshupAppName: !!gupshupAppName,
+    });
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Get collection details
+    console.log("Fetching collection details...");
     const { data: collection, error: collectionError } = await supabase
       .from("expected_collections")
       .select(`
@@ -48,18 +66,28 @@ Deno.serve(async (req: Request) => {
       .eq("id", collection_id)
       .single();
 
-    if (collectionError) throw collectionError;
+    if (collectionError) {
+      console.error("Error fetching collection:", collectionError);
+      throw collectionError;
+    }
+    console.log("Collection loaded:", collection?.collection_name);
 
     // Get apartment details
+    console.log("Fetching apartment details...");
     const { data: apartment, error: apartmentError } = await supabase
       .from("apartments")
       .select("apartment_name")
       .eq("id", apartment_id)
       .single();
 
-    if (apartmentError) throw apartmentError;
+    if (apartmentError) {
+      console.error("Error fetching apartment:", apartmentError);
+      throw apartmentError;
+    }
+    console.log("Apartment loaded:", apartment?.apartment_name);
 
-    // Get all registered residents (email + WhatsApp opt-in)
+    // Get all registered residents - FIXED QUERY
+    console.log("Fetching residents...");
     const { data: residents, error: residentsError } = await supabase
       .from("flat_email_mappings")
       .select(`
@@ -67,26 +95,43 @@ Deno.serve(async (req: Request) => {
         mobile,
         name,
         flat_id,
-        flats!inner (
+        whatsapp_opt_in,
+        flat_numbers!inner (
           flat_number,
-          building_id,
-          buildings!inner (
-            building_name
+          block_id,
+          buildings_blocks_phases!inner (
+            block_name,
+            apartment_id
           )
-        ),
-        whatsapp_optin
+        )
       `)
-      .eq("flats.apartment_id", apartment_id);
+      .eq("flat_numbers.buildings_blocks_phases.apartment_id", apartment_id);
 
-    if (residentsError) throw residentsError;
+    if (residentsError) {
+      console.error("Error fetching residents:", residentsError);
+      throw residentsError;
+    }
+
+    console.log(`Found ${residents?.length || 0} resident mappings`);
 
     const emailAddresses = residents
-      .filter((r) => r.email)
-      .map((r) => r.email);
+      ?.filter((r) => r.email)
+      .map((r) => ({
+        email: r.email,
+        name: r.name,
+        flat_number: r.flat_numbers?.flat_number,
+      })) || [];
 
     const whatsappNumbers = residents
-      .filter((r) => r.mobile && r.whatsapp_optin)
-      .map((r) => r.mobile);
+      ?.filter((r) => r.mobile && r.whatsapp_opt_in === true)
+      .map((r) => ({
+        mobile: r.mobile,
+        name: r.name,
+        flat_number: r.flat_numbers?.flat_number,
+      })) || [];
+
+    console.log(`Email recipients: ${emailAddresses.length}`);
+    console.log(`WhatsApp recipients (opt-in): ${whatsappNumbers.length}`);
 
     let sent = 0;
     let failed = 0;
@@ -173,61 +218,143 @@ Deno.serve(async (req: Request) => {
 `;
 
     // Send emails
-    for (const email of emailAddresses) {
+    console.log("=== Starting Email Delivery ===");
+    for (const recipient of emailAddresses) {
       try {
-        const response = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
-          },
-          body: JSON.stringify({
-            from: "FlatFund Pro <noreply@flatfundpro.com>",
-            to: [email],
-            subject: emailSubject,
-            html: emailHtml,
-          }),
-        });
+        console.log(`Sending email to ${recipient.email} (Flat ${recipient.flat_number})`);
 
-        if (response.ok) {
-          sent++;
-          // Log to communication audit
-          await supabase.from("communication_audit").insert({
+        if (!resendApiKey) {
+          console.error("RESEND_API_KEY not configured");
+          failed++;
+
+          // Log failed attempt to communication_logs
+          await supabase.from("communication_logs").insert({
             apartment_id,
-            channel: "email",
-            recipient: email,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_email: recipient.email,
+            communication_channel: "EMAIL",
             communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: emailSubject,
+            message_preview: `Collection status shared for ${collection.collection_name}`,
+            status: "FAILED",
+            error_message: "RESEND_API_KEY not configured",
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_v1",
             metadata: {
               collection_id,
               collection_name: collection.collection_name,
               share_code,
               share_url,
             },
-            status: "sent",
           });
-        } else {
-          failed++;
-          await supabase.from("communication_audit").insert({
+          continue;
+        }
+
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${resendApiKey}`,
+          },
+          body: JSON.stringify({
+            from: "FlatFund Pro <onboarding@resend.dev>",
+            to: [recipient.email],
+            subject: emailSubject,
+            html: emailHtml,
+          }),
+        });
+
+        const responseData = await response.json();
+
+        if (response.ok) {
+          sent++;
+          console.log(`✓ Email sent successfully to ${recipient.email}`);
+
+          // Log to communication_logs
+          await supabase.from("communication_logs").insert({
             apartment_id,
-            channel: "email",
-            recipient: email,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_email: recipient.email,
+            communication_channel: "EMAIL",
             communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: emailSubject,
+            message_preview: `Collection status shared for ${collection.collection_name}`,
+            full_message_data: {
+              html_length: emailHtml.length,
+              share_url,
+            },
+            status: "DELIVERED",
+            delivery_status_details: responseData,
+            sent_at: new Date().toISOString(),
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_v1",
             metadata: {
               collection_id,
               collection_name: collection.collection_name,
               share_code,
-              error: await response.text(),
+              email_id: responseData.id,
             },
-            status: "failed",
+          });
+        } else {
+          failed++;
+          console.error(`✗ Email failed for ${recipient.email}:`, responseData);
+
+          await supabase.from("communication_logs").insert({
+            apartment_id,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_email: recipient.email,
+            communication_channel: "EMAIL",
+            communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: emailSubject,
+            message_preview: `Collection status share attempt for ${collection.collection_name}`,
+            status: "FAILED",
+            error_message: JSON.stringify(responseData),
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_v1",
+            metadata: {
+              collection_id,
+              collection_name: collection.collection_name,
+              share_code,
+            },
           });
         }
       } catch (error) {
         failed++;
-        console.error(`Failed to send email to ${email}:`, error);
+        console.error(`✗ Exception sending email to ${recipient.email}:`, error);
+
+        await supabase.from("communication_logs").insert({
+          apartment_id,
+          flat_number: recipient.flat_number || "Unknown",
+          recipient_name: recipient.name,
+          recipient_email: recipient.email,
+          communication_channel: "EMAIL",
+          communication_type: "collection_status_share",
+          related_entity_type: "expected_collection",
+          related_entity_id: collection_id,
+          message_subject: emailSubject,
+          status: "FAILED",
+          error_message: error instanceof Error ? error.message : String(error),
+          triggered_by_event: "share_collection_status",
+          template_name: "share_collection_status_v1",
+          metadata: {
+            collection_id,
+            collection_name: collection.collection_name,
+          },
+        });
       }
     }
 
     // Send WhatsApp messages
+    console.log("=== Starting WhatsApp Delivery ===");
     const whatsappMessage = `*Payment Status Update*
 
 Maintenance collection update for *${collection.collection_name}* is now available.
@@ -238,20 +365,51 @@ ${share_url}
 – FlatFund Pro
 ${apartment.apartment_name}`;
 
-    for (const mobile of whatsappNumbers) {
+    for (const recipient of whatsappNumbers) {
       try {
+        console.log(`Sending WhatsApp to ${recipient.mobile} (Flat ${recipient.flat_number})`);
+
+        if (!gupshupApiKey || !gupshupAppName) {
+          console.error("Gupshup configuration missing");
+          failed++;
+
+          await supabase.from("communication_logs").insert({
+            apartment_id,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_mobile: recipient.mobile,
+            communication_channel: "WHATSAPP",
+            communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: "Collection Status Update",
+            message_preview: whatsappMessage.substring(0, 100),
+            status: "FAILED",
+            error_message: "Gupshup API key or app name not configured",
+            whatsapp_opt_in_status: true,
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_whatsapp_v1",
+            metadata: {
+              collection_id,
+              collection_name: collection.collection_name,
+              share_code,
+            },
+          });
+          continue;
+        }
+
         const response = await fetch(
           `https://api.gupshup.io/wa/api/v1/msg`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
-              "apikey": Deno.env.get("GUPSHUP_API_KEY") || "",
+              "apikey": gupshupApiKey,
             },
             body: new URLSearchParams({
               channel: "whatsapp",
-              source: Deno.env.get("GUPSHUP_APP_NAME") || "",
-              destination: mobile,
+              source: gupshupAppName,
+              destination: recipient.mobile,
               "src.name": "FlatFundPro",
               message: JSON.stringify({
                 type: "text",
@@ -265,41 +423,91 @@ ${apartment.apartment_name}`;
 
         if (response.ok && result.status === "submitted") {
           sent++;
-          await supabase.from("communication_audit").insert({
+          console.log(`✓ WhatsApp sent successfully to ${recipient.mobile}`);
+
+          await supabase.from("communication_logs").insert({
             apartment_id,
-            channel: "whatsapp",
-            recipient: mobile,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_mobile: recipient.mobile,
+            communication_channel: "WHATSAPP",
             communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: "Collection Status Update",
+            message_preview: whatsappMessage.substring(0, 100),
+            full_message_data: {
+              message: whatsappMessage,
+              message_id: result.messageId,
+            },
+            status: "DELIVERED",
+            delivery_status_details: result,
+            sent_at: new Date().toISOString(),
+            whatsapp_opt_in_status: true,
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_whatsapp_v1",
             metadata: {
               collection_id,
               collection_name: collection.collection_name,
               share_code,
-              share_url,
-              message_id: result.messageId,
+              gupshup_message_id: result.messageId,
             },
-            status: "sent",
           });
         } else {
           failed++;
-          await supabase.from("communication_audit").insert({
+          console.error(`✗ WhatsApp failed for ${recipient.mobile}:`, result);
+
+          await supabase.from("communication_logs").insert({
             apartment_id,
-            channel: "whatsapp",
-            recipient: mobile,
+            flat_number: recipient.flat_number || "Unknown",
+            recipient_name: recipient.name,
+            recipient_mobile: recipient.mobile,
+            communication_channel: "WHATSAPP",
             communication_type: "collection_status_share",
+            related_entity_type: "expected_collection",
+            related_entity_id: collection_id,
+            message_subject: "Collection Status Update",
+            message_preview: whatsappMessage.substring(0, 100),
+            status: "FAILED",
+            error_message: JSON.stringify(result),
+            whatsapp_opt_in_status: true,
+            triggered_by_event: "share_collection_status",
+            template_name: "share_collection_status_whatsapp_v1",
             metadata: {
               collection_id,
               collection_name: collection.collection_name,
               share_code,
-              error: JSON.stringify(result),
             },
-            status: "failed",
           });
         }
       } catch (error) {
         failed++;
-        console.error(`Failed to send WhatsApp to ${mobile}:`, error);
+        console.error(`✗ Exception sending WhatsApp to ${recipient.mobile}:`, error);
+
+        await supabase.from("communication_logs").insert({
+          apartment_id,
+          flat_number: recipient.flat_number || "Unknown",
+          recipient_name: recipient.name,
+          recipient_mobile: recipient.mobile,
+          communication_channel: "WHATSAPP",
+          communication_type: "collection_status_share",
+          related_entity_type: "expected_collection",
+          related_entity_id: collection_id,
+          message_subject: "Collection Status Update",
+          status: "FAILED",
+          error_message: error instanceof Error ? error.message : String(error),
+          whatsapp_opt_in_status: true,
+          triggered_by_event: "share_collection_status",
+          template_name: "share_collection_status_whatsapp_v1",
+          metadata: {
+            collection_id,
+            collection_name: collection.collection_name,
+          },
+        });
       }
     }
+
+    console.log(`=== Delivery Complete: Sent=${sent}, Failed=${failed} ===`);
 
     return new Response(
       JSON.stringify({
@@ -314,7 +522,8 @@ ${apartment.apartment_name}`;
       }
     );
   } catch (error) {
-    console.error("Error sharing collection status:", error);
+    console.error("=== Fatal Error in Share Collection Status ===");
+    console.error(error);
     return new Response(
       JSON.stringify({
         success: false,
