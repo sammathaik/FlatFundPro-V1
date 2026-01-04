@@ -637,7 +637,7 @@ export default function CollectionManagement({ apartmentId, apartmentName }: Col
                     <>
                       <button
                         onClick={() => openShareModal(collection)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                         title="Share Collection Status"
                       >
                         <Share2 className="w-5 h-5" />
