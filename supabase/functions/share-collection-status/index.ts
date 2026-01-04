@@ -377,7 +377,7 @@ ${apartment.apartment_name}`;
             apartment_id,
             flat_number: recipient.flat_number || "Unknown",
             recipient_name: recipient.name,
-            recipient_mobile: recipient.mobile,
+            recipient_mobile: recipient.mobile.startsWith("+") ? recipient.mobile : "+" + recipient.mobile,
             communication_channel: "WHATSAPP",
             communication_type: "collection_status_share",
             related_entity_type: "expected_collection",
@@ -398,8 +398,17 @@ ${apartment.apartment_name}`;
           continue;
         }
 
+        // Format phone number for Gupshup
+        let formattedPhone = recipient.mobile.trim();
+        if (!formattedPhone.startsWith("+")) {
+          formattedPhone = "+" + formattedPhone;
+        }
+
+        console.log(`Formatted phone: ${formattedPhone}`);
+
+        // Gupshup Sandbox endpoint (use /sm/ not /wa/)
         const response = await fetch(
-          `https://api.gupshup.io/wa/api/v1/msg`,
+          `https://api.gupshup.io/sm/api/v1/msg`,
           {
             method: "POST",
             headers: {
@@ -409,8 +418,8 @@ ${apartment.apartment_name}`;
             body: new URLSearchParams({
               channel: "whatsapp",
               source: gupshupAppName,
-              destination: recipient.mobile,
-              "src.name": "FlatFundPro",
+              destination: formattedPhone,
+              "src.name": gupshupAppName,
               message: JSON.stringify({
                 type: "text",
                 text: whatsappMessage,
@@ -423,13 +432,13 @@ ${apartment.apartment_name}`;
 
         if (response.ok && result.status === "submitted") {
           sent++;
-          console.log(`✓ WhatsApp sent successfully to ${recipient.mobile}`);
+          console.log(`✓ WhatsApp sent successfully to ${formattedPhone}`);
 
           await supabase.from("communication_logs").insert({
             apartment_id,
             flat_number: recipient.flat_number || "Unknown",
             recipient_name: recipient.name,
-            recipient_mobile: recipient.mobile,
+            recipient_mobile: formattedPhone,
             communication_channel: "WHATSAPP",
             communication_type: "collection_status_share",
             related_entity_type: "expected_collection",
@@ -455,13 +464,13 @@ ${apartment.apartment_name}`;
           });
         } else {
           failed++;
-          console.error(`✗ WhatsApp failed for ${recipient.mobile}:`, result);
+          console.error(`✗ WhatsApp failed for ${formattedPhone}:`, result);
 
           await supabase.from("communication_logs").insert({
             apartment_id,
             flat_number: recipient.flat_number || "Unknown",
             recipient_name: recipient.name,
-            recipient_mobile: recipient.mobile,
+            recipient_mobile: formattedPhone,
             communication_channel: "WHATSAPP",
             communication_type: "collection_status_share",
             related_entity_type: "expected_collection",
@@ -482,13 +491,13 @@ ${apartment.apartment_name}`;
         }
       } catch (error) {
         failed++;
-        console.error(`✗ Exception sending WhatsApp to ${recipient.mobile}:`, error);
+        console.error(`✗ Exception sending WhatsApp to ${formattedPhone}:`, error);
 
         await supabase.from("communication_logs").insert({
           apartment_id,
           flat_number: recipient.flat_number || "Unknown",
           recipient_name: recipient.name,
-          recipient_mobile: recipient.mobile,
+          recipient_mobile: formattedPhone,
           communication_channel: "WHATSAPP",
           communication_type: "collection_status_share",
           related_entity_type: "expected_collection",
