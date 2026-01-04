@@ -36,7 +36,7 @@ type PaymentSnapshot = {
   created_at: string | null;
 };
 
-type FlatStatus = 'paid' | 'partial' | 'pending';
+type FlatStatus = 'paid' | 'under_review' | 'partial' | 'overpaid' | 'pending';
 
 interface PaymentStatusDashboardProps {
   apartmentId: string;
@@ -52,6 +52,7 @@ interface FlatStatusDisplay {
   flat_number: string;
   status: FlatStatus;
   paidAmount: number;
+  pendingAmount: number;
   expectedAmount: number;
   paymentStatus?: string | null;
   paymentDate?: string | null;
@@ -60,9 +61,11 @@ interface FlatStatusDisplay {
 }
 
 const STATUS_META: Record<FlatStatus, { label: string; color: string; bg: string }> = {
-  paid: { label: 'Paid', color: 'bg-green-500', bg: 'bg-green-100' },
-  partial: { label: 'Partial', color: 'bg-blue-500', bg: 'bg-blue-100' },
-  pending: { label: 'Not Paid', color: 'bg-red-500', bg: 'bg-red-100' },
+  paid: { label: 'Paid & Approved', color: 'bg-green-500', bg: 'bg-green-100' },
+  under_review: { label: 'Under Review', color: 'bg-blue-500', bg: 'bg-blue-100' },
+  partial: { label: 'Partially Paid', color: 'bg-orange-500', bg: 'bg-orange-100' },
+  overpaid: { label: 'Overpaid', color: 'bg-cyan-500', bg: 'bg-cyan-100' },
+  pending: { label: 'Not Paid', color: 'bg-gray-500', bg: 'bg-gray-100' },
 };
 
 function sortFlats<T extends { flat_number: string }>(flats: T[]): T[] {
@@ -286,7 +289,9 @@ export default function PaymentStatusDashboard({
     dueDate.setHours(0, 0, 0, 0);
 
     let paidCount = 0;
+    let underReviewCount = 0;
     let partialCount = 0;
+    let overpaidCount = 0;
     let pendingCount = 0;
     let totalCollected = 0;
     let totalExpected = 0;
@@ -309,89 +314,33 @@ export default function PaymentStatusDashboard({
           return;
         }
 
-        let paidStatusFound = false;
-        let partialStatusFound = false;
-        let latestPaymentDate: Date | null = null;
+        const approvedPayments = validPayments.filter(p => p.status === 'Approved');
+        const pendingReviewPayments = validPayments.filter(p => p.status === 'Received' || p.status === 'Reviewed');
 
-        for (const payment of validPayments) {
-          const paymentAmount = Number(payment.payment_amount || 0);
-          if (paymentAmount <= 0) continue;
+        const totalApproved = approvedPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
+        const totalPendingReview = pendingReviewPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
+        const totalPaid = totalApproved + totalPendingReview;
 
-          const paymentDate = payment.payment_date ? new Date(payment.payment_date) : null;
+        totalCollected += totalApproved;
+        totalExpected += baseAmount;
 
-          if (paymentDate) {
-            paymentDate.setHours(0, 0, 0, 0);
-            if (!latestPaymentDate || paymentDate > latestPaymentDate) {
-              latestPaymentDate = paymentDate;
-            }
-          }
-
-          let isOnTime = false;
-          let isLate = false;
-          let daysLate = 0;
-          let expectedAmountWithFine = baseAmount;
-
-          if (paymentDate) {
-            daysLate = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            isOnTime = daysLate <= 0;
-            isLate = daysLate > 0;
-
-            if (isLate) {
-              const fineAmount = daysLate * dailyFine;
-              expectedAmountWithFine = baseAmount + fineAmount;
-            }
-          }
-
-          if (isOnTime && payment.status === 'Approved') {
-            if (Math.abs(paymentAmount - baseAmount) < 0.01) {
-              paidStatusFound = true;
-              break;
-            }
-          }
-
-          if (isLate && payment.status === 'Approved') {
-            if (Math.abs(paymentAmount - expectedAmountWithFine) < 0.01) {
-              paidStatusFound = true;
-              break;
-            }
-          }
-
-          if (isOnTime && paymentAmount < baseAmount) {
-            partialStatusFound = true;
-          }
-
-          if (isLate && Math.abs(paymentAmount - expectedAmountWithFine) >= 0.01) {
-            partialStatusFound = true;
-          }
-        }
-
-        const paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
-        totalCollected += paidAmount;
-
-        if (paidStatusFound) {
-          paidCount++;
-          totalExpected += baseAmount;
-        } else if (partialStatusFound || validPayments.length > 0) {
-          partialCount++;
-          if (latestPaymentDate) {
-            const daysLate = Math.floor((latestPaymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysLate > 0) {
-              const fineAmount = daysLate * dailyFine;
-              totalExpected += baseAmount + fineAmount;
-            } else {
-              totalExpected += baseAmount;
-            }
+        if (totalApproved >= baseAmount) {
+          if (totalApproved > baseAmount + 0.01) {
+            overpaidCount++;
           } else {
-            totalExpected += baseAmount;
+            paidCount++;
           }
+        } else if (totalPendingReview > 0) {
+          underReviewCount++;
+        } else if (totalApproved > 0) {
+          partialCount++;
         } else {
           pendingCount++;
-          totalExpected += baseAmount;
         }
       });
     });
 
-    return { paidCount, partialCount, pendingCount, totalCollected, totalExpected };
+    return { paidCount, underReviewCount, partialCount, overpaidCount, pendingCount, totalCollected, totalExpected };
   }
 
   function getBlockStatuses(collection: ExpectedCollection) {
@@ -413,6 +362,7 @@ export default function PaymentStatusDashboard({
             flat_number: flat.flat_number,
             status: 'pending' as FlatStatus,
             paidAmount: 0,
+            pendingAmount: 0,
             expectedAmount: baseAmount,
           } as FlatStatusDisplay;
         }
@@ -427,81 +377,18 @@ export default function PaymentStatusDashboard({
             flat_number: flat.flat_number,
             status: 'pending' as FlatStatus,
             paidAmount: 0,
+            pendingAmount: 0,
             expectedAmount: baseAmount,
           } as FlatStatusDisplay;
         }
 
-        let paidStatusFound = false;
-        let partialStatusFound = false;
-        let latestPaymentDate: Date | null = null;
+        const approvedPayments = validPayments.filter(p => p.status === 'Approved');
+        const pendingReviewPayments = validPayments.filter(p => p.status === 'Received' || p.status === 'Reviewed');
 
-        for (const payment of validPayments) {
-          const paymentAmount = Number(payment.payment_amount || 0);
-
-          if (paymentAmount <= 0) continue;
-
-          const paymentDate = payment.payment_date ? new Date(payment.payment_date) : null;
-
-          if (paymentDate) {
-            paymentDate.setHours(0, 0, 0, 0);
-            if (!latestPaymentDate || paymentDate > latestPaymentDate) {
-              latestPaymentDate = paymentDate;
-            }
-          }
-
-          let isOnTime = false;
-          let isLate = false;
-          let daysLate = 0;
-          let expectedAmountWithFine = baseAmount;
-
-          if (paymentDate) {
-            daysLate = Math.floor((paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            isOnTime = daysLate <= 0;
-            isLate = daysLate > 0;
-
-            if (isLate) {
-              const fineAmount = daysLate * dailyFine;
-              expectedAmountWithFine = baseAmount + fineAmount;
-            }
-          }
-
-          if (isOnTime && payment.status === 'Approved') {
-            if (Math.abs(paymentAmount - baseAmount) < 0.01) {
-              paidStatusFound = true;
-              break;
-            }
-          }
-
-          if (isLate && payment.status === 'Approved') {
-            if (Math.abs(paymentAmount - expectedAmountWithFine) < 0.01) {
-              paidStatusFound = true;
-              break;
-            }
-          }
-
-          if (isOnTime) {
-            if (paymentAmount < baseAmount) {
-              partialStatusFound = true;
-            }
-          }
-
-          if (isLate) {
-            if (Math.abs(paymentAmount - expectedAmountWithFine) >= 0.01) {
-              partialStatusFound = true;
-            }
-          }
-
-          if (!paymentDate && payment.status !== 'Approved') {
-            if (Math.abs(paymentAmount - baseAmount) >= 0.01) {
-              partialStatusFound = true;
-            }
-          }
-        }
+        const totalApproved = approvedPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
+        const totalPendingReview = pendingReviewPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
 
         let status: FlatStatus = 'pending';
-        let paidAmount = 0;
-        let expectedAmount = baseAmount;
-
         let paymentStatus: string | null = null;
         let paymentDate: string | null = null;
         let transactionAmount: number | null = null;
@@ -520,37 +407,27 @@ export default function PaymentStatusDashboard({
           transactionAmount = mostRecentPayment.payment_amount ? Number(mostRecentPayment.payment_amount) : null;
         }
 
-        if (paidStatusFound) {
-          status = 'paid';
-          paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
-          expectedAmount = baseAmount;
-        } else if (partialStatusFound || validPayments.length > 0) {
-          status = 'partial';
-          paidAmount = validPayments.reduce((sum, p) => sum + Number(p.payment_amount || 0), 0);
-
-          if (latestPaymentDate) {
-            const daysLate = Math.floor((latestPaymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysLate > 0) {
-              const fineAmount = daysLate * dailyFine;
-              expectedAmount = baseAmount + fineAmount;
-            } else {
-              expectedAmount = baseAmount;
-            }
+        if (totalApproved >= baseAmount) {
+          if (totalApproved > baseAmount + 0.01) {
+            status = 'overpaid';
           } else {
-            expectedAmount = baseAmount;
+            status = 'paid';
           }
+        } else if (totalPendingReview > 0) {
+          status = 'under_review';
+        } else if (totalApproved > 0) {
+          status = 'partial';
         } else {
           status = 'pending';
-          paidAmount = 0;
-          expectedAmount = baseAmount;
         }
 
         return {
           id: flat.id,
           flat_number: flat.flat_number,
           status,
-          paidAmount,
-          expectedAmount: expectedAmount,
+          paidAmount: totalApproved,
+          pendingAmount: totalPendingReview,
+          expectedAmount: baseAmount,
           paymentStatus: paymentStatus,
           paymentDate: paymentDate,
           maintenanceDueDate: collection.due_date,
@@ -839,7 +716,7 @@ export default function PaymentStatusDashboard({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -850,13 +727,27 @@ export default function PaymentStatusDashboard({
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Under Review</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{stats.underReviewCount}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                               <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">{stats.partialCount}</p>
                           </div>
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase">Overpaid</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{stats.overpaidCount}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                               <p className="text-xs font-semibold text-gray-600 uppercase">Unpaid</p>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">{stats.pendingCount}</p>
@@ -916,9 +807,18 @@ export default function PaymentStatusDashboard({
                                       }
 
                                       let tooltipText = `Flat ${flat.flat_number}\n`;
-                                      tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
+                                      tooltipText += `Status: ${
+                                        flat.status === 'paid' ? '✓ Paid & Approved' :
+                                        flat.status === 'under_review' ? '⏳ Under Review' :
+                                        flat.status === 'partial' ? '⚠ Partially Paid' :
+                                        flat.status === 'overpaid' ? '↑ Overpaid' :
+                                        '❌ Not Paid'
+                                      }\n`;
                                       tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                                      tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                      tooltipText += `Approved: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                      if (flat.pendingAmount > 0) {
+                                        tooltipText += `Pending Review: ${currencySymbol}${flat.pendingAmount.toLocaleString()}\n`;
+                                      }
                                       tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
                                       tooltipText += `Difference: ${currencySymbol}${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
 
@@ -954,7 +854,11 @@ export default function PaymentStatusDashboard({
                                         >
                                           <span>{flat.flat_number}</span>
                                           <span className="text-[10px] font-normal">
-                                            {flat.status === 'paid' ? 'Paid' : flat.status === 'partial' ? 'Part' : 'Unpaid'}
+                                            {flat.status === 'paid' ? 'Paid' :
+                                             flat.status === 'under_review' ? 'Review' :
+                                             flat.status === 'partial' ? 'Part' :
+                                             flat.status === 'overpaid' ? 'Over' :
+                                             'Unpaid'}
                                           </span>
                                         </div>
                                       );
@@ -1060,31 +964,45 @@ export default function PaymentStatusDashboard({
 
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-200 bg-white">
-                            <div className="grid grid-cols-4 gap-3 mb-4">
-                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <div className="flex items-center gap-2 mb-1">
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
                                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                   <p className="text-xs font-semibold text-gray-600 uppercase">Paid</p>
                                 </div>
-                                <p className="text-xl font-bold text-gray-900">{stats.paidCount}</p>
+                                <p className="text-lg font-bold text-gray-900">{stats.paidCount}</p>
                               </div>
-                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <div className="flex items-center gap-2 mb-1">
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
                                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  <p className="text-xs font-semibold text-gray-600 uppercase">Review</p>
+                                </div>
+                                <p className="text-lg font-bold text-gray-900">{stats.underReviewCount}</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                   <p className="text-xs font-semibold text-gray-600 uppercase">Partial</p>
                                 </div>
-                                <p className="text-xl font-bold text-gray-900">{stats.partialCount}</p>
+                                <p className="text-lg font-bold text-gray-900">{stats.partialCount}</p>
                               </div>
-                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                                  <p className="text-xs font-semibold text-gray-600 uppercase">Over</p>
+                                </div>
+                                <p className="text-lg font-bold text-gray-900">{stats.overpaidCount}</p>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                                   <p className="text-xs font-semibold text-gray-600 uppercase">Unpaid</p>
                                 </div>
-                                <p className="text-xl font-bold text-gray-900">{stats.pendingCount}</p>
+                                <p className="text-lg font-bold text-gray-900">{stats.pendingCount}</p>
                               </div>
-                              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                                 <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Rate</p>
-                                <p className="text-xl font-bold text-gray-700">{collectionProgress}%</p>
+                                <p className="text-lg font-bold text-gray-700">{collectionProgress}%</p>
                               </div>
                             </div>
 
@@ -1119,9 +1037,18 @@ export default function PaymentStatusDashboard({
                                         }
 
                                         let tooltipText = `Flat ${flat.flat_number}\n`;
-                                        tooltipText += `Status: ${flat.status === 'paid' ? '✓ Paid' : flat.status === 'partial' ? '⚠ Partial' : '❌ Unpaid'}\n`;
+                                        tooltipText += `Status: ${
+                                          flat.status === 'paid' ? '✓ Paid & Approved' :
+                                          flat.status === 'under_review' ? '⏳ Under Review' :
+                                          flat.status === 'partial' ? '⚠ Partially Paid' :
+                                          flat.status === 'overpaid' ? '↑ Overpaid' :
+                                          '❌ Not Paid'
+                                        }\n`;
                                         tooltipText += `━━━━━━━━━━━━━━━━━━━━\n`;
-                                        tooltipText += `Paid: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                        tooltipText += `Approved: ${currencySymbol}${flat.paidAmount.toLocaleString()}\n`;
+                                        if (flat.pendingAmount > 0) {
+                                          tooltipText += `Pending Review: ${currencySymbol}${flat.pendingAmount.toLocaleString()}\n`;
+                                        }
                                         tooltipText += `Expected: ${currencySymbol}${flat.expectedAmount.toLocaleString()}\n`;
                                         tooltipText += `Difference: ${currencySymbol}${Math.abs(difference).toLocaleString()} ${difference >= 0 ? 'short' : 'over'}\n`;
 
