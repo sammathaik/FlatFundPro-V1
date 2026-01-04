@@ -110,21 +110,19 @@ export default function WhatsAppCommunicationAudit() {
     try {
       setLoading(true);
 
-      let query = supabase
-        .from('admin_communication_dashboard')
-        .select('*')
-        .eq('apartment_id', selectedApartmentId)
-        .eq('channel', 'WHATSAPP')
-        .order('created_at', { ascending: false });
-
+      let dateFilter = '';
       if (dateRange !== 'all') {
         const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
-        query = query.gte('created_at', startDate.toISOString());
+        dateFilter = `AND cl.created_at >= '${startDate.toISOString()}'`;
       }
 
-      const { data, error } = await query.limit(500);
+      const { data, error } = await supabase.rpc('get_whatsapp_communications', {
+        p_apartment_id: selectedApartmentId,
+        p_date_filter: dateFilter,
+        p_limit: 500
+      });
 
       if (error) throw error;
       setCommunications(data || []);
@@ -672,7 +670,7 @@ export default function WhatsAppCommunicationAudit() {
                             </div>
                             <div className="bg-white rounded-lg p-4 shadow-sm">
                               <pre className="whitespace-pre-wrap text-sm text-gray-900 font-sans leading-relaxed">
-                                {comm.preview}
+                                {comm.full_message_data?.message || comm.preview}
                               </pre>
                             </div>
                             <div className="mt-2 text-xs text-gray-600 italic">
