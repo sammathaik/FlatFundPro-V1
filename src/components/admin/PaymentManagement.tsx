@@ -23,6 +23,7 @@ interface PaymentWithDetails {
   created_at: string;
   block: { block_name: string };
   flat: { flat_number: string };
+  expected_collection?: { collection_name: string } | null;
   payer_name?: string | null;
   payee_name?: string | null;
   bank_name?: string | null;
@@ -132,7 +133,8 @@ export default function PaymentManagement() {
         .select(`
           *,
           block:buildings_blocks_phases(block_name),
-          flat:flat_numbers(flat_number)
+          flat:flat_numbers(flat_number),
+          expected_collection:expected_collections(collection_name)
         `)
         .eq('apartment_id', adminData.apartment_id)
         .order('created_at', { ascending: false });
@@ -455,6 +457,7 @@ export default function PaymentManagement() {
       currency: payment.currency || '',
       platform: payment.platform || '',
       payment_type: payment.payment_type || '',
+      collection_name: payment.expected_collection?.collection_name || '',
       payment_source: payment.payment_source || '',
       sender_upi_id: payment.sender_upi_id || '',
       receiver_account: payment.receiver_account || '',
@@ -655,6 +658,9 @@ export default function PaymentManagement() {
                 Type
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Collection Name
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -697,6 +703,9 @@ export default function PaymentManagement() {
                   </td>
                   <td className="px-6 py-5 text-sm text-gray-700">
                     {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                  </td>
+                  <td className="px-6 py-5 text-sm text-gray-700">
+                    {payment.expected_collection?.collection_name || '-'}
                   </td>
                   <td className="px-6 py-5">
                     <span
@@ -810,7 +819,7 @@ export default function PaymentManagement() {
                 </tr>
                 {expandedRows.has(payment.id) && (
                   <tr key={`${payment.id}-details`} className="bg-blue-50">
-                    <td colSpan={9} className="px-6 py-4">
+                    <td colSpan={10} className="px-6 py-4">
                       <div className="bg-white rounded-lg border border-blue-200 p-4 space-y-4">
                         {payment.is_fraud_flagged && (
                           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
@@ -1125,6 +1134,12 @@ export default function PaymentManagement() {
                   <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Type</label>
                   <p className="text-sm text-gray-900">
                     {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Collection Name</label>
+                  <p className="text-sm text-gray-900">
+                    {payment.expected_collection?.collection_name || '-'}
                   </p>
                 </div>
                 <div>
