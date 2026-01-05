@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Auth check timeout - allowing page to load');
         setLoading(false);
       }
-    }, 3000);
+    }, 1500);
 
     checkUser().finally(() => clearTimeout(timeoutId));
 
