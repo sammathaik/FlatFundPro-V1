@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Building2,
@@ -72,6 +72,10 @@ export default function WhatsAppCommunicationAudit() {
   const [optInFilter, setOptInFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Load apartments for Super Admin
   useEffect(() => {
@@ -150,6 +154,20 @@ export default function WhatsAppCommunicationAudit() {
       return matchesSearch && matchesStatus && matchesTrigger && matchesOptIn;
     });
   }
+
+  function getPaginatedCommunications() {
+    const filtered = getFilteredCommunications();
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filtered.slice(startIndex, endIndex);
+  }
+
+  const totalFilteredRecords = getFilteredCommunications().length;
+  const totalPages = Math.ceil(totalFilteredRecords / pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, triggerFilter, optInFilter, dateRange, pageSize]);
 
   function getStatusBadge(status: string) {
     switch (status) {
@@ -491,7 +509,7 @@ export default function WhatsAppCommunicationAudit() {
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-4 text-gray-600">Loading communications...</p>
               </div>
-            ) : filteredCommunications.length === 0 ? (
+            ) : totalFilteredRecords === 0 ? (
               <div className="p-12 text-center">
                 <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No WhatsApp Communications Found</h3>
@@ -533,69 +551,76 @@ export default function WhatsAppCommunicationAudit() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCommunications.map((comm) => (
-                      <tr key={comm.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(comm.created_at).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(comm.created_at).toLocaleTimeString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Home className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-900">
-                              {comm.flat_number}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-gray-400" />
+                    {getPaginatedCommunications().map((comm) => (
+                      <React.Fragment key={comm.id}>
+                        <tr className={`transition-colors ${expandedId === comm.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(comm.created_at).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(comm.created_at).toLocaleTimeString()}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Home className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {comm.flat_number}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm text-gray-900">
+                                {comm.recipient_name || 'N/A'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm text-gray-900 font-mono">
+                                {comm.recipient_mobile_masked || 'N/A'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getOptInBadge(comm.whatsapp_opt_in_status)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-gray-900">
-                              {comm.recipient_name || 'N/A'}
+                              {getTriggerLabel(comm.type)}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-900 font-mono">
-                              {comm.recipient_mobile_masked || 'N/A'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getOptInBadge(comm.whatsapp_opt_in_status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">
-                            {getTriggerLabel(comm.type)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(comm.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => setExpandedId(expandedId === comm.id ? null : comm.id)}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                            {expandedId === comm.id ? 'Hide' : 'Details'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getStatusBadge(comm.status)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => setExpandedId(expandedId === comm.id ? null : comm.id)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              {expandedId === comm.id ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4" />
+                                  <span>Hide</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4" />
+                                  <span>Details</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
 
-                {/* Expanded Details */}
-                {expandedId && filteredCommunications.map((comm) =>
-                  comm.id === expandedId ? (
-                    <div key={`expanded-${comm.id}`} className="border-t border-gray-200 bg-gray-50 p-6">
+                        {expandedId === comm.id && (
+                          <tr>
+                            <td colSpan={8} className="px-0 py-0">
+                              <div className="bg-gray-50 border-t border-b border-gray-200 p-6">
                       <div className="max-w-4xl mx-auto space-y-4">
                         {/* Details Grid */}
                         <div className="grid grid-cols-2 gap-4">
@@ -686,18 +711,81 @@ export default function WhatsAppCommunicationAudit() {
                           Close Details
                         </button>
                       </div>
-                    </div>
-                  ) : null
-                )}
-              </div>
-            )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
 
-            {filteredCommunications.length > 0 && (
-              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                <div className="text-sm text-gray-600 text-center">
-                  Showing {filteredCommunications.length} of {communications.length} WhatsApp communications for{' '}
-                  <span className="font-semibold">{selectedApartmentName}</span>
-                </div>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-gray-600">
+                        Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                        <span className="font-medium">
+                          {Math.min(currentPage * pageSize, totalFilteredRecords)}
+                        </span>{' '}
+                        of <span className="font-medium">{totalFilteredRecords}</span> records
+                      </div>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value={25}>25 per page</option>
+                        <option value={50}>50 per page</option>
+                        <option value={100}>100 per page</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                currentPage === pageNum
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
