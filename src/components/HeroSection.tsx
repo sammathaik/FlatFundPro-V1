@@ -22,7 +22,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
           Housing Society Payments<br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-            That Survive People Changes
+            Built for Change, Designed for Continuity
           </span>
         </h1>
 
