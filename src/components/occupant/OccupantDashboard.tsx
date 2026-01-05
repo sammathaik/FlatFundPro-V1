@@ -24,6 +24,7 @@ import ChatBot from '../ChatBot';
 import OccupantProfile from './OccupantProfile';
 import PendingPayments from './PendingPayments';
 import QuickPaymentModal from './QuickPaymentModal';
+import NotificationCenter from './NotificationCenter';
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
@@ -74,10 +75,33 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [flatEmail, setFlatEmail] = useState<string>(occupant.email);
   const [flatOccupantName, setFlatOccupantName] = useState<string | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     loadData();
   }, [occupant, selectedFlatId]);
+
+  useEffect(() => {
+    if (occupant?.mobile) {
+      loadUnreadCount();
+    }
+  }, [occupant?.mobile]);
+
+  const loadUnreadCount = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_unread_notification_count', {
+        p_mobile: occupant.mobile,
+        p_flat_id: null,
+        p_apartment_id: null
+      });
+      if (!error && data !== null) {
+        setUnreadNotificationCount(data);
+      }
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -313,13 +337,27 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                 </p>
               </div>
             </div>
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium flex-shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowNotifications(true)}
+                className="relative flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full min-w-[20px]">
+                    {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium flex-shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 overflow-x-auto">
@@ -725,6 +763,14 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         onSuccess={() => {
           loadData();
         }}
+      />
+
+      {/* Notification Center */}
+      <NotificationCenter
+        mobile={occupant.mobile}
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onUnreadCountChange={(count) => setUnreadNotificationCount(count)}
       />
     </div>
   );
