@@ -35,6 +35,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
     { id: 'occupants', label: 'Occupants', icon: Users },
+    { id: 'subscribers', label: 'Subscriber List', icon: Users },
     { id: 'payments', label: 'Payment Submissions', icon: FileText },
     { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
     { id: 'collections', label: 'Collections', icon: DollarSign },

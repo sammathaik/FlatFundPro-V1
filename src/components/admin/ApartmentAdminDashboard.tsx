@@ -6,6 +6,7 @@ import PaymentManagement from './PaymentManagement';
 import AdminPaymentStatusTab from './AdminPaymentStatusTab';
 import ExpectedCollectionsAdmin from './ExpectedCollectionsAdmin';
 import OccupantManagement from './OccupantManagement';
+import SubscriberList from './SubscriberList';
 import FAQManagement from './FAQManagement';
 import { FraudDetectionDashboard } from './FraudDetectionDashboard';
 import AnalyticsReports from './AnalyticsReports';
@@ -32,6 +33,7 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'notifications' && <NotificationsPage />}
       {activeTab === 'buildings' && <BuildingManagement />}
       {activeTab === 'occupants' && <OccupantManagement />}
+      {activeTab === 'subscribers' && <SubscriberList />}
       {activeTab === 'payments' && <PaymentManagement />}
       {activeTab === 'payment-setup' && <ExpectedCollectionsAdmin />}
       {activeTab === 'collections' && <MaintenanceCollectionsActiveSummary />}
