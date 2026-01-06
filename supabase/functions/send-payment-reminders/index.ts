@@ -412,7 +412,7 @@ Deno.serve(async (req: Request) => {
                 responseData = { error: responseText };
               }
 
-              if (gupshupResponse.ok && responseData.status === 'success') {
+              if (gupshupResponse.ok && (responseData.status === 'success' || responseData.status === 'submitted')) {
                 await supabaseClient.rpc('log_communication_event', {
                   p_apartment_id: body.apartment_id,
                   p_flat_number: flat.flat_number,
