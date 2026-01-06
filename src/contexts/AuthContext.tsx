@@ -26,14 +26,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let checkCompleted = false;
+
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn('Auth check timeout - allowing page to load');
+      if (!checkCompleted) {
         setLoading(false);
       }
-    }, 1500);
+    }, 3000);
 
-    checkUser().finally(() => clearTimeout(timeoutId));
+    checkUser().finally(() => {
+      checkCompleted = true;
+      clearTimeout(timeoutId);
+    });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
