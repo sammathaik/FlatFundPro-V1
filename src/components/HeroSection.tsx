@@ -22,13 +22,13 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
           Housing Society Payments<br />
           <span className="text-4xl md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-            Built for Change, Designed for Continuity
+            Simplify Your Apartment Payment Management
           </span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-          A payment governance backbone designed for committees that change, residents who move,
-          and WhatsApp-based societies.<span className="font-semibold text-gray-800"> Built for continuity, not perfection.</span>
+          Streamline maintenance payment tracking, reporting, and management for apartment societies.
+          Say goodbye to spreadsheets and manual follow-ups.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
