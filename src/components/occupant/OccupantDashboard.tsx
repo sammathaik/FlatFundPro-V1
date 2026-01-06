@@ -772,6 +772,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         apartmentId={apartmentInfo?.apartment_id || occupant.apartment_id}
         blockId={occupant.block_id || (allFlats.find(f => f.flat_id === selectedFlatId)?.block_id)}
         flatEmail={flatEmail}
+        occupantName={flatOccupantName || occupant.name}
         occupantMobile={occupant.mobile}
         onSuccess={() => {
           loadData();

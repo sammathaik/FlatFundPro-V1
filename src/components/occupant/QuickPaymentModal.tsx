@@ -22,6 +22,7 @@ interface QuickPaymentModalProps {
   apartmentId: string;
   blockId?: string;
   flatEmail: string;
+  occupantName?: string;
   occupantMobile?: string;
   onSuccess?: () => void;
 }
@@ -34,6 +35,7 @@ export default function QuickPaymentModal({
   apartmentId,
   blockId,
   flatEmail,
+  occupantName,
   occupantMobile,
   onSuccess
 }: QuickPaymentModalProps) {
@@ -160,7 +162,7 @@ export default function QuickPaymentModal({
           block_id: effectiveBlockId,
           flat_id: flatId,
           expected_collection_id: collection.collection_id,
-          name: flatEmail,
+          name: occupantName || flatEmail,
           email: flatEmail,
           contact_number: occupantMobile || null,
           payment_amount: parseFloat(paymentAmount),
@@ -234,25 +236,25 @@ export default function QuickPaymentModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between rounded-t-2xl">
+      <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full my-8 max-h-[95vh] overflow-y-auto">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
           <div>
-            <h2 className="text-2xl font-bold">Submit Payment</h2>
-            <p className="text-blue-100 text-sm mt-1">{collection.collection_name}</p>
-            <p className="text-blue-200 text-xs mt-2">
-              Submitting as: <span className="font-semibold">{flatEmail}</span>
+            <h2 className="text-xl font-bold">Submit Payment</h2>
+            <p className="text-blue-100 text-sm mt-0.5">{collection.collection_name}</p>
+            <p className="text-blue-200 text-xs mt-1">
+              As: <span className="font-semibold">{occupantName || flatEmail}</span>
             </p>
           </div>
           <button
             onClick={handleClose}
             disabled={submitting}
-            className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors disabled:opacity-50"
+            className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors disabled:opacity-50"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
             <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -260,15 +262,15 @@ export default function QuickPaymentModal({
             </div>
           )}
 
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Base Amount</p>
-                <p className="text-2xl font-bold text-gray-900">₹{collection.balance.toLocaleString()}</p>
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3 space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-lg p-2.5">
+                <p className="text-xs text-gray-600 mb-0.5">Base Amount</p>
+                <p className="text-lg font-bold text-gray-900">₹{collection.balance.toLocaleString()}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Due Date</p>
-                <p className="font-semibold text-gray-900">
+              <div className="bg-white rounded-lg p-2.5">
+                <p className="text-xs text-gray-600 mb-0.5">Due Date</p>
+                <p className="text-sm font-semibold text-gray-900">
                   {new Date(collection.due_date).toLocaleDateString('en-IN', {
                     day: '2-digit',
                     month: 'short',
@@ -279,117 +281,107 @@ export default function QuickPaymentModal({
             </div>
 
             {collection.late_fee > 0 && (
-              <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-3">
-                <div className="flex items-start justify-between gap-3">
+              <div className="bg-amber-100 border border-amber-300 rounded-lg p-2.5">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <p className="text-sm font-semibold text-amber-900">Late Fee Applied</p>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                      <p className="text-xs font-semibold text-amber-900">Late Fee ({collection.overdue_days} days overdue)</p>
                     </div>
-                    <p className="text-xs text-amber-700">
-                      Payment is {collection.overdue_days} day{collection.overdue_days !== 1 ? 's' : ''} overdue.
-                      Late fee has been added as per society rules.
-                    </p>
                   </div>
-                  <p className="text-lg font-bold text-amber-900">+₹{collection.late_fee.toLocaleString()}</p>
+                  <p className="text-base font-bold text-amber-900">+₹{collection.late_fee.toLocaleString()}</p>
                 </div>
               </div>
             )}
 
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-3">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-2.5">
               <div className="flex items-center justify-between text-white">
-                <div>
-                  <p className="text-sm opacity-90">Total Payable</p>
-                  <p className="text-xs opacity-75 mt-0.5">
-                    {collection.late_fee > 0
-                      ? `Base (₹${collection.balance.toLocaleString()}) + Late Fee (₹${collection.late_fee.toLocaleString()})`
-                      : 'Outstanding balance'
-                    }
-                  </p>
-                </div>
-                <p className="text-2xl font-bold">
+                <p className="text-sm font-medium">Total Payable</p>
+                <p className="text-xl font-bold">
                   ₹{(collection.balance + (collection.late_fee || 0)).toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Payment Amount <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Payment Amount <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  disabled={submitting}
+                  className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="Enter amount"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Payment Date <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  disabled={submitting}
+                  className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Payment Mode <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <select
+                  value={paymentMode}
+                  onChange={(e) => setPaymentMode(e.target.value)}
+                  disabled={submitting}
+                  className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 appearance-none"
+                  required
+                >
+                  <option value="">Select payment mode</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Transaction Ref (Optional)
+              </label>
               <input
-                type="number"
-                step="0.01"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
+                type="text"
+                value={transactionRef}
+                onChange={(e) => setTransactionRef(e.target.value)}
                 disabled={submitting}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                placeholder="Enter amount"
-                required
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                placeholder="Transaction ID"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Payment Date <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                disabled={submitting}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Payment Mode <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                disabled={submitting}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 appearance-none"
-                required
-              >
-                <option value="">Select payment mode</option>
-                <option value="UPI">UPI</option>
-                <option value="Net Banking">Net Banking</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Debit Card">Debit Card</option>
-                <option value="Cash">Cash</option>
-                <option value="Cheque">Cheque</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Transaction Reference (Optional)
-            </label>
-            <input
-              type="text"
-              value={transactionRef}
-              onChange={(e) => setTransactionRef(e.target.value)}
-              disabled={submitting}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              placeholder="Enter transaction/reference number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Payment Screenshot <span className="text-red-500">*</span>
             </label>
             <input
@@ -404,20 +396,20 @@ export default function QuickPaymentModal({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={submitting}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
             >
               {screenshotPreview ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <img
                     src={screenshotPreview}
                     alt="Payment screenshot"
-                    className="max-h-48 mx-auto rounded-lg"
+                    className="max-h-32 mx-auto rounded-lg"
                   />
-                  <p className="text-sm text-blue-600 font-medium">Click to change</p>
+                  <p className="text-xs text-blue-600 font-medium">Click to change</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-gray-400" />
+                <div className="flex flex-col items-center gap-1.5">
+                  <Upload className="w-6 h-6 text-gray-400" />
                   <p className="text-sm font-medium text-gray-700">Upload Payment Screenshot</p>
                   <p className="text-xs text-gray-500">JPG, PNG (Max 5MB)</p>
                 </div>
@@ -426,52 +418,52 @@ export default function QuickPaymentModal({
           </div>
 
           {occupantMobile && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
-              <label className="flex items-start gap-3 cursor-pointer">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-3">
+              <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={whatsappOptIn}
                   onChange={(e) => setWhatsappOptIn(e.target.checked)}
                   disabled={submitting}
-                  className="mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  className="mt-0.5 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                 />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <MessageCircle className="w-4 h-4 text-green-600" />
-                    <span className="font-semibold text-gray-900 text-sm">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+                    <span className="font-semibold text-gray-900 text-xs">
                       Enable WhatsApp Reminders
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    Get automated payment reminders on WhatsApp at 7 days, 3 days, and 1 day before due dates
+                    Get automated reminders on WhatsApp 7, 3, and 1 day before due dates
                   </p>
                 </div>
               </label>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4 border-t-2 border-gray-200">
+          <div className="sticky bottom-0 bg-white flex gap-2 pt-3 border-t-2 border-gray-200">
             <button
               type="button"
               onClick={handleClose}
               disabled={submitting}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-bold transition-all disabled:opacity-50"
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-bold transition-all disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-bold transition-all shadow-md flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg font-bold transition-all shadow-md flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-5 h-5" />
+                  <CreditCard className="w-4 h-4" />
                   Submit Payment
                 </>
               )}
