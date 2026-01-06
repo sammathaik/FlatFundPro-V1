@@ -130,8 +130,8 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ 
           success: true, 
           message: 'All flats have submitted payment confirmation. No reminders to send.',
-          sent: 0,
-          failed: 0
+          email: { sent: 0, failed: 0 },
+          whatsapp: { sent: 0, failed: 0 }
         }),
         {
           status: 200,
@@ -164,6 +164,11 @@ Deno.serve(async (req: Request) => {
     const results = [];
     let sentCount = 0;
     let failedCount = 0;
+    let whatsappSentCount = 0;
+    let whatsappFailedCount = 0;
+
+    const gupshupApiKey = Deno.env.get('GUPSHUP_API_KEY');
+    const gupshupAppName = Deno.env.get('GUPSHUP_APP_NAME') || 'FlatFundPro';
 
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -337,7 +342,6 @@ Deno.serve(async (req: Request) => {
               created_by: user.id,
             });
 
-          // Log to unified communication audit trail
           await supabaseClient.rpc('log_communication_event', {
             p_apartment_id: body.apartment_id,
             p_flat_number: flat.flat_number,
@@ -369,7 +373,117 @@ Deno.serve(async (req: Request) => {
           });
 
           sentCount++;
-          results.push({ flat_number: flat.flat_number, email: flat.email, status: 'sent' });
+          results.push({ flat_number: flat.flat_number, email: flat.email, status: 'sent', whatsapp: 'pending' });
+
+          if (flat.mobile && gupshupApiKey) {
+            try {
+              const whatsappMessage = `🔔 *Payment Reminder*\n\n${urgencyMessage}\n\n*Details:*\nFlat: ${flat.flat_number}\nCollection: ${flat.collection_name}\nAmount Due: ₹${Number(flat.amount_due).toLocaleString()}\nDue Date: ${new Date(flat.due_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}\n\nPlease submit your payment confirmation at:\n${Deno.env.get('SITE_URL') || 'https://flatfundpro.netlify.app'}/\n\n_FlatFund Pro_`;
+
+              let formattedPhone = flat.mobile.trim();
+              if (!formattedPhone.startsWith('+')) {
+                formattedPhone = '+' + formattedPhone;
+              }
+
+              const gupshupUrl = 'https://api.gupshup.io/sm/api/v1/msg';
+              const formData = new URLSearchParams();
+              formData.append('channel', 'whatsapp');
+              formData.append('source', gupshupAppName);
+              formData.append('destination', formattedPhone);
+              formData.append('message', JSON.stringify({
+                type: 'text',
+                text: whatsappMessage,
+              }));
+              formData.append('src.name', gupshupAppName);
+
+              const gupshupResponse = await fetch(gupshupUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'apikey': gupshupApiKey,
+                },
+                body: formData.toString(),
+              });
+
+              const responseText = await gupshupResponse.text();
+              let responseData: any;
+              try {
+                responseData = JSON.parse(responseText);
+              } catch {
+                responseData = { error: responseText };
+              }
+
+              if (gupshupResponse.ok && responseData.status === 'success') {
+                await supabaseClient.rpc('log_communication_event', {
+                  p_apartment_id: body.apartment_id,
+                  p_flat_number: flat.flat_number,
+                  p_recipient_name: flat.occupant_type,
+                  p_recipient_email: flat.email,
+                  p_recipient_mobile: flat.mobile,
+                  p_channel: 'WHATSAPP',
+                  p_type: 'payment_reminder',
+                  p_payment_id: null,
+                  p_subject: `Payment Reminder - ${flat.collection_name}`,
+                  p_preview: whatsappMessage.substring(0, 200),
+                  p_full_data: {
+                    collection_name: flat.collection_name,
+                    payment_type: flat.payment_type,
+                    amount_due: flat.amount_due,
+                    due_date: flat.due_date,
+                    daily_fine: flat.daily_fine,
+                    urgency_class: urgencyClass,
+                    urgency_message: urgencyMessage,
+                    reminder_type: reminderType,
+                    expected_collection_id: body.expected_collection_id,
+                    gupshup_message_id: responseData.messageId,
+                    message_length: whatsappMessage.length
+                  },
+                  p_status: 'DELIVERED',
+                  p_triggered_by_user_id: user.id,
+                  p_triggered_by_event: 'manual_reminder',
+                  p_template_name: 'payment_reminder_whatsapp_v1',
+                  p_whatsapp_opt_in: true
+                });
+
+                whatsappSentCount++;
+                results[results.length - 1].whatsapp = 'sent';
+              } else {
+                throw new Error(responseData.message || responseText);
+              }
+
+              await delay(300);
+            } catch (whatsappError) {
+              console.error(`WhatsApp error for ${flat.flat_number}:`, whatsappError);
+
+              await supabaseClient.rpc('log_communication_event', {
+                p_apartment_id: body.apartment_id,
+                p_flat_number: flat.flat_number,
+                p_recipient_name: flat.occupant_type,
+                p_recipient_email: flat.email,
+                p_recipient_mobile: flat.mobile,
+                p_channel: 'WHATSAPP',
+                p_type: 'payment_reminder',
+                p_payment_id: null,
+                p_subject: `Payment Reminder - ${flat.collection_name}`,
+                p_preview: 'WhatsApp reminder failed to send',
+                p_full_data: {
+                  error: whatsappError instanceof Error ? whatsappError.message : String(whatsappError),
+                  collection_name: flat.collection_name,
+                  payment_type: flat.payment_type,
+                  amount_due: flat.amount_due,
+                  urgency_class: urgencyClass,
+                  reminder_type: reminderType
+                },
+                p_status: 'FAILED',
+                p_triggered_by_user_id: user.id,
+                p_triggered_by_event: 'manual_reminder',
+                p_template_name: 'payment_reminder_whatsapp_v1',
+                p_whatsapp_opt_in: true
+              });
+
+              whatsappFailedCount++;
+              results[results.length - 1].whatsapp = 'failed';
+            }
+          }
         } else {
           await supabaseClient
             .from('email_reminders')
@@ -384,7 +498,6 @@ Deno.serve(async (req: Request) => {
               created_by: user.id,
             });
 
-          // Log failed reminder to unified communication audit trail
           await supabaseClient.rpc('log_communication_event', {
             p_apartment_id: body.apartment_id,
             p_flat_number: flat.flat_number,
@@ -430,9 +543,9 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Reminders sent to ${sentCount} flats. ${failedCount} failed.`,
-        sent: sentCount,
-        failed: failedCount,
+        message: `Email reminders: ${sentCount} sent, ${failedCount} failed. WhatsApp reminders: ${whatsappSentCount} sent, ${whatsappFailedCount} failed.`,
+        email: { sent: sentCount, failed: failedCount },
+        whatsapp: { sent: whatsappSentCount, failed: whatsappFailedCount },
         details: results,
       }),
       {
