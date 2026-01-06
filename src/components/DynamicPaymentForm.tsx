@@ -404,7 +404,7 @@ export default function DynamicPaymentForm() {
       newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
     }
 
-    if (!formData.expected_collection_id && !selectedCollectionId) {
+    if (!selectedCollectionId || !formData.expected_collection_id) {
       newErrors.payment_type = 'Please choose what this payment is for';
     }
 
@@ -758,6 +758,11 @@ export default function DynamicPaymentForm() {
 
       setUploadProgress(60);
 
+      // Final safety check: ensure collection is selected
+      if (!formData.expected_collection_id || !selectedCollectionId) {
+        throw new Error('Please select a collection type before submitting. This payment cannot be processed without specifying what it is for.');
+      }
+
       const submissionData: PaymentSubmission = {
         apartment_id: formData.apartmentId,
         name: formData.name.trim(),
@@ -772,7 +777,7 @@ export default function DynamicPaymentForm() {
         screenshot_url: screenshotUrl,
         screenshot_filename: formData.screenshot!.name,
         occupant_type: formData.occupant_type,
-        expected_collection_id: formData.expected_collection_id || undefined,
+        expected_collection_id: formData.expected_collection_id,
       };
       
       // Debug log to verify payment_date is being saved
