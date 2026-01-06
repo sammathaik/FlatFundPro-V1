@@ -630,7 +630,7 @@ export default function PaymentManagement() {
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
             <tr>
-              <th className="px-6 py-4 text-left w-12">
+              <th className="px-4 py-4 text-left w-12">
                 <button
                   onClick={toggleSelectAll}
                   className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -645,32 +645,26 @@ export default function PaymentManagement() {
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Location
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-24">
+                Actions
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Flat
+              </th>
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Resident
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Type
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Collection Name
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Fraud Risk
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider w-28">
-                Actions
+              <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Details
               </th>
             </tr>
           </thead>
@@ -678,7 +672,7 @@ export default function PaymentManagement() {
             {paginatedPayments.map((payment) => (
               <React.Fragment key={payment.id}>
                 <tr className="hover:bg-blue-50/30 transition-colors">
-                  <td className="px-6 py-5">
+                  <td className="px-4 py-4">
                     <button
                       onClick={() => toggleSelect(payment.id)}
                       className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -690,61 +684,11 @@ export default function PaymentManagement() {
                       )}
                     </button>
                   </td>
-                  <td className="px-6 py-5 text-sm text-gray-900">
-                    <div className="font-semibold">{payment.block?.block_name}</div>
-                    <div className="text-gray-500 text-xs mt-0.5">{payment.flat?.flat_number}</div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="text-sm font-semibold text-gray-900">{payment.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{payment.email}</div>
-                  </td>
-                  <td className="px-6 py-5 text-sm font-bold text-gray-900">
-                    {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
-                  </td>
-                  <td className="px-6 py-5 text-sm text-gray-700">
-                    {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
-                  </td>
-                  <td className="px-6 py-5 text-sm text-gray-700">
-                    {payment.expected_collection?.collection_name || '-'}
-                  </td>
-                  <td className="px-6 py-5">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        payment.status === 'Approved'
-                          ? 'bg-green-100 text-green-800'
-                          : payment.status === 'Reviewed'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    {payment.fraud_score !== null && payment.fraud_score !== undefined ? (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full ${getFraudRiskBgColor(
-                            payment.fraud_score
-                          )} ${getFraudRiskColor(payment.fraud_score)}`}
-                        >
-                          {payment.is_fraud_flagged && <AlertTriangle className="w-3 h-3 mr-1" />}
-                          {payment.fraud_score}
-                        </span>
-                        <span className="text-xs text-gray-600 font-medium">{getFraudRiskLabel(payment.fraud_score)}</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">Not checked</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5 text-sm text-gray-700 font-medium">
-                    {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleRow(payment.id)}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title={expandedRows.has(payment.id) ? "Collapse" : "Expand"}
                       >
                         {expandedRows.has(payment.id) ? (
@@ -756,7 +700,7 @@ export default function PaymentManagement() {
                       <div className="relative">
                         <button
                           onClick={() => setActionMenuOpen(actionMenuOpen === payment.id ? null : payment.id)}
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                           title="More actions"
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -767,7 +711,7 @@ export default function PaymentManagement() {
                               className="fixed inset-0 z-10"
                               onClick={() => setActionMenuOpen(null)}
                             ></div>
-                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            <div className="absolute left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                               <button
                                 onClick={() => {
                                   setSelectedPayment(payment);
@@ -816,10 +760,61 @@ export default function PaymentManagement() {
                       </div>
                     </div>
                   </td>
+                  <td className="px-4 py-4 text-sm text-gray-900">
+                    <div className="font-semibold">{payment.flat?.flat_number}</div>
+                    <div className="text-gray-500 text-xs mt-0.5">{payment.block?.block_name}</div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="text-sm font-semibold text-gray-900 truncate max-w-[180px]" title={payment.name}>{payment.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]" title={payment.email}>{payment.email}</div>
+                  </td>
+                  <td className="px-4 py-4 text-sm font-bold text-gray-900">
+                    {payment.payment_amount ? `₹${payment.payment_amount.toLocaleString()}` : '-'}
+                  </td>
+                  <td className="px-4 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        payment.status === 'Approved'
+                          ? 'bg-green-100 text-green-800'
+                          : payment.status === 'Reviewed'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {payment.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700 font-medium">
+                    {payment.payment_date ? formatDate(payment.payment_date) : formatDate(payment.created_at)}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700">
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">
+                        {payment.payment_type ? PAYMENT_TYPE_LABELS[payment.payment_type] || payment.payment_type : '-'}
+                      </div>
+                      {payment.expected_collection?.collection_name && (
+                        <div className="text-xs text-gray-600 font-medium truncate max-w-[150px]" title={payment.expected_collection.collection_name}>
+                          {payment.expected_collection.collection_name}
+                        </div>
+                      )}
+                      {payment.fraud_score !== null && payment.fraud_score !== undefined && (
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 text-xs font-bold rounded ${getFraudRiskBgColor(
+                              payment.fraud_score
+                            )} ${getFraudRiskColor(payment.fraud_score)}`}
+                          >
+                            {payment.is_fraud_flagged && <AlertTriangle className="w-3 h-3 mr-0.5" />}
+                            {payment.fraud_score}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
                 </tr>
                 {expandedRows.has(payment.id) && (
                   <tr key={`${payment.id}-details`} className="bg-blue-50">
-                    <td colSpan={10} className="px-6 py-4">
+                    <td colSpan={8} className="px-6 py-4">
                       <div className="bg-white rounded-lg border border-blue-200 p-4 space-y-4">
                         {payment.is_fraud_flagged && (
                           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
