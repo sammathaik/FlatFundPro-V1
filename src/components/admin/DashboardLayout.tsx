@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, DollarSign, Brain, MessageSquare, Mail, Bell, Calculator } from 'lucide-react';
+import { LogOut, Building2, Users, FileText, LayoutDashboard, Home, MapPin, BarChart3, Menu, X, ChevronLeft, ChevronRight, UserPlus, TrendingUp, Settings, Shield, HelpCircle, AlertTriangle, Brain, MessageSquare, Mail, Bell, Calculator, UserCheck, Sliders, Wallet, Eye } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCountryFlag } from '../../lib/utils';
 import AdminNotifications from './AdminNotifications';
@@ -32,27 +32,28 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
   const adminTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'collections', label: 'Collections', icon: Wallet },
+    { id: 'payments', label: 'Payment Submissions', icon: FileText },
+    { id: 'payment-setup', label: 'Fund Collection Setup', icon: Sliders },
+    { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
+    { id: 'budget-planning', label: 'Budget Planning', icon: Calculator },
     { id: 'buildings', label: 'Buildings & Flats', icon: Building2 },
     { id: 'occupants', label: 'Occupants', icon: Users },
-    { id: 'subscribers', label: 'Subscriber List', icon: Users },
-    { id: 'payments', label: 'Payment Submissions', icon: FileText },
-    { id: 'payment-setup', label: 'Fund Collection Setup', icon: FileText },
-    { id: 'collections', label: 'Collections', icon: DollarSign },
-    { id: 'budget-planning', label: 'Budget Planning', icon: Calculator },
-    { id: 'payment-status', label: 'Collection Summary', icon: BarChart3 },
-    { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
+    { id: 'subscribers', label: 'Subscriber List', icon: UserCheck },
     { id: 'fraud-detection', label: 'Fraud Detection', icon: AlertTriangle },
     { id: 'classification', label: 'AI Classification', icon: Brain },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'communications', label: 'Communication Audit', icon: Mail },
     { id: 'whatsapp-audit', label: 'WhatsApp Audit', icon: MessageSquare },
-    { id: 'whatsapp-notifications', label: 'WhatsApp Preview', icon: MessageSquare },
-    { id: 'diagnostic', label: 'API Diagnostic', icon: Settings },
+    { id: 'whatsapp-notifications', label: 'WhatsApp Preview', icon: Eye },
+    { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
 
   const tabs = isSuperAdmin ? superAdminTabs : adminTabs;
   const userName = isSuperAdmin ? superAdminData?.name : adminData?.admin_name;
+
+  const visibleTabs = tabs.filter(tab => tab.id !== 'diagnostic');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -181,7 +182,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
               </button>
             </div>
             <nav className="space-y-1">
-              {tabs.map((tab) => {
+              {visibleTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
@@ -214,7 +215,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
                 </button>
               </div>
               <nav className="space-y-1">
-                {tabs.map((tab) => {
+                {visibleTabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <button
