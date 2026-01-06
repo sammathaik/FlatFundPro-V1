@@ -113,12 +113,25 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
       // Load payments for selected flat using RPC function
       const paymentsResult = await supabase.rpc('get_payments_for_flat_with_session', {
-        session_token: occupant.sessionToken,
-        flat_id: selectedFlatId
+        p_session_token: occupant.sessionToken,
+        p_flat_id: selectedFlatId
       });
 
-      if (paymentsResult.data) {
+      console.log('Payment RPC Result:', {
+        session_token: occupant.sessionToken,
+        flat_id: selectedFlatId,
+        data: paymentsResult.data,
+        error: paymentsResult.error,
+        dataLength: paymentsResult.data?.length
+      });
+
+      if (paymentsResult.error) {
+        console.error('Error loading payments:', paymentsResult.error);
+        setPayments([]);
+      } else if (paymentsResult.data) {
         setPayments(paymentsResult.data);
+      } else {
+        setPayments([]);
       }
 
       // Load WhatsApp opt-in preference and flat's registered email and name
