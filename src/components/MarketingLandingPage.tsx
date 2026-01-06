@@ -134,13 +134,13 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => handleNavigate('/admin')}
+                onClick={() => handleNavigate('/admin/login')}
                 className="hidden sm:inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium"
               >
                 Sign In
               </button>
               <button
-                onClick={() => handleNavigate('/admin')}
+                onClick={() => handleNavigate('/')}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm"
               >
                 Get Started
@@ -175,7 +175,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <button
-                  onClick={() => handleNavigate('/admin')}
+                  onClick={() => handleNavigate('/')}
                   className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 rounded-lg transition-colors font-semibold text-lg border-2 border-gray-200"
                 >
                   Try It Now
@@ -773,7 +773,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <button
-              onClick={() => handleNavigate('/admin')}
+              onClick={() => handleNavigate('/admin/login')}
               className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg"
             >
               Start Free Trial
@@ -988,7 +988,14 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="/login" className="hover:text-white transition-colors">Login</a></li>
+                <li>
+                  <button
+                    onClick={() => handleNavigate('/admin/login')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Admin Login
+                  </button>
+                </li>
                 <li><a href="#demo" className="hover:text-white transition-colors">Request Demo</a></li>
               </ul>
             </div>

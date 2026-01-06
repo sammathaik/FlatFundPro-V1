@@ -499,13 +499,22 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
             across committee changes, resident churn, and real-world behavior.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('/')}
+                className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 justify-center"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
             {onRequestDemo && (
               <button
                 onClick={onRequestDemo}
-                className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 justify-center"
+                className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 justify-center border-2 border-white/30"
               >
                 Request Demo
-                <ArrowRight className="w-5 h-5" />
+                <Calendar className="w-5 h-5" />
               </button>
             )}
             <button
@@ -516,6 +525,16 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               <Eye className="w-5 h-5" />
             </button>
           </div>
+          {onNavigate && (
+            <p className="mt-6 text-blue-100 text-sm">
+              Committee Members: <button
+                onClick={() => onNavigate('/admin/login')}
+                className="underline hover:text-white font-semibold transition-colors"
+              >
+                Sign In to Admin Portal
+              </button>
+            </p>
+          )}
         </div>
       </section>
     </div>
