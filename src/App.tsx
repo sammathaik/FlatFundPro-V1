@@ -10,6 +10,7 @@ import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import ApartmentAdminDashboard from './components/admin/ApartmentAdminDashboard';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import QRCodePrintPage from './components/QRCodePrintPage';
+import RequestDemoPage from './components/RequestDemoPage';
 import OccupantLoginPage from './components/occupant/OccupantLoginPage';
 import OccupantDashboard from './components/occupant/OccupantDashboard';
 import RoleSelectionScreen from './components/RoleSelectionScreen';
@@ -198,6 +199,10 @@ function App() {
 
   if (currentPath === '/qr-print') {
     return <QRCodePrintPage onBack={() => navigate('/marketing')} />;
+  }
+
+  if (currentPath === '/request-demo') {
+    return <RequestDemoPage onBack={() => navigate('/')} />;
   }
 
   if (currentPath === '/login') {

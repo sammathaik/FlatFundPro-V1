@@ -39,9 +39,13 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
         onLoginClick={() => setShowLoginModal(true)}
         onDemoClick={() => setShowDemoModal(true)}
         onLearnMoreClick={() => onNavigate('/learn-more')}
+        onNavigate={onNavigate}
       />
       <div ref={heroRef as React.RefObject<HTMLDivElement>} className="pt-20">
-        <HeroSection onGetStarted={scrollToForm} />
+        <HeroSection
+          onGetStarted={scrollToForm}
+          onRequestDemo={() => setShowDemoModal(true)}
+        />
       </div>
       <MissionStatement />
       <WhyFlatFundPro />
@@ -87,6 +91,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <DemoRequestModal
         isOpen={showDemoModal}
         onClose={() => setShowDemoModal(false)}
+        onNavigateToFullPage={() => onNavigate('/request-demo')}
       />
     </div>
   );

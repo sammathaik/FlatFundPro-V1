@@ -6,9 +6,10 @@ interface HeaderProps {
   onLoginClick?: () => void;
   onDemoClick?: () => void;
   onLearnMoreClick?: () => void;
+  onNavigate?: (path: string) => void;
 }
 
-export default function Header({ onLogoClick, onLoginClick, onDemoClick, onLearnMoreClick }: HeaderProps) {
+export default function Header({ onLogoClick, onLoginClick, onDemoClick, onLearnMoreClick, onNavigate }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [learnMoreOpen, setLearnMoreOpen] = useState(false);
 

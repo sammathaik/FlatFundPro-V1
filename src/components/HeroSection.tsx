@@ -1,10 +1,11 @@
-import { ArrowRight, Zap, Shield, Clock } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Clock, Calendar } from 'lucide-react';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
+  onRequestDemo?: () => void;
 }
 
-export default function HeroSection({ onGetStarted }: HeroSectionProps) {
+export default function HeroSection({ onGetStarted, onRequestDemo }: HeroSectionProps) {
   return (
     <section id="features" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 scroll-mt-20">
       <div className="absolute inset-0 overflow-hidden">
@@ -31,17 +32,32 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
           Say goodbye to spreadsheets and manual follow-ups.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
           <button
             onClick={onGetStarted}
-            className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
+            className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             Get Started
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium">Takes less than 30 seconds</span>
+          <button
+            onClick={onRequestDemo}
+            className="group px-8 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 border-2 border-blue-600 w-full sm:w-auto justify-center"
+          >
+            Request a Demo
+            <Calendar className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center text-sm text-gray-600 mb-16">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-blue-600" />
+            <span className="font-medium">Quick Setup</span>
+          </div>
+          <div className="hidden sm:block text-gray-400">|</div>
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-600" />
+            <span className="font-medium">Secure & Private</span>
           </div>
         </div>
 

@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { X, Mail, User, Building, Phone, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Mail, User, Building, Phone, Loader2, CheckCircle, AlertCircle, QrCode, Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import QRCodeGenerator from './QRCodeGenerator';
 
 interface DemoRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToFullPage?: () => void;
 }
 
-export default function DemoRequestModal({ isOpen, onClose }: DemoRequestModalProps) {
+export default function DemoRequestModal({ isOpen, onClose, onNavigateToFullPage }: DemoRequestModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,34 +68,36 @@ export default function DemoRequestModal({ isOpen, onClose }: DemoRequestModalPr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Request a Demo</h2>
-            <p className="text-blue-100 text-sm mt-1">
-              See how FlatFund Pro can transform your society's payment management
+          <div className="flex-1">
+            <h2 className="text-2xl sm:text-3xl font-bold">Request a Demo of FlatFund Pro</h2>
+            <p className="text-blue-100 text-sm sm:text-base mt-1">
+              For Committees, Society Decision-Makers & Management Teams
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+            className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors flex-shrink-0"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6">
-          {success ? (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Received!</h3>
-              <p className="text-gray-600">
-                We'll contact you shortly to schedule your personalized demo.
-              </p>
-            </div>
-          ) : (
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 mb-6">
+            <div className="lg:col-span-2 order-2 lg:order-1">
+              {success ? (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Received!</h3>
+                  <p className="text-gray-600">
+                    We'll contact you shortly to schedule your personalized demo.
+                  </p>
+                </div>
+              ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -240,8 +244,65 @@ export default function DemoRequestModal({ isOpen, onClose }: DemoRequestModalPr
                   'Request Demo'
                 )}
               </button>
-            </form>
-          )}
+                </form>
+              )}
+            </div>
+
+            <div className="order-1 lg:order-2">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 sticky top-24">
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-full mb-3">
+                    <QrCode className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Quick Demo Access</h3>
+                  <p className="text-sm text-gray-600">Scan to request a demo instantly</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 mb-4">
+                  <QRCodeGenerator
+                    url={typeof window !== 'undefined' ? window.location.href : 'https://flatfundpro.com'}
+                    size={180}
+                    showDownload={false}
+                  />
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3 bg-white rounded-lg p-3">
+                    <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">On Mobile?</p>
+                      <p className="text-gray-600 text-xs">Just fill the form to the left</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-white rounded-lg p-3">
+                    <QrCode className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Share this QR</p>
+                      <p className="text-gray-600 text-xs">Perfect for committee meetings</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-blue-200 space-y-3">
+                  <p className="text-xs text-gray-600 text-center">
+                    We'll respond within 24 hours to schedule your personalized demo
+                  </p>
+                  {onNavigateToFullPage && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onNavigateToFullPage();
+                      }}
+                      className="w-full text-xs text-blue-600 hover:text-blue-700 font-medium text-center py-2 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      View Full Demo Page
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
