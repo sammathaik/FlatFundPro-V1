@@ -16,6 +16,8 @@ import {
   Building2,
   Heart
 } from 'lucide-react';
+import { useState } from 'react';
+import UniversalLoginModal from './UniversalLoginModal';
 
 interface LearnMorePageProps {
   onNavigate?: (path: string) => void;
@@ -23,6 +25,8 @@ interface LearnMorePageProps {
 }
 
 export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePageProps) {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -501,7 +505,15 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {onNavigate && (
               <button
-                onClick={() => onNavigate('/')}
+                onClick={() => {
+                  onNavigate('/');
+                  setTimeout(() => {
+                    const section = document.getElementById('payment-form');
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
+                }}
                 className="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 justify-center"
               >
                 Get Started
@@ -525,18 +537,39 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               <Eye className="w-5 h-5" />
             </button>
           </div>
-          {onNavigate && (
-            <p className="mt-6 text-blue-100 text-sm">
-              Committee Members: <button
-                onClick={() => onNavigate('/admin/login')}
-                className="underline hover:text-white font-semibold transition-colors"
-              >
-                Sign In to Admin Portal
-              </button>
-            </p>
-          )}
+          <p className="mt-6 text-blue-100 text-sm">
+            Already have an account? <button
+              onClick={() => setShowLoginModal(true)}
+              className="underline hover:text-white font-semibold transition-colors"
+            >
+              Sign In
+            </button>
+          </p>
         </div>
       </section>
+
+      {/* Universal Login Modal */}
+      <UniversalLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={(roles, occupantData) => {
+          setShowLoginModal(false);
+          if (onNavigate) {
+            if (occupantData) {
+              sessionStorage.setItem('occupant_session', JSON.stringify(occupantData));
+              onNavigate('/occupant/dashboard');
+            } else if (roles.length === 1) {
+              const roleMap: Record<string, string> = {
+                super_admin: '/super-admin',
+                admin: '/admin',
+              };
+              onNavigate(roleMap[roles[0]] || '/');
+            } else if (roles.length > 1) {
+              onNavigate('/role-selection');
+            }
+          }
+        }}
+      />
     </div>
   );
 }

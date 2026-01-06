@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import QRCodeGenerator from './QRCodeGenerator';
 import ChatBot from './ChatBot';
+import UniversalLoginModal from './UniversalLoginModal';
 
 interface MarketingLandingPageProps {
   navigate?: (path: string) => void;
@@ -27,6 +28,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -134,13 +136,21 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => handleNavigate('/admin/login')}
+                onClick={() => setShowLoginModal(true)}
                 className="hidden sm:inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium"
               >
                 Sign In
               </button>
               <button
-                onClick={() => handleNavigate('/')}
+                onClick={() => {
+                  handleNavigate('/');
+                  setTimeout(() => {
+                    const section = document.getElementById('payment-form');
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
+                }}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm"
               >
                 Get Started
@@ -175,7 +185,15 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <button
-                  onClick={() => handleNavigate('/')}
+                  onClick={() => {
+                    handleNavigate('/');
+                    setTimeout(() => {
+                      const section = document.getElementById('payment-form');
+                      if (section) {
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }}
                   className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 rounded-lg transition-colors font-semibold text-lg border-2 border-gray-200"
                 >
                   Try It Now
@@ -773,7 +791,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <button
-              onClick={() => handleNavigate('/admin/login')}
+              onClick={() => setShowLoginModal(true)}
               className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors font-semibold text-lg"
             >
               Start Free Trial
@@ -990,10 +1008,10 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
                 <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
                 <li>
                   <button
-                    onClick={() => handleNavigate('/admin/login')}
+                    onClick={() => setShowLoginModal(true)}
                     className="hover:text-white transition-colors"
                   >
-                    Admin Login
+                    Sign In
                   </button>
                 </li>
                 <li><a href="#demo" className="hover:text-white transition-colors">Request Demo</a></li>
@@ -1017,6 +1035,27 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
 
       {/* Chatbot for marketing visitors */}
       <ChatBot userRole="guest" />
+
+      {/* Universal Login Modal */}
+      <UniversalLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={(roles, occupantData) => {
+          setShowLoginModal(false);
+          if (occupantData) {
+            sessionStorage.setItem('occupant_session', JSON.stringify(occupantData));
+            handleNavigate('/occupant/dashboard');
+          } else if (roles.length === 1) {
+            const roleMap: Record<string, string> = {
+              super_admin: '/super-admin',
+              admin: '/admin',
+            };
+            handleNavigate(roleMap[roles[0]] || '/');
+          } else if (roles.length > 1) {
+            handleNavigate('/role-selection');
+          }
+        }}
+      />
     </div>
   );
 }
