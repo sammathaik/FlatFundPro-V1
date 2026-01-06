@@ -727,26 +727,29 @@ export default function DynamicPaymentForm() {
             .from('flat_email_mappings')
             .update({
               whatsapp_opt_in: formData.whatsapp_opt_in,
-              mobile: formData.contact_number.trim()
+              mobile: formData.contact_number.trim(),
+              name: formData.name.trim()
             })
             .eq('apartment_id', formData.apartmentId)
             .eq('flat_id', formData.flatId);
         } else if (mobileUpdateChoice === 'one-time') {
-          // Only update WhatsApp opt-in, keep existing mobile
+          // Only update WhatsApp opt-in and name, keep existing mobile
           await supabase
             .from('flat_email_mappings')
             .update({
-              whatsapp_opt_in: formData.whatsapp_opt_in
+              whatsapp_opt_in: formData.whatsapp_opt_in,
+              name: formData.name.trim()
             })
             .eq('apartment_id', formData.apartmentId)
             .eq('flat_id', formData.flatId);
         }
       } else {
-        // No contact number entered, just update WhatsApp opt-in
+        // No contact number entered, just update WhatsApp opt-in and name
         await supabase
           .from('flat_email_mappings')
           .update({
-            whatsapp_opt_in: formData.whatsapp_opt_in
+            whatsapp_opt_in: formData.whatsapp_opt_in,
+            name: formData.name.trim()
           })
           .eq('apartment_id', formData.apartmentId)
           .eq('flat_id', formData.flatId);
