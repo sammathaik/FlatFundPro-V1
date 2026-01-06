@@ -117,9 +117,9 @@ export default function DynamicPaymentForm() {
     }
   }, [formData.flatId, formData.apartmentId]);
 
-  // Auto-select the most recent collection when flat is first selected
+  // Auto-select the most recent collection when flat is selected and email is available
   useEffect(() => {
-    if (formData.flatId && formData.email && activeCollections.length > 0 && !selectedCollectionId && selectedFlat) {
+    if (formData.flatId && formData.email && activeCollections.length > 0 && !formData.expected_collection_id && selectedFlat) {
       const mostRecentCollection = activeCollections[0];
       setSelectedCollectionId(mostRecentCollection.id);
 
@@ -404,7 +404,7 @@ export default function DynamicPaymentForm() {
       newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
     }
 
-    if (!formData.payment_type) {
+    if (!formData.expected_collection_id && !selectedCollectionId) {
       newErrors.payment_type = 'Please choose what this payment is for';
     }
 
