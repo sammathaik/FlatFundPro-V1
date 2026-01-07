@@ -235,13 +235,16 @@ export default function DynamicPaymentForm() {
 
   const loadFlatDetails = async (apartmentId: string, flatId: string) => {
     try {
-      // Load flat email mapping
-      const { data: emailData, error: emailError } = await supabase
-        .from('flat_email_mappings')
-        .select('email, occupant_type, mobile')
-        .eq('apartment_id', apartmentId)
-        .eq('flat_id', flatId)
-        .maybeSingle();
+      // Load flat email mapping using secure RPC function
+      const { data: contactData, error: emailError } = await supabase.rpc(
+        'get_flat_contact_info',
+        {
+          p_apartment_id: apartmentId,
+          p_flat_id: flatId
+        }
+      );
+
+      const emailData = contactData && contactData.length > 0 ? contactData[0] : null;
 
       if (emailError) {
         console.error('Error loading flat email details:', emailError);
@@ -645,13 +648,15 @@ export default function DynamicPaymentForm() {
 
       // Check for mobile number mismatch
       if (formData.contact_number && formData.contact_number.trim()) {
-        const { data: existingMapping } = await supabase
-          .from('flat_email_mappings')
-          .select('mobile')
-          .eq('apartment_id', formData.apartmentId)
-          .eq('flat_id', formData.flatId)
-          .maybeSingle();
+        const { data: contactInfo } = await supabase.rpc(
+          'get_flat_contact_info',
+          {
+            p_apartment_id: formData.apartmentId,
+            p_flat_id: formData.flatId
+          }
+        );
 
+        const existingMapping = contactInfo && contactInfo.length > 0 ? contactInfo[0] : null;
         const enteredMobile = normalizeMobile(formData.contact_number.trim());
         const storedMobile = existingMapping?.mobile ? normalizeMobile(existingMapping.mobile) : '';
 
@@ -709,50 +714,46 @@ export default function DynamicPaymentForm() {
     try {
       setUploadProgress(20);
 
-      // Handle mobile number and WhatsApp opt-in
+      // Handle mobile number and WhatsApp opt-in using secure RPC function
       if (formData.contact_number && formData.contact_number.trim()) {
-        const { data: existingMapping } = await supabase
-          .from('flat_email_mappings')
-          .select('mobile')
-          .eq('apartment_id', formData.apartmentId)
-          .eq('flat_id', formData.flatId)
-          .maybeSingle();
+        const { data: contactInfo } = await supabase.rpc(
+          'get_flat_contact_info',
+          {
+            p_apartment_id: formData.apartmentId,
+            p_flat_id: formData.flatId
+          }
+        );
 
+        const existingMapping = contactInfo && contactInfo.length > 0 ? contactInfo[0] : null;
         const storedMobile = existingMapping?.mobile ? normalizeMobile(existingMapping.mobile) : '';
 
         // Update mobile and WhatsApp opt-in based on user choice
         if (mobileUpdateChoice === 'permanent' || !storedMobile) {
           // Update permanently if user chose permanent OR if no mobile was stored
-          await supabase
-            .from('flat_email_mappings')
-            .update({
-              whatsapp_opt_in: formData.whatsapp_opt_in,
-              mobile: formData.contact_number.trim(),
-              name: formData.name.trim()
-            })
-            .eq('apartment_id', formData.apartmentId)
-            .eq('flat_id', formData.flatId);
+          await supabase.rpc('update_flat_contact_info', {
+            p_apartment_id: formData.apartmentId,
+            p_flat_id: formData.flatId,
+            p_mobile: formData.contact_number.trim(),
+            p_name: formData.name.trim(),
+            p_whatsapp_opt_in: formData.whatsapp_opt_in
+          });
         } else if (mobileUpdateChoice === 'one-time') {
           // Only update WhatsApp opt-in and name, keep existing mobile
-          await supabase
-            .from('flat_email_mappings')
-            .update({
-              whatsapp_opt_in: formData.whatsapp_opt_in,
-              name: formData.name.trim()
-            })
-            .eq('apartment_id', formData.apartmentId)
-            .eq('flat_id', formData.flatId);
+          await supabase.rpc('update_flat_contact_info', {
+            p_apartment_id: formData.apartmentId,
+            p_flat_id: formData.flatId,
+            p_name: formData.name.trim(),
+            p_whatsapp_opt_in: formData.whatsapp_opt_in
+          });
         }
       } else {
         // No contact number entered, just update WhatsApp opt-in and name
-        await supabase
-          .from('flat_email_mappings')
-          .update({
-            whatsapp_opt_in: formData.whatsapp_opt_in,
-            name: formData.name.trim()
-          })
-          .eq('apartment_id', formData.apartmentId)
-          .eq('flat_id', formData.flatId);
+        await supabase.rpc('update_flat_contact_info', {
+          p_apartment_id: formData.apartmentId,
+          p_flat_id: formData.flatId,
+          p_name: formData.name.trim(),
+          p_whatsapp_opt_in: formData.whatsapp_opt_in
+        });
       }
 
       setUploadProgress(40);

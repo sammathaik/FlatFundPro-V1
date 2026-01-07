@@ -387,12 +387,20 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
 
       // Update WhatsApp opt-in and send acknowledgment
       try {
-        // Update WhatsApp opt-in preference
-        await supabase
-          .from('flat_email_mappings')
-          .update({ whatsapp_opt_in: whatsappOptIn })
-          .eq('apartment_id', session.apartment_id)
-          .eq('flat_number', session.flat_number);
+        // Update WhatsApp opt-in preference using secure RPC function
+        const { data: updateSuccess, error: updateError } = await supabase.rpc(
+          'update_mobile_payment_whatsapp_preference',
+          {
+            p_apartment_id: session.apartment_id,
+            p_flat_number: session.flat_number,
+            p_whatsapp_opt_in: whatsappOptIn
+          }
+        );
+
+        if (updateError) {
+          console.error('Failed to update WhatsApp preference:', updateError);
+          // Don't block payment submission if this fails
+        }
 
         // Find the selected collection for details
         const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
