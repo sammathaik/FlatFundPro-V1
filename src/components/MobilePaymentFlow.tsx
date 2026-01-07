@@ -66,8 +66,12 @@ interface ActiveCollection {
   id: string;
   collection_name: string;
   payment_type: string;
+  payment_frequency: string;
   amount_due: number | null;
   due_date: string;
+  daily_fine: number;
+  rate_per_sqft: number | null;
+  flat_type_rates: any;
 }
 
 interface MobilePaymentFlowProps {
@@ -307,10 +311,10 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     try {
       const { data, error } = await supabase
         .from('expected_collections')
-        .select('id, collection_name, payment_type, amount_due, due_date')
+        .select('id, collection_name, payment_type, payment_frequency, amount_due, due_date, daily_fine, rate_per_sqft, flat_type_rates')
         .eq('apartment_id', apartmentId)
         .eq('is_active', true)
-        .order('due_date', { ascending: false });
+        .order('due_date', { ascending: true });
 
       if (error) throw error;
       setActiveCollections(data || []);
@@ -319,7 +323,177 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
     }
   };
 
-  // Submit payment
+  // Calculate base amount based on collection mode
+  const calculateBaseAmount = (collection: ActiveCollection): number | null => {
+    if (!session) return null;
+
+    // Get apartment's collection mode
+    const collectionMode = session.apartment_country || 'A'; // Default to A if not set
+
+    // Mode A: Equal/Flat Rate - use amount_due directly
+    if (collectionMode === 'A') {
+      return collection.amount_due || 0;
+    }
+
+    // Mode B: Area-Based - calculate using rate_per_sqft × built_up_area
+    if (collectionMode === 'B') {
+      if (!collection.rate_per_sqft) {
+        console.error('Mode B collection missing rate_per_sqft');
+        return collection.amount_due || 0;
+      }
+      if (!session.built_up_area) {
+        console.error('Mode B flat missing built_up_area');
+        return collection.amount_due || 0;
+      }
+      return Number(collection.rate_per_sqft) * Number(session.built_up_area);
+    }
+
+    // Mode C: Type-Based - look up flat type in flat_type_rates
+    if (collectionMode === 'C') {
+      if (!collection.flat_type_rates) {
+        console.error('Mode C collection missing flat_type_rates');
+        return collection.amount_due || 0;
+      }
+      if (!session.flat_type) {
+        console.error('Mode C flat missing flat_type');
+        return collection.amount_due || 0;
+      }
+      const rate = collection.flat_type_rates[session.flat_type];
+      if (rate === undefined) {
+        console.error(`Mode C: Rate not found for flat type ${session.flat_type}`);
+        return collection.amount_due || 0;
+      }
+      return Number(rate);
+    }
+
+    return collection.amount_due || 0;
+  };
+
+  const calculateAmountWithFine = (
+    baseAmount: number | null,
+    dueDate: string,
+    dailyFine: number,
+    paymentDate: string
+  ): number => {
+    if (!baseAmount) return 0;
+
+    const due = new Date(dueDate);
+    const payment = new Date(paymentDate);
+
+    due.setHours(0, 0, 0, 0);
+    payment.setHours(0, 0, 0, 0);
+
+    if (payment <= due) {
+      return baseAmount;
+    }
+
+    const daysOverdue = Math.floor((payment.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+    const fineAmount = daysOverdue * dailyFine;
+
+    return baseAmount + fineAmount;
+  };
+
+  const calculateFine = (dueDate: string, paymentDate: string, dailyFine: number): number => {
+    const due = new Date(dueDate);
+    const payment = new Date(paymentDate);
+
+    due.setHours(0, 0, 0, 0);
+    payment.setHours(0, 0, 0, 0);
+
+    if (payment <= due) {
+      return 0;
+    }
+
+    const daysOverdue = Math.floor((payment.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue * dailyFine;
+  };
+
+  // Check for duplicate submissions
+  const checkForDuplicate = async (): Promise<{ isDuplicate: boolean; existingRecord?: any }> => {
+    if (!session || !selectedCollectionId) {
+      return { isDuplicate: false };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('check_payment_duplicate', {
+        p_block_id: session.block_id,
+        p_flat_id: session.flat_id,
+        p_expected_collection_id: selectedCollectionId,
+        p_payment_date: paymentDate || null,
+        p_submission_date: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error('Error checking for duplicates:', error);
+        // Don't block submission if check fails
+        return { isDuplicate: false };
+      }
+
+      if (data && data.length > 0 && data[0].is_duplicate) {
+        return {
+          isDuplicate: true,
+          existingRecord: {
+            payment_date: data[0].existing_payment_date,
+            created_at: data[0].existing_created_at,
+            payment_quarter: data[0].existing_quarter,
+            payment_type: data[0].existing_payment_type,
+            collection_name: data[0].existing_collection_name,
+          }
+        };
+      }
+
+      return { isDuplicate: false };
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+      return { isDuplicate: false };
+    }
+  };
+
+  // Handle confirmation button click
+  const handleConfirmSubmit = async () => {
+    if (!session || !screenshot) {
+      setError('Please upload payment proof');
+      return;
+    }
+
+    if (!selectedCollectionId) {
+      setError('Please select a collection type');
+      return;
+    }
+
+    // Check for duplicates before showing confirmation
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const duplicateCheck = await checkForDuplicate();
+
+      if (duplicateCheck.isDuplicate) {
+        setSubmitting(false);
+        const existingRecord = duplicateCheck.existingRecord;
+        const existingDate = existingRecord.payment_date
+          ? new Date(existingRecord.payment_date).toLocaleDateString()
+          : new Date(existingRecord.created_at).toLocaleDateString();
+
+        setError(
+          `Duplicate payment detected! You already submitted a payment for "${existingRecord.collection_name || 'this collection'}" on ${existingDate}. ` +
+          `Please verify before resubmitting.`
+        );
+        return;
+      }
+
+      // No duplicate, show confirmation dialog
+      setSubmitting(false);
+      setShowConfirmation(true);
+    } catch (err) {
+      console.error('Error during duplicate check:', err);
+      setSubmitting(false);
+      // Show confirmation anyway if duplicate check fails
+      setShowConfirmation(true);
+    }
+  };
+
+  // Submit payment (called after confirmation)
   const handleSubmitPayment = async () => {
     if (!session || !screenshot) {
       setError('Please upload payment proof');
@@ -760,24 +934,89 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                 <select
                   value={selectedCollectionId}
                   onChange={(e) => {
-                    setSelectedCollectionId(e.target.value);
-                    const selected = activeCollections.find(c => c.id === e.target.value);
-                    if (selected?.amount_due) {
-                      setPaymentAmount(selected.amount_due.toString());
+                    const collectionId = e.target.value;
+                    setSelectedCollectionId(collectionId);
+                    setError(null);
+
+                    if (collectionId) {
+                      const selected = activeCollections.find(c => c.id === collectionId);
+                      if (selected) {
+                        const baseAmount = calculateBaseAmount(selected);
+                        const totalAmount = calculateAmountWithFine(
+                          baseAmount,
+                          selected.due_date,
+                          selected.daily_fine || 0,
+                          paymentDate
+                        );
+                        setPaymentAmount(totalAmount > 0 ? totalAmount.toString() : '');
+                      }
+                    } else {
+                      setPaymentAmount('');
                     }
                   }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select collection</option>
-                  {activeCollections.map((collection) => (
-                    <option key={collection.id} value={collection.id}>
-                      {collection.collection_name}
-                      {collection.amount_due && ` - ₹${collection.amount_due.toLocaleString()}`}
-                    </option>
-                  ))}
+                  {activeCollections.map((collection) => {
+                    const baseAmount = calculateBaseAmount(collection);
+                    return (
+                      <option key={collection.id} value={collection.id}>
+                        {collection.collection_name}
+                        {baseAmount && ` - ₹${baseAmount.toLocaleString()}`}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             )}
+
+            {selectedCollectionId && activeCollections.length > 0 && (() => {
+              const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+              if (!selectedCollection) return null;
+
+              const baseAmount = calculateBaseAmount(selectedCollection);
+              const fine = calculateFine(selectedCollection.due_date, paymentDate, selectedCollection.daily_fine || 0);
+              const dueDate = new Date(selectedCollection.due_date);
+              const isPastDue = new Date(paymentDate) > dueDate;
+
+              return (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Due Date:</span>
+                    <span className={`font-medium ${isPastDue ? 'text-red-600' : 'text-gray-800'}`}>
+                      {dueDate.toLocaleDateString()}
+                      {isPastDue && ' (Overdue)'}
+                    </span>
+                  </div>
+                  {baseAmount && (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Base Amount:</span>
+                        <span className="font-medium text-gray-800">₹{baseAmount.toLocaleString()}</span>
+                      </div>
+                      {fine > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Late Fine:</span>
+                          <span className="font-medium text-red-600">+₹{fine.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-sm pt-2 border-t-2 border-blue-300">
+                        <span className="font-semibold text-gray-800">Total Amount:</span>
+                        <span className="font-bold text-blue-600">₹{(baseAmount + fine).toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
+                  {selectedCollection.daily_fine > 0 && (
+                    <div className="flex items-start gap-2 mt-2 pt-2 border-t border-blue-200">
+                      <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-800">
+                        Fine of ₹{selectedCollection.daily_fine}/day applies for late payments
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -804,7 +1043,25 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
                 <input
                   type="date"
                   value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setPaymentDate(newDate);
+
+                    // Recalculate amount if a collection is selected
+                    if (selectedCollectionId) {
+                      const selected = activeCollections.find(c => c.id === selectedCollectionId);
+                      if (selected) {
+                        const baseAmount = calculateBaseAmount(selected);
+                        const totalAmount = calculateAmountWithFine(
+                          baseAmount,
+                          selected.due_date,
+                          selected.daily_fine || 0,
+                          newDate
+                        );
+                        setPaymentAmount(totalAmount > 0 ? totalAmount.toString() : '');
+                      }
+                    }
+                  }}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -861,14 +1118,14 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
             )}
 
             <button
-              onClick={() => setShowConfirmation(true)}
-              disabled={submitting || !screenshot || !paymentAmount}
+              onClick={handleConfirmSubmit}
+              disabled={submitting || !screenshot || !paymentAmount || !selectedCollectionId}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Submitting...
+                  Checking...
                 </>
               ) : (
                 'Submit Payment'
@@ -876,50 +1133,117 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
             </button>
 
             {/* Confirmation Dialog */}
-            {showConfirmation && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="w-6 h-6 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-800">Confirm Payment Submission</h3>
-                  </div>
+            {showConfirmation && (() => {
+              const selectedCollection = activeCollections.find(c => c.id === selectedCollectionId);
+              const baseAmount = selectedCollection ? calculateBaseAmount(selectedCollection) : null;
+              const fine = selectedCollection ? calculateFine(selectedCollection.due_date, paymentDate, selectedCollection.daily_fine || 0) : 0;
 
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p className="font-medium text-gray-800">Please review your payment details:</p>
-                    <div className="bg-gray-50 rounded p-3 space-y-1">
-                      <p><span className="font-medium">Flat:</span> {session?.flat_number}</p>
-                      <p><span className="font-medium">Building:</span> {session?.apartment_name}</p>
-                      <p><span className="font-medium">Amount:</span> ₹{paymentAmount}</p>
-                      <p><span className="font-medium">Date:</span> {new Date(paymentDate).toLocaleDateString()}</p>
-                      {transactionRef && <p><span className="font-medium">Reference:</span> {transactionRef}</p>}
+              return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle className="w-6 h-6 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-800">Confirm Payment Submission</h3>
                     </div>
-                    <p className="text-xs text-gray-500 pt-2">
-                      Once submitted, you will receive a confirmation notification.
-                    </p>
-                  </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowConfirmation(false)}
-                      disabled={submitting}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowConfirmation(false);
-                        handleSubmitPayment();
-                      }}
-                      disabled={submitting}
-                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                      Confirm & Submit
-                    </button>
+                    <div className="space-y-3 text-sm text-gray-600">
+                      <p className="font-medium text-gray-800">Please review your payment details:</p>
+
+                      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-gray-600">Name:</span>
+                          <span className="text-gray-900 text-right">{session?.name || 'Resident'}</span>
+                        </div>
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-gray-600">Flat:</span>
+                          <span className="text-gray-900">{session?.flat_number}</span>
+                        </div>
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-gray-600">Building:</span>
+                          <span className="text-gray-900 text-right">{session?.apartment_name}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-gray-600">Collection:</span>
+                          <span className="text-gray-900 font-semibold text-right">{selectedCollection?.collection_name}</span>
+                        </div>
+                        {selectedCollection && (
+                          <div className="flex items-start justify-between">
+                            <span className="font-medium text-gray-600">Due Date:</span>
+                            <span className="text-gray-900">{new Date(selectedCollection.due_date).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-gray-600">Payment Date:</span>
+                          <span className="text-gray-900">{new Date(paymentDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {baseAmount && (
+                        <div className="bg-green-50 rounded-lg p-3 space-y-2 border border-green-200">
+                          <div className="flex items-start justify-between">
+                            <span className="font-medium text-gray-600">Base Amount:</span>
+                            <span className="text-gray-900">₹{baseAmount.toLocaleString()}</span>
+                          </div>
+                          {fine > 0 && (
+                            <div className="flex items-start justify-between">
+                              <span className="font-medium text-gray-600">Late Fine:</span>
+                              <span className="text-red-600">+₹{fine.toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="flex items-start justify-between pt-2 border-t border-green-300">
+                            <span className="font-bold text-gray-800">Total Amount:</span>
+                            <span className="font-bold text-green-600">₹{(baseAmount + fine).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {transactionRef && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <p><span className="font-medium">Reference:</span> {transactionRef}</p>
+                        </div>
+                      )}
+
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-yellow-800">
+                          Please verify all details carefully. Once submitted, you will receive a confirmation notification.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowConfirmation(false)}
+                        disabled={submitting}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowConfirmation(false);
+                          handleSubmitPayment();
+                        }}
+                        disabled={submitting}
+                        className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          'Confirm & Submit'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </>
       )}
