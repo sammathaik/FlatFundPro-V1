@@ -87,7 +87,7 @@ This approach is **more secure** than the original implementation because:
 -- Returns: boolean (success/failure)
 ```
 
-**Used by**: `OccupantProfile.tsx` (line 49-55)
+**Status**: ⚠️ **NO LONGER USED** - Profile editing removed for data integrity (see note below)
 
 #### Function 3: `update_occupant_whatsapp_preference(p_session_token, p_flat_id, p_whatsapp_opt_in)`
 ```sql
@@ -102,6 +102,30 @@ This approach is **more secure** than the original implementation because:
 - `supabase/migrations/fix_occupant_rpc_functions_correct_schema.sql` ✅
 - `src/components/occupant/OccupantDashboard.tsx` ✅
 - `src/components/occupant/OccupantProfile.tsx` ✅
+
+**⚠️ IMPORTANT UPDATE - Profile Editing Removed**:
+
+After fixing the security issue, it was discovered that allowing occupants to edit their profiles causes **data integrity problems** when occupants have multiple flats:
+
+**Problem Example**:
+- Mobile +919686394010 has 2 flats: G-100 (Jitesh) and S-100 (Akhil)
+- If occupant edits profile while viewing S-100, it could corrupt G-100's data
+- Each flat has separate records, but editing creates confusion and inconsistencies
+
+**Solution Applied**:
+- ✅ Occupant profile changed to **read-only** display
+- ❌ "Edit Profile" button removed
+- ❌ All editing functionality removed
+- ✅ Clear notice added: "Contact your management committee if you need to update your details"
+- ✅ Admins retain full edit access via Occupant Management
+
+**Reasoning**:
+- Name, email, and mobile are **master data fields** (not user preferences)
+- Should only be managed by admins to maintain data integrity
+- Prevents accidental data corruption in multi-flat scenarios
+- Separates master data (admin-controlled) from preferences (user-controlled like WhatsApp toggle)
+
+See `OCCUPANT_PROFILE_READ_ONLY_CHANGE.md` for full details.
 
 ---
 
@@ -232,7 +256,7 @@ CREATE FUNCTION get_flat_contact_info(p_apartment_id, p_flat_id)
 |-----------|-------|---------------|--------|
 | OccupantDashboard | Profile loading | `get_occupant_profile_for_flat` | ✅ Fixed |
 | OccupantDashboard | WhatsApp toggle | `update_occupant_whatsapp_preference` | ✅ Fixed |
-| OccupantProfile | Profile editing | `update_occupant_profile` | ✅ Fixed |
+| OccupantProfile | Profile editing | ~~`update_occupant_profile`~~ (removed) | ✅ Read-only now |
 | MobilePaymentFlow | WhatsApp update | `update_mobile_payment_whatsapp_preference` | ✅ Fixed |
 | DynamicPaymentForm | Contact info read | `get_flat_contact_info` | ✅ Fixed |
 | DynamicPaymentForm | Contact info update | `update_flat_contact_info` | ✅ Fixed |
@@ -250,7 +274,7 @@ CREATE FUNCTION get_flat_contact_info(p_apartment_id, p_flat_id)
 1. **Occupant Portal**
    - [ ] Login with +919686394010 → Profile shows "Jitesh" for G-100
    - [ ] Switch to S-100 → Profile shows "Akhil"
-   - [ ] Edit profile → Name updates successfully
+   - [ ] Profile is read-only → No edit button, clear notice displayed
    - [ ] Toggle WhatsApp → Preference saves
 
 2. **Mobile Payment Flow**
@@ -297,10 +321,11 @@ CREATE FUNCTION get_flat_contact_info(p_apartment_id, p_flat_id)
 4. ✅ `src/components/DynamicPaymentForm.tsx`
 5. ✅ `src/components/EnhancedPaymentForm.tsx`
 
-### Documentation (3 files)
+### Documentation (4 files)
 1. ✅ `OCCUPANT_PROFILE_NAME_DISPLAY_FIX.md` (Initial issue)
-2. ✅ `SECURITY_FIX_COMPREHENSIVE_TESTING_GUIDE.md` (Testing guide)
-3. ✅ `SECURITY_FIX_COMPLETE_SUMMARY.md` (This document)
+2. ✅ `OCCUPANT_PROFILE_READ_ONLY_CHANGE.md` (Profile editing removal)
+3. ✅ `SECURITY_FIX_COMPREHENSIVE_TESTING_GUIDE.md` (Testing guide)
+4. ✅ `SECURITY_FIX_COMPLETE_SUMMARY.md` (This document)
 
 ---
 

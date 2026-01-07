@@ -40,20 +40,19 @@ Created secure RPC functions using `SECURITY DEFINER` that:
 4. **Expected**: Email and mobile number also display correctly
 5. **Expected**: No empty fields
 
-#### Test Case 1.2: Profile Editing
-**What was broken**: Unable to update profile information
-**Fixed by**: `update_occupant_profile` RPC function
+#### Test Case 1.2: Profile Editing - REMOVED FOR DATA INTEGRITY
+**Status**: Profile editing has been REMOVED (read-only now)
+**Reason**: Data integrity issues - occupants with multiple flats could corrupt data
 
-**Steps to test**:
+**Steps to verify**:
 1. Login as occupant
 2. Go to Profile tab
-3. Click "Edit Profile"
-4. Change name to "Test Name Updated"
-5. Click "Save Changes"
-6. **Expected**: Success message appears
-7. Refresh page
-8. **Expected**: Name persists as "Test Name Updated"
-9. Change name back to original value
+3. **Expected**: NO "Edit Profile" button visible
+4. **Expected**: Blue notice box explains read-only status
+5. **Expected**: All fields display as text (not inputs)
+6. **Expected**: Message says "Contact your management committee if you need to update your details"
+
+**Note**: Only admins can update occupant information via Occupant Management
 
 #### Test Case 1.3: WhatsApp Preference Toggle
 **What was broken**: Unable to toggle WhatsApp notifications
@@ -350,7 +349,7 @@ RESET ROLE;
 | Test Case | Priority | User Type | Expected Duration |
 |-----------|----------|-----------|-------------------|
 | Occupant Profile Display | 🔴 CRITICAL | Occupant | 2 min |
-| Occupant Profile Editing | 🔴 CRITICAL | Occupant | 3 min |
+| Occupant Profile Read-Only Verification | 🔴 CRITICAL | Occupant | 2 min |
 | Mobile Payment WhatsApp Update | 🔴 CRITICAL | Anonymous | 5 min |
 | Public Form Mobile Mismatch | 🔴 CRITICAL | Anonymous | 5 min |
 | Public Form Contact Update | 🔴 CRITICAL | Anonymous | 5 min |
