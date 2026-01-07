@@ -4,6 +4,7 @@ import {
   Smartphone,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Loader2,
   Home,
   Upload,
