@@ -140,7 +140,6 @@ Deno.serve(async (req: Request) => {
       throw new Error('RESEND_API_KEY environment variable is not set');
     }
 
-    // Initialize Supabase client for logging
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl!, supabaseServiceRoleKey!);
@@ -180,7 +179,6 @@ Deno.serve(async (req: Request) => {
       console.error('Error sending email:', emailError);
     }
 
-    // Log EMAIL to unified communication audit trail
     try {
       await supabase.rpc('log_communication_event', {
         p_apartment_id: apartment_id,
@@ -209,10 +207,8 @@ Deno.serve(async (req: Request) => {
       console.log('EMAIL communication logged to audit trail');
     } catch (logError) {
       console.error('Failed to log email communication:', logError);
-      // Non-blocking - continue even if logging fails
     }
 
-    // Send WhatsApp notification if opted in
     const results = {
       email_sent: emailStatus === 'DELIVERED',
       whatsapp_sent: false,
@@ -227,20 +223,14 @@ Deno.serve(async (req: Request) => {
         const { data: notificationData, error: notificationError } = await supabase
           .from("notification_outbox")
           .insert({
-            apartment_id: apartment_id,
-            flat_number: flat_number,
-            recipient_mobile: mobile,
+            payment_submission_id: payment_id,
+            recipient_phone: mobile,
             recipient_name: name,
-            message_type: "payment_acknowledgment",
+            channel: "WHATSAPP",
+            delivery_mode: "GUPSHUP_SANDBOX",
+            template_name: "payment_acknowledgment",
             message_preview: whatsappMessage,
-            full_message_data: {
-              payment_id: payment_id,
-              flat_number: flat_number,
-              payment_type: payment_type,
-              payment_amount: payment_amount,
-              payment_quarter: payment_quarter,
-              submission_date: submission_date,
-            },
+            trigger_reason: "Payment Submitted",
             status: "PENDING",
           })
           .select("id")
@@ -272,7 +262,6 @@ Deno.serve(async (req: Request) => {
           if (whatsappResponse.ok) {
             results.whatsapp_sent = true;
 
-            // Log WhatsApp to communication audit trail
             await supabase.rpc('log_communication_event', {
               p_apartment_id: apartment_id,
               p_flat_number: flat_number,
@@ -303,7 +292,6 @@ Deno.serve(async (req: Request) => {
           } else {
             results.whatsapp_error = JSON.stringify(whatsappResult);
 
-            // Log failed WhatsApp
             await supabase.rpc('log_communication_event', {
               p_apartment_id: apartment_id,
               p_flat_number: flat_number,
