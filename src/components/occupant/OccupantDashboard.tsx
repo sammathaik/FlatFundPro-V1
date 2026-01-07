@@ -134,15 +134,19 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         setPayments([]);
       }
 
-      // Load WhatsApp opt-in preference and flat's registered email and name
-      const { data: flatMapping } = await supabase
-        .from('flat_email_mappings')
-        .select('whatsapp_opt_in, email, name, occupant_type')
-        .eq('flat_id', selectedFlatId)
-        .eq('mobile', occupant.mobile)
-        .maybeSingle();
+      // Load profile data using secure RPC function
+      const { data: profileData, error: profileError } = await supabase.rpc(
+        'get_occupant_profile_for_flat',
+        {
+          p_session_token: occupant.sessionToken,
+          p_flat_id: selectedFlatId
+        }
+      );
 
-      if (flatMapping) {
+      if (profileError) {
+        console.error('Error loading profile data:', profileError);
+      } else if (profileData && profileData.length > 0) {
+        const flatMapping = profileData[0];
         setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
         setFlatEmail(flatMapping.email || occupant.email);
         setFlatOccupantName(flatMapping.name || null);
@@ -207,17 +211,19 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
     try {
       const newOptInValue = !whatsappOptIn;
 
-      const { error } = await supabase
-        .from('flat_email_mappings')
-        .update({ whatsapp_opt_in: newOptInValue })
-        .eq('flat_id', selectedFlatId)
-        .eq('email', occupant.email);
+      const { data, error } = await supabase.rpc('update_occupant_whatsapp_preference', {
+        p_session_token: occupant.sessionToken,
+        p_flat_id: selectedFlatId,
+        p_whatsapp_opt_in: newOptInValue
+      });
 
       if (error) {
         console.error('Error updating WhatsApp preference:', error);
         alert('Failed to update notification preferences. Please try again.');
-      } else {
+      } else if (data) {
         setWhatsappOptIn(newOptInValue);
+      } else {
+        alert('Failed to update notification preferences. Please try again.');
       }
     } catch (error) {
       console.error('Error updating WhatsApp preference:', error);

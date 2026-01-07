@@ -39,18 +39,26 @@ export default function OccupantProfile({ occupant, apartmentInfo, onProfileUpda
     setSaving(true);
 
     try {
-      const { error: updateError } = await supabase
-        .from('flat_email_mappings')
-        .update({
-          mobile: editedMobile || null,
-          email: editedEmail || occupant.email,
-          name: editedName || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('flat_id', occupant.flat_id)
-        .eq('email', occupant.email);
+      // Get session token from sessionStorage
+      const sessionData = sessionStorage.getItem('occupant_session');
+      if (!sessionData) {
+        throw new Error('Session not found. Please log in again.');
+      }
+      const sessionObj = JSON.parse(sessionData);
+
+      const { data, error: updateError } = await supabase.rpc('update_occupant_profile', {
+        p_session_token: sessionObj.sessionToken,
+        p_flat_id: occupant.flat_id,
+        p_email: editedEmail || null,
+        p_name: editedName || null,
+        p_mobile: editedMobile || null
+      });
 
       if (updateError) throw updateError;
+
+      if (!data) {
+        throw new Error('Failed to update profile. Please try again.');
+      }
 
       occupant.mobile = editedMobile;
       occupant.email = editedEmail;
