@@ -2,7 +2,13 @@
 
 ## Issue Reported
 
-When users try to login with mobile number, they enter 10 digits (e.g., 9686394010) and get error "No account found with this mobile number" even though the account exists in the database.
+When users try to login with mobile number from either:
+1. **UniversalLoginModal** (Login button in header)
+2. **Get Started → Mobile Number Login** (Public landing page)
+
+They enter 10 digits (e.g., 9686394010) and get error "No account found with this mobile number" even though the account exists in the database.
+
+**Note:** The MobileNumberInput component already has proper country code selector UI with +91 default and dropdown for other countries. The issue was in how the normalized mobile number was being used in the query logic.
 
 ## Root Cause Analysis
 
@@ -213,22 +219,43 @@ SELECT public.discover_flats_by_mobile('+919686394010');
 
 ## Testing Instructions
 
-### Test Case 1: Login with 10-Digit Mobile
+### Test Case 1: Login via Header (UniversalLoginModal)
 
-1. Go to login page
-2. Click "Login with Mobile"
-3. Select country code: **+91** (India)
-4. Enter mobile number: **9686394010** (10 digits)
-5. Click "Continue"
-6. **VERIFY:** Shows flat selection screen with 2 flats:
+1. Go to landing page
+2. Click **"Login"** button in header
+3. Click "Login with Mobile"
+4. Select country code: **+91** (India) - default
+5. Enter mobile number: **9686394010** (10 digits)
+6. Click "Continue"
+7. **VERIFY:** Shows flat selection screen with 2 flats:
    - S-100 (OutSkill Housing Society - Topaz)
    - G-100 (OutSkill Housing Society - Topaz)
-7. Select S-100
-8. **VERIFY:** OTP sent message appears
-9. Enter OTP
-10. **VERIFY:** Login successful, redirects to dashboard
+8. Select S-100
+9. **VERIFY:** OTP sent message appears
+10. Enter OTP
+11. **VERIFY:** Login successful, redirects to dashboard
 
-### Test Case 2: Login with Full Number Including Country Code
+### Test Case 2: Login via Get Started Button (MobilePaymentFlow)
+
+1. Go to landing page
+2. Click **"Get Started"** button
+3. Page scrolls to payment submission section
+4. Click **"Mobile Number Login"** card (Recommended option)
+5. **VERIFY:** Shows mobile input screen with:
+   - Country code selector dropdown (defaults to +91 🇮🇳)
+   - 10-digit mobile number input field
+6. Enter mobile number: **9686394010**
+7. Click "Continue"
+8. **VERIFY:** Shows flat selection screen with 2 flats:
+   - S-100 (OutSkill Housing Society - Topaz)
+   - G-100 (OutSkill Housing Society - Topaz)
+9. Select S-100
+10. **VERIFY:** OTP sent message appears (development mode shows OTP on screen)
+11. Enter OTP
+12. **VERIFY:** Shows payment history and active collections
+13. **VERIFY:** Can submit new payment
+
+### Test Case 3: Login with Full Number Including Country Code
 
 1. Go to login page
 2. Click "Login with Mobile"
@@ -239,7 +266,7 @@ SELECT public.discover_flats_by_mobile('+919686394010');
 5. Click "Continue"
 6. **VERIFY:** Shows flat selection (same as Test Case 1)
 
-### Test Case 3: Different Country Code
+### Test Case 4: Different Country Code
 
 1. Go to login page
 2. Click "Login with Mobile"
@@ -248,7 +275,7 @@ SELECT public.discover_flats_by_mobile('+919686394010');
 5. Click "Continue"
 6. **VERIFY:** Shows "No account found" (expected if no USA number exists)
 
-### Test Case 4: Invalid Number
+### Test Case 5: Invalid Number
 
 1. Go to login page
 2. Click "Login with Mobile"
@@ -264,6 +291,13 @@ SELECT public.discover_flats_by_mobile('+919686394010');
 - Line 123-125: Use `normalized.fullNumber` instead of raw `mobileNumber` or `normalized.localNumber`
 - Line 163: Fix generateOtp fallback to use `normalized.fullNumber`
 - Line 222: Fix handleVerifyOtp fallback to use `normalized.fullNumber`
+
+### 2. `src/components/MobilePaymentFlow.tsx`
+
+**Changes:**
+- Line 140-142: Use `normalized.fullNumber` instead of raw `mobileNumber` or `normalized.localNumber`
+- Line 192: Fix generateOtp fallback to use `normalized.fullNumber`
+- Line 245: Fix handleVerifyOtp fallback to use `normalized.fullNumber`
 
 ## Components Already Working Correctly
 
@@ -291,11 +325,15 @@ This utility was already correct:
 
 ## Summary
 
-**Root Cause:** Login was using local number "9686394010" instead of full number "+919686394010" when querying the database.
+**Root Cause:** Both login components (UniversalLoginModal and MobilePaymentFlow) were using local number "9686394010" instead of full number "+919686394010" when querying the database.
 
 **Solution:** Always use `normalized.fullNumber` when making RPC calls to match the database format.
 
-**Result:** Mobile login now works correctly with 10-digit input, properly matches database records, and successfully logs users in.
+**Components Fixed:**
+1. **UniversalLoginModal.tsx** - Login button in header
+2. **MobilePaymentFlow.tsx** - Get Started → Mobile Number Login flow
+
+**Result:** Mobile login now works correctly with 10-digit input from BOTH entry points, properly matches database records, and successfully logs users in.
 
 ## Related Fixes
 
