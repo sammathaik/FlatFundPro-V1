@@ -53,7 +53,7 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <HowItWorks />
       <StatsSection />
       <div ref={formRef as React.RefObject<HTMLDivElement>}>
-        <ResidentPaymentGateway />
+        <ResidentPaymentGateway onNavigate={onNavigate} />
       </div>
 
       <PortalAccessSection onNavigate={onNavigate} />
@@ -72,6 +72,10 @@ export default function PublicLandingPage({ onNavigate }: PublicLandingPageProps
       <UniversalLoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+        onNavigateToOccupant={() => {
+          setShowLoginModal(false);
+          onNavigate('/occupant');
+        }}
         onLoginSuccess={(roles, occupantData) => {
           setShowLoginModal(false);
           if (roles.length === 1) {

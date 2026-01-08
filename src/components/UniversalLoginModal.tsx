@@ -9,6 +9,7 @@ interface UniversalLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess?: (roles: string[], occupantData?: any) => void;
+  onNavigateToOccupant?: () => void;
 }
 
 type LoginMethod = 'email' | 'mobile';
@@ -23,7 +24,7 @@ interface FlatInfo {
   mobile: string;
 }
 
-export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }: UniversalLoginModalProps) {
+export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess, onNavigateToOccupant }: UniversalLoginModalProps) {
   const { signIn } = useAuth();
   const otpInputRef = useRef<HTMLInputElement>(null);
 
@@ -509,7 +510,16 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess }:
                   Email
                 </button>
                 <button
-                  onClick={() => setLoginMethod('mobile')}
+                  onClick={() => {
+                    // Redirect to Occupant Portal for mobile login (unified entry point)
+                    if (onNavigateToOccupant) {
+                      sessionStorage.setItem('occupant_entry_context', 'mobile_login');
+                      onClose();
+                      onNavigateToOccupant();
+                    } else {
+                      setLoginMethod('mobile');
+                    }
+                  }}
                   className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                     loginMethod === 'mobile'
                       ? 'bg-blue-100 text-blue-700'

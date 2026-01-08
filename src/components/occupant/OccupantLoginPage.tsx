@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Home, Mail, Phone, KeyRound, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Home, Mail, Phone, KeyRound, ArrowLeft, Smartphone } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface OccupantLoginPageProps {
@@ -8,7 +8,11 @@ interface OccupantLoginPageProps {
 }
 
 export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLoginPageProps) {
-  const [step, setStep] = useState<'email' | 'mobile' | 'otp' | 'flat-selection'>('email');
+  // Check entry context to determine initial flow
+  const entryContext = sessionStorage.getItem('occupant_entry_context');
+  const initialStep = (entryContext === 'payment_submission' || entryContext === 'mobile_login') ? 'mobile' : 'email';
+
+  const [step, setStep] = useState<'email' | 'mobile' | 'otp' | 'flat-selection'>(initialStep);
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
@@ -65,7 +69,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
     try {
       const { data, error } = await supabase.rpc('generate_occupant_otp', {
-        p_email: email.toLowerCase().trim(),
+        p_email: email ? email.toLowerCase().trim() : null,
         p_mobile: mobile,
       });
 
@@ -78,6 +82,10 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
         // Mobile is already in state from user input, but ensure it's set from response
         if (data.mobile) {
           setMobile(data.mobile);
+        }
+        // Store email if returned by database (for mobile-first login)
+        if (data.email) {
+          setEmail(data.email);
         }
         setStep('otp');
       }
@@ -95,7 +103,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
     try {
       const { data, error } = await supabase.rpc('verify_occupant_otp', {
-        p_email: email.toLowerCase().trim(),
+        p_email: email ? email.toLowerCase().trim() : null,
         p_otp: otp,
         p_flat_id: null,
       });
@@ -136,7 +144,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
     try {
       const { data, error } = await supabase.rpc('verify_occupant_otp', {
-        p_email: email.toLowerCase().trim(),
+        p_email: email ? email.toLowerCase().trim() : null,
         p_otp: otp,
         p_flat_id: selectedFlatId,
       });
@@ -172,7 +180,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
     try {
       const { data, error } = await supabase.rpc('generate_occupant_otp', {
-        p_email: email.toLowerCase().trim(),
+        p_email: email ? email.toLowerCase().trim() : null,
         p_mobile: mobile || undefined,
       });
 
@@ -222,7 +230,9 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
             Occupant Portal
           </h2>
           <p className="text-center text-gray-600 mb-8">
-            View your payment history and transactions
+            {entryContext === 'payment_submission'
+              ? 'Submit payments and manage your account'
+              : 'View your payment history and transactions'}
           </p>
 
           {step === 'email' && (
@@ -268,11 +278,24 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
 
           {step === 'mobile' && (
             <form onSubmit={handleMobileSubmit} className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
-                <p className="text-sm">
-                  Please provide your mobile number to receive an OTP for secure login.
-                </p>
-              </div>
+              {!email && (
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Smartphone className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    Enter your registered mobile number for quick login
+                  </p>
+                </div>
+              )}
+
+              {email && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
+                  <p className="text-sm">
+                    Please provide your mobile number to receive an OTP for secure login.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -307,22 +330,41 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep('email')}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium transition-all"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Sending...' : 'Send OTP'}
-                </button>
-              </div>
+              {email ? (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep('email')}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Sending...' : 'Send OTP'}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    type="submit"
+                    disabled={loading || mobile.length !== 10}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Sending OTP...' : 'Continue'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep('email')}
+                    className="w-full text-blue-600 hover:text-blue-700 py-2 text-sm font-medium"
+                  >
+                    Login with Email Instead
+                  </button>
+                </div>
+              )}
             </form>
           )}
 
