@@ -153,6 +153,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
         // Update occupant object with flat-specific data
         occupant.email = flatMapping.email || occupant.email;
+        occupant.mobile = flatMapping.mobile || occupant.mobile;
         occupant.name = flatMapping.name || null;
         occupant.occupant_type = flatMapping.occupant_type || occupant.occupant_type;
       }
