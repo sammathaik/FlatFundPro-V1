@@ -61,6 +61,10 @@ interface ApartmentInfo {
 }
 
 export default function OccupantDashboard({ occupant, onLogout }: OccupantDashboardProps) {
+  // Check if user came from mobile login to show pending payments by default
+  const entryContext = sessionStorage.getItem('occupant_entry_context');
+  const initialTab = (entryContext === 'payment_submission' || entryContext === 'mobile_login') ? 'pending' : 'dashboard';
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [apartmentInfo, setApartmentInfo] = useState<ApartmentInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +72,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [allFlats, setAllFlats] = useState<any[]>([]);
   const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'pending' | 'help'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'pending' | 'help'>(initialTab);
   const [whatsappOptIn, setWhatsappOptIn] = useState<boolean>(false);
   const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);

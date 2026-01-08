@@ -168,6 +168,11 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
           setError(data.message || 'Invalid OTP');
         }
       } else {
+        // If user logged in via mobile, ensure context is set for pending payments view
+        if (initialStep === 'mobile') {
+          sessionStorage.setItem('occupant_entry_context', 'mobile_login');
+        }
+
         // Pass both occupant data and session token
         onLoginSuccess({
           ...data.occupant,
