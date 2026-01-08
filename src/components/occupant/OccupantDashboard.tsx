@@ -74,6 +74,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [flatEmail, setFlatEmail] = useState<string>(occupant.email);
+  const [flatMobile, setFlatMobile] = useState<string>(occupant.mobile);
   const [flatOccupantName, setFlatOccupantName] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -83,15 +84,15 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   }, [occupant, selectedFlatId]);
 
   useEffect(() => {
-    if (occupant?.mobile) {
+    if (flatMobile) {
       loadUnreadCount();
     }
-  }, [occupant?.mobile]);
+  }, [flatMobile]);
 
   const loadUnreadCount = async () => {
     try {
       const { data, error } = await supabase.rpc('get_unread_notification_count', {
-        p_mobile: occupant.mobile,
+        p_mobile: flatMobile,
         p_flat_id: null,
         p_apartment_id: null
       });
@@ -149,6 +150,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         const flatMapping = profileData[0];
         setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
         setFlatEmail(flatMapping.email || occupant.email);
+        setFlatMobile(flatMapping.mobile || occupant.mobile);
         setFlatOccupantName(flatMapping.name || null);
 
         // Update occupant object with flat-specific data
@@ -447,6 +449,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
             occupant={{
               ...occupant,
               email: flatEmail,
+              mobile: flatMobile,
               name: flatOccupantName,
               flat_id: selectedFlatId
             }}
@@ -514,14 +517,14 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               <Mail className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium text-gray-800">{occupant.email}</p>
+                <p className="font-medium text-gray-800">{flatEmail}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-600">Mobile</p>
-                <p className="font-medium text-gray-800">{occupant.mobile || 'Not provided'}</p>
+                <p className="font-medium text-gray-800">{flatMobile || 'Not provided'}</p>
               </div>
             </div>
           </div>
@@ -547,7 +550,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     Receive automated WhatsApp reminders at 7 days, 3 days, and 1 day before payment due dates.
-                    {!occupant.mobile && (
+                    {!flatMobile && (
                       <span className="block mt-2 text-amber-600 font-medium">
                         Note: Please provide your mobile number in the payment form to receive WhatsApp notifications.
                       </span>
@@ -557,7 +560,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
               </div>
               <button
                 onClick={handleWhatsAppOptInToggle}
-                disabled={updatingPreferences || !occupant.mobile}
+                disabled={updatingPreferences || !flatMobile}
                 className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                   whatsappOptIn ? 'bg-green-600' : 'bg-gray-200'
                 }`}
@@ -780,7 +783,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         blockId={occupant.block_id || (allFlats.find(f => f.flat_id === selectedFlatId)?.block_id)}
         flatEmail={flatEmail}
         occupantName={flatOccupantName || occupant.name}
-        occupantMobile={occupant.mobile}
+        occupantMobile={flatMobile}
         onSuccess={() => {
           loadData();
         }}
@@ -788,7 +791,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
       {/* Notification Center */}
       <NotificationCenter
-        mobile={occupant.mobile}
+        mobile={flatMobile}
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
         onUnreadCountChange={(count) => setUnreadNotificationCount(count)}
