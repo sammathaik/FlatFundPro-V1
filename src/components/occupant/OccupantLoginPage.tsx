@@ -480,6 +480,11 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                         <p className="text-sm text-gray-600">
                           {flat.apartment_name} - {flat.block_name}
                         </p>
+                        {flat.name && (
+                          <p className="text-sm text-blue-600 font-medium mt-1">
+                            {flat.name}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
                           {flat.occupant_type}
                         </p>
