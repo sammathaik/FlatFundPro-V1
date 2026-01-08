@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Home, Mail, Phone, KeyRound, ArrowLeft, Smartphone } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import MobileNumberInput from '../MobileNumberInput';
+import { normalizeMobileNumber } from '../../lib/mobileNumberUtils';
 
 interface OccupantLoginPageProps {
   onLoginSuccess: (occupant: any) => void;
@@ -56,13 +58,15 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
     }
   };
 
-  const handleMobileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMobileSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     setLoading(true);
 
-    if (!/^[6-9]\d{9}$/.test(mobile)) {
-      setError('Please enter a valid 10-digit Indian mobile number');
+    const normalized = normalizeMobileNumber(mobile);
+
+    if (!normalized.localNumber || normalized.localNumber.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
       setLoading(false);
       return;
     }
@@ -70,7 +74,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
     try {
       const { data, error } = await supabase.rpc('generate_occupant_otp', {
         p_email: email ? email.toLowerCase().trim() : null,
-        p_mobile: mobile,
+        p_mobile: normalized.fullNumber,
       });
 
       if (error) throw error;
@@ -298,21 +302,14 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile Number
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="tel"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit mobile number"
-                    maxLength={10}
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                <MobileNumberInput
+                  value={mobile}
+                  onChange={(value) => setMobile(value)}
+                  label="Mobile Number"
+                  placeholder="Enter 10-digit mobile number"
+                  required
+                  onSubmit={handleMobileSubmit}
+                />
                 <p className="text-xs text-gray-500 mt-1">
                   An OTP will be sent to this number
                 </p>
@@ -351,7 +348,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
                 <div className="space-y-3">
                   <button
                     type="submit"
-                    disabled={loading || mobile.length !== 10}
+                    disabled={loading || normalizeMobileNumber(mobile).localNumber.length !== 10}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Sending OTP...' : 'Continue'}
