@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Upload, Calendar, IndianRupee, CreditCard, Loader2, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
+import { X, Upload, Calendar, IndianRupee, CreditCard, Loader2, CheckCircle, AlertCircle, MessageCircle, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface PendingPayment {
@@ -69,11 +69,16 @@ export default function QuickPaymentModal({
       setScreenshot(file);
       setError(null);
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setScreenshotPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      // For PDFs, don't try to show preview as image
+      if (file.type === 'application/pdf') {
+        setScreenshotPreview('PDF');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setScreenshotPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -387,7 +392,7 @@ export default function QuickPaymentModal({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.pdf"
               onChange={handleFileSelect}
               disabled={submitting}
               className="hidden"
@@ -400,18 +405,25 @@ export default function QuickPaymentModal({
             >
               {screenshotPreview ? (
                 <div className="space-y-2">
-                  <img
-                    src={screenshotPreview}
-                    alt="Payment screenshot"
-                    className="max-h-32 mx-auto rounded-lg"
-                  />
+                  {screenshotPreview === 'PDF' ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="w-12 h-12 text-red-500" />
+                      <p className="text-sm font-medium text-gray-700">{screenshot?.name}</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={screenshotPreview}
+                      alt="Payment screenshot"
+                      className="max-h-32 mx-auto rounded-lg"
+                    />
+                  )}
                   <p className="text-xs text-blue-600 font-medium">Click to change</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1.5">
                   <Upload className="w-6 h-6 text-gray-400" />
-                  <p className="text-sm font-medium text-gray-700">Upload Payment Screenshot</p>
-                  <p className="text-xs text-gray-500">JPG, PNG (Max 5MB)</p>
+                  <p className="text-sm font-medium text-gray-700">Upload Payment Proof</p>
+                  <p className="text-xs text-gray-500">JPG, PNG or PDF (Max 5MB)</p>
                 </div>
               )}
             </button>
