@@ -119,22 +119,10 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess, o
     setError(null);
 
     try {
-      let data, rpcError;
-
-      const result1 = await supabase.rpc('discover_flats_by_mobile', {
-        mobile_number: mobileNumber
+      // Always use the full number with country code to match database format
+      const { data, error: rpcError } = await supabase.rpc('discover_flats_by_mobile', {
+        mobile_number: normalized.fullNumber
       });
-
-      if (result1.error || (result1.data as any)?.count === 0) {
-        const result2 = await supabase.rpc('discover_flats_by_mobile', {
-          mobile_number: normalized.localNumber
-        });
-        data = result2.data;
-        rpcError = result2.error;
-      } else {
-        data = result1.data;
-        rpcError = result1.error;
-      }
 
       if (rpcError) throw rpcError;
 
@@ -172,7 +160,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess, o
 
     try {
       const normalized = normalizeMobileNumber(mobileNumber);
-      const mobileToUse = flat.mobile || normalized.localNumber;
+      const mobileToUse = flat.mobile || normalized.fullNumber;
 
       const { data, error: rpcError } = await supabase.rpc('generate_mobile_otp', {
         mobile_number: mobileToUse,
@@ -231,7 +219,7 @@ export default function UniversalLoginModal({ isOpen, onClose, onLoginSuccess, o
 
     try {
       const normalized = normalizeMobileNumber(mobileNumber);
-      const mobileToUse = selectedFlat?.mobile || normalized.localNumber;
+      const mobileToUse = selectedFlat?.mobile || normalized.fullNumber;
 
       const { data, error: rpcError } = await supabase.rpc('verify_mobile_otp_for_payment', {
         mobile_number: mobileToUse,
