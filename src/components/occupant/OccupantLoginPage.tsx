@@ -155,6 +155,7 @@ export default function OccupantLoginPage({ onLoginSuccess, onBack }: OccupantLo
         p_email: email ? email.toLowerCase().trim() : null,
         p_otp: otp,
         p_flat_id: selectedFlatId || null,
+        p_mobile: mobile || null,
       });
 
       if (error) throw error;
