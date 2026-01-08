@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Smartphone, FileText, ArrowRight, Zap, Shield, Clock, Sparkles, CheckCircle2, TrendingUp } from 'lucide-react';
-import MobilePaymentFlow from './MobilePaymentFlow';
 import DynamicPaymentForm from './DynamicPaymentForm';
 
-type EntryMode = 'selection' | 'mobile' | 'manual';
+type EntryMode = 'selection' | 'manual';
 
-export default function ResidentPaymentGateway() {
+interface ResidentPaymentGatewayProps {
+  onNavigate?: (path: string) => void;
+}
+
+export default function ResidentPaymentGateway({ onNavigate }: ResidentPaymentGatewayProps) {
   const [mode, setMode] = useState<EntryMode>('selection');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
@@ -34,7 +37,12 @@ export default function ResidentPaymentGateway() {
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Mobile-First Option - RECOMMENDED */}
           <button
-            onClick={() => setMode('mobile')}
+            onClick={() => {
+              if (onNavigate) {
+                sessionStorage.setItem('occupant_entry_context', 'payment_submission');
+                onNavigate('/occupant');
+              }
+            }}
             onMouseEnter={() => setHoveredCard('mobile')}
             onMouseLeave={() => setHoveredCard(null)}
             className="group relative bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 rounded-3xl shadow-2xl hover:shadow-blue-500/50 transition-all duration-500 p-1 text-left overflow-hidden transform hover:scale-105 hover:-rotate-1"
@@ -226,10 +234,6 @@ export default function ResidentPaymentGateway() {
       </div>
     </section>
   );
-
-  if (mode === 'mobile') {
-    return <MobilePaymentFlow onBack={() => setMode('selection')} />;
-  }
 
   if (mode === 'manual') {
     return (
