@@ -64,8 +64,12 @@ export default function RequestDemoPage({ onBack }: RequestDemoPageProps) {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8 sm:p-12">
             <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
-                <Calendar className="w-8 h-8 text-white" />
+              <div className="flex items-center justify-center mb-6">
+                <img
+                  src="/flatfunprologo.jpg"
+                  alt="FlatFund Pro Logo"
+                  className="h-20 sm:h-24 w-auto rounded-xl shadow-lg bg-white p-2"
+                />
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
                 Request a Demo of FlatFund Pro
