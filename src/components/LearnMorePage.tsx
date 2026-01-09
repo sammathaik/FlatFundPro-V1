@@ -23,9 +23,11 @@ import {
   Bell,
   Link,
   Home,
-  Upload
+  Upload,
+  Menu,
+  X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UniversalLoginModal from './UniversalLoginModal';
 
 interface LearnMorePageProps {
@@ -33,20 +35,251 @@ interface LearnMorePageProps {
   onRequestDemo?: () => void;
 }
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: any;
+  subtext: string;
+}
+
+const navigationItems: NavItem[] = [
+  { id: 'the-problem', label: 'The Problem', icon: AlertCircle, subtext: 'Why current systems fail' },
+  { id: 'our-solution', label: 'Our Solution', icon: Shield, subtext: 'How FlatFund Pro solves it' },
+  { id: 'features', label: 'Features', icon: Zap, subtext: 'Modern tools & AI' },
+  { id: 'how-it-works', label: 'How It Works', icon: Users, subtext: 'Real behavior design' },
+  { id: 'benefits', label: 'Benefits', icon: TrendingUp, subtext: 'Long-term value' },
+  { id: 'for-residents', label: 'For Residents', icon: Smartphone, subtext: 'Simple process' },
+];
+
 export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePageProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if scrolled past hero
+      setIsScrolled(window.scrollY > 100);
+
+      // Calculate scroll progress
+      const winScroll = document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      setScrollProgress(scrolled);
+
+      // Detect active section using Intersection Observer approach
+      const sections = navigationItems.map(item => document.getElementById(item.id));
+      const scrollPosition = window.scrollY + 150; // Offset for header
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i];
+        if (section && section.offsetTop <= scrollPosition) {
+          setActiveSection(navigationItems[i].id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      const headerOffset = 80;
+      const elementPosition = section.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setMobileMenuOpen(false);
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMobileMenuOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Sticky Navigation Header */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100'
+            : 'bg-transparent'
+        }`}
+        style={{ display: isScrolled ? 'block' : 'none' }}
+      >
+        {/* Scroll Progress Bar */}
+        <div
+          className="h-1 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-200"
+          style={{ width: `${scrollProgress}%` }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <button
+              onClick={scrollToTop}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img
+                src="/flatfunprologo.jpg"
+                alt="FlatFund Pro"
+                className="h-8 w-auto rounded-lg"
+              />
+              <span className="font-bold text-gray-900 hidden sm:inline">FlatFund Pro</span>
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative ${
+                      activeSection === item.id
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </div>
+                    {activeSection === item.id && (
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-blue-600 rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="hidden md:flex items-center gap-3">
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('/')}
+                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="text-sm font-medium hidden lg:inline">Home</span>
+                </button>
+              )}
+              {onRequestDemo && (
+                <button
+                  onClick={onRequestDemo}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all"
+                >
+                  Request Demo
+                </button>
+              )}
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-xl">
+            <div className="max-w-7xl mx-auto px-4 py-4">
+              <div className="space-y-1">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToSection(item.id)}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
+                        activeSection === item.id
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5" />
+                        <div>
+                          <div className="font-medium">{item.label}</div>
+                          <div className="text-xs text-gray-500">{item.subtext}</div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                {onNavigate && (
+                  <button
+                    onClick={() => {
+                      onNavigate('/');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg flex items-center gap-2"
+                  >
+                    <Home className="w-4 h-4" />
+                    <span>Back to Home</span>
+                  </button>
+                )}
+                {onRequestDemo && (
+                  <button
+                    onClick={() => {
+                      onRequestDemo();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                  >
+                    Request Demo
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowLoginModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg font-medium"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 py-20 px-4 overflow-hidden">
+      <section id="hero" className="relative bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden opacity-10">
           <div className="absolute -top-1/2 -right-1/4 w-96 h-96 bg-blue-300 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 bg-indigo-300 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 bg-sky-300 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative max-w-5xl mx-auto text-center">
@@ -84,7 +317,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 1: Why Governance Breaks */}
-      <section className="py-20 px-4 bg-white">
+      <section id="the-problem" className="py-20 px-4 bg-white scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-full mb-4">
@@ -248,7 +481,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 2: What FlatFund Pro Solves */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <section id="our-solution" className="py-20 px-4 bg-gradient-to-br from-blue-50 to-sky-50 scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full mb-4">
@@ -293,30 +526,30 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
             </div>
 
             <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
-                <MessageCircle className="w-7 h-7 text-indigo-600" />
+              <div className="w-14 h-14 bg-sky-100 rounded-xl flex items-center justify-center mb-6">
+                <MessageCircle className="w-7 h-7 text-sky-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Turns WhatsApp Into a Governed Channel</h3>
               <p className="text-gray-600 leading-relaxed mb-4">
                 Opt-in WhatsApp communication with complete audit trails. Payment acknowledgments, reminders,
                 and status updates become structured, not scattered.
               </p>
-              <div className="bg-indigo-50 rounded-lg p-4">
-                <p className="text-sm text-indigo-900 font-semibold">Communication becomes documented, not lost in chat.</p>
+              <div className="bg-sky-50 rounded-lg p-4">
+                <p className="text-sm text-sky-900 font-semibold">Communication becomes documented, not lost in chat.</p>
               </div>
             </div>
 
             <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <Users className="w-7 h-7 text-purple-600" />
+              <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center mb-6">
+                <Users className="w-7 h-7 text-teal-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Reduces Dependency on Individuals</h3>
               <p className="text-gray-600 leading-relaxed mb-4">
                 AI-assisted validation automatically extracts transaction details. Automated workflows handle
                 acknowledgments and reminders. The system works even when key people are unavailable.
               </p>
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-900 font-semibold">Governance survives people changes.</p>
+              <div className="bg-teal-50 rounded-lg p-4">
+                <p className="text-sm text-teal-900 font-semibold">Governance survives people changes.</p>
               </div>
             </div>
           </div>
@@ -324,10 +557,10 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 3: Modern Features That Make It Work */}
-      <section className="py-20 px-4 bg-white">
+      <section id="features" className="py-20 px-4 bg-white scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-sky-600 text-white rounded-full mb-4">
               <Zap className="w-4 h-4" />
               <span className="font-semibold text-sm">POWERFUL FEATURES</span>
             </div>
@@ -360,8 +593,8 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border-2 border-purple-200 hover:shadow-xl transition-shadow">
-              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-6 border-2 border-amber-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center mb-4">
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">AI Fraud Detection</h3>
@@ -370,8 +603,8 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl p-6 border-2 border-indigo-200 hover:shadow-xl transition-shadow">
-              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-2xl p-6 border-2 border-sky-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-sky-600 rounded-xl flex items-center justify-center mb-4">
                 <FileSearch className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Document Classification</h3>
@@ -434,7 +667,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 4: How FlatFund Pro Fits Real Behavior */}
-      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section id="how-it-works" className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50 scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full mb-4">
@@ -504,10 +737,10 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 5: Why This Matters Long-Term */}
-      <section className="py-20 px-4 bg-white">
+      <section id="benefits" className="py-20 px-4 bg-white scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-full mb-4">
               <TrendingUp className="w-4 h-4" />
               <span className="font-semibold text-sm">LONG-TERM IMPACT</span>
             </div>
@@ -544,7 +777,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
 
             <div className="bg-white rounded-2xl p-8 shadow-lg">
               <div className="flex items-center gap-3 mb-6">
-                <CheckCircle className="w-8 h-8 text-indigo-600" />
+                <CheckCircle className="w-8 h-8 text-sky-600" />
                 <h3 className="text-xl font-bold text-gray-900">Residents Experience Consistency</h3>
               </div>
               <p className="text-gray-600 leading-relaxed">
@@ -555,7 +788,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
 
             <div className="bg-white rounded-2xl p-8 shadow-lg">
               <div className="flex items-center gap-3 mb-6">
-                <Shield className="w-8 h-8 text-purple-600" />
+                <Shield className="w-8 h-8 text-teal-600" />
                 <h3 className="text-xl font-bold text-gray-900">Governance Survives People Changes</h3>
               </div>
               <p className="text-gray-600 leading-relaxed">
@@ -568,7 +801,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Section 6: For Residents */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <section id="for-residents" className="py-20 px-4 bg-gradient-to-br from-blue-50 to-sky-50 scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full mb-4">
@@ -586,7 +819,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
           <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
               <div className="text-center">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                   <QrCode className="w-7 h-7 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2 text-sm">Scan QR Code</h4>
@@ -600,7 +833,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
                 <p className="text-gray-600 text-xs">Mobile number + OTP, done in 30 seconds</p>
               </div>
               <div className="text-center">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                   <Upload className="w-7 h-7 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2 text-sm">Upload Proof</h4>
@@ -615,7 +848,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 text-center">
+            <div className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-2xl p-6 text-center">
               <p className="text-lg text-gray-800 font-bold mb-3">
                 Three Ways to Pay: QR Code, Mobile Login, or Public Form
               </p>
@@ -633,7 +866,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-600 to-sky-600 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">
             Built for Real Housing Societies<br />— Including During Change
