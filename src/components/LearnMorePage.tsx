@@ -14,7 +14,16 @@ import {
   AlertCircle,
   Award,
   Building2,
-  Heart
+  Heart,
+  QrCode,
+  Zap,
+  Brain,
+  FileSearch,
+  BarChart3,
+  Bell,
+  Link,
+  Home,
+  Upload
 } from 'lucide-react';
 import { useState } from 'react';
 import UniversalLoginModal from './UniversalLoginModal';
@@ -41,6 +50,14 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
         </div>
 
         <div className="relative max-w-5xl mx-auto text-center">
+          <div className="flex items-center justify-center mb-6">
+            <img
+              src="/flatfunprologo.jpg"
+              alt="FlatFund Pro Logo"
+              className="h-16 sm:h-20 w-auto rounded-xl shadow-lg bg-white p-2"
+            />
+          </div>
+
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md mb-6">
             <Heart className="w-4 h-4 text-blue-600" />
             <span className="text-sm font-semibold text-gray-700">Built for Real Housing Societies</span>
@@ -306,8 +323,118 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
         </div>
       </section>
 
-      {/* Section 3: How FlatFund Pro Fits Real Behavior */}
+      {/* Section 3: Modern Features That Make It Work */}
       <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full mb-4">
+              <Zap className="w-4 h-4" />
+              <span className="font-semibold text-sm">POWERFUL FEATURES</span>
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Modern Tools for Effortless Management
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Advanced technology that simplifies payment collection and committee workflows
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border-2 border-blue-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">QR Code Payments</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Generate unique QR codes for each flat. Residents scan and pay in seconds without manual data entry. Share via WhatsApp or print on notices.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border-2 border-green-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center mb-4">
+                <Smartphone className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Quick Mobile Login</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Residents access their account using just mobile number + OTP. No passwords to remember. Perfect for quick payments on the go.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border-2 border-purple-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">AI Fraud Detection</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Automatic analysis of payment screenshots detects image manipulation, duplicates, and suspicious patterns. Flags risks for committee review.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl p-6 border-2 border-indigo-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                <FileSearch className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Document Classification</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                AI automatically identifies payment type: UPI screenshot, bank transfer, cheque, cash receipt. Helps committees quickly verify and categorize.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border-2 border-orange-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center mb-4">
+                <Home className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Multi-Flat Management</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Owners with multiple flats get one unified login. Switch between properties seamlessly. View separate payment history for each flat.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-2xl p-6 border-2 border-cyan-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-cyan-600 rounded-xl flex items-center justify-center mb-4">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Flexible Collection Modes</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Three modes: Equal amount for all, Area-based (per sqft), Type-based (by BHK). Choose what fits your society's rules and regulations.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-6 border-2 border-yellow-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center mb-4">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Smart Notifications</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Automated payment reminders, approval confirmations, and status updates via email and WhatsApp. Notification Center for residents.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-6 border-2 border-pink-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-pink-600 rounded-xl flex items-center justify-center mb-4">
+                <Link className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Public Status Sharing</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Generate public links showing live collection progress. Residents view payment status without login. Perfect transparency for all.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-6 border-2 border-teal-200 hover:shadow-xl transition-shadow">
+              <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center mb-4">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">PDF & Image Support</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Upload payment proof in any format: JPG, PNG, or PDF. Bank statements, UPI screenshots, or receipts—all accepted up to 5MB.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 4: How FlatFund Pro Fits Real Behavior */}
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full mb-4">
@@ -325,55 +452,50 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
           <div className="space-y-6">
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">1</div>
-              <div className="bg-gray-50 rounded-xl p-6 flex-1">
-                <h4 className="font-bold text-gray-900 mb-2">Accepts Screenshots, PDFs, Manual Transfers</h4>
+              <div className="bg-white rounded-xl p-6 flex-1 shadow-md border border-blue-100">
+                <h4 className="font-bold text-gray-900 mb-2">QR Codes Make Payments Instant</h4>
                 <p className="text-gray-600">
-                  Residents can submit payment proof the way they already do. No forced app installation,
-                  no complex processes. Upload a screenshot, and you're done.
+                  Scan a QR code and payment details auto-fill. No typing flat numbers or names. Share QR codes via WhatsApp, email, or print on notice boards. Perfect for residents who prefer speed over forms.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">2</div>
-              <div className="bg-gray-50 rounded-xl p-6 flex-1">
-                <h4 className="font-bold text-gray-900 mb-2">Works Even If Residents Don't Install Apps</h4>
+              <div className="bg-white rounded-xl p-6 flex-1 shadow-md border border-blue-100">
+                <h4 className="font-bold text-gray-900 mb-2">Mobile-First, Login Optional</h4>
                 <p className="text-gray-600">
-                  Payment submission works through simple web forms or WhatsApp sharing. No resident login required.
-                  The system captures and validates without forcing behavior change.
+                  Quick mobile login with OTP for residents who want to track history. Public payment forms for those who prefer anonymity. Works on any device—mobile, tablet, or desktop.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">3</div>
-              <div className="bg-gray-50 rounded-xl p-6 flex-1">
-                <h4 className="font-bold text-gray-900 mb-2">AI-Assisted Validation Reduces Ambiguity</h4>
+              <div className="bg-white rounded-xl p-6 flex-1 shadow-md border border-blue-100">
+                <h4 className="font-bold text-gray-900 mb-2">AI Extracts Details Automatically</h4>
                 <p className="text-gray-600">
-                  OCR technology automatically extracts transaction IDs, amounts, and dates from screenshots.
-                  Committee members review, not manually type. Time savings compound over months.
+                  OCR extracts transaction IDs, amounts, and dates from screenshots. Document classification identifies payment types. Fraud detection flags suspicious submissions. Committees review, not transcribe.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">4</div>
-              <div className="bg-gray-50 rounded-xl p-6 flex-1">
-                <h4 className="font-bold text-gray-900 mb-2">Keeps Humans in Control</h4>
+              <div className="bg-white rounded-xl p-6 flex-1 shadow-md border border-blue-100">
+                <h4 className="font-bold text-gray-900 mb-2">Committees Stay in Control</h4>
                 <p className="text-gray-600">
-                  AI assists, but doesn't decide. Committee members review and approve payments. Fraud detection
-                  flags risks, but committees override when appropriate. Technology supports, doesn't replace.
+                  AI assists, humans decide. Committee review panels provide full audit trails. Override fraud flags when verified. Edit submissions with documented reasons. Technology empowers, never replaces judgment.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">5</div>
-              <div className="bg-gray-50 rounded-xl p-6 flex-1">
-                <h4 className="font-bold text-gray-900 mb-2">Supports Opt-In WhatsApp Communication</h4>
+              <div className="bg-white rounded-xl p-6 flex-1 shadow-md border border-blue-100">
+                <h4 className="font-bold text-gray-900 mb-2">Opt-In Communication, Complete Transparency</h4>
                 <p className="text-gray-600">
-                  Residents choose whether to receive WhatsApp notifications. Those who opt in get structured
-                  updates. Those who don't can use email or check status pages. Choice, not force.
+                  Residents choose WhatsApp notifications or stick with email. Public status links show collection progress without login. Notification Center keeps everyone informed. Choice and transparency combined.
                 </p>
               </div>
             </div>
@@ -381,8 +503,8 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
         </div>
       </section>
 
-      {/* Section 4: Why This Matters Long-Term */}
-      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Section 5: Why This Matters Long-Term */}
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full mb-4">
@@ -445,8 +567,8 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
         </div>
       </section>
 
-      {/* Section 5: For Residents */}
-      <section className="py-20 px-4 bg-white">
+      {/* Section 6: For Residents */}
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full mb-4">
@@ -461,32 +583,50 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 md:p-12">
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
+          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
+            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl">1</div>
-                <h4 className="font-bold text-gray-900 mb-2">Submit Payment</h4>
-                <p className="text-gray-600 text-sm">Upload screenshot with name and flat number</p>
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <QrCode className="w-7 h-7 text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-2 text-sm">Scan QR Code</h4>
+                <p className="text-gray-600 text-xs">Instant access, no typing needed</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl">2</div>
-                <h4 className="font-bold text-gray-900 mb-2">Get Acknowledgment</h4>
-                <p className="text-gray-600 text-sm">Receive instant confirmation via email or WhatsApp</p>
+                <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Smartphone className="w-7 h-7 text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-2 text-sm">Quick Mobile Login</h4>
+                <p className="text-gray-600 text-xs">Mobile number + OTP, done in 30 seconds</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl">3</div>
-                <h4 className="font-bold text-gray-900 mb-2">Track Status</h4>
-                <p className="text-gray-600 text-sm">Check public status pages anytime</p>
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Upload className="w-7 h-7 text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-2 text-sm">Upload Proof</h4>
+                <p className="text-gray-600 text-xs">Screenshots, PDFs, or bank statements</p>
+              </div>
+              <div className="text-center">
+                <div className="w-14 h-14 bg-gradient-to-br from-orange-600 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Bell className="w-7 h-7 text-white" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-2 text-sm">Get Notified</h4>
+                <p className="text-gray-600 text-xs">Instant confirmation via email or WhatsApp</p>
               </div>
             </div>
 
-            <div className="text-center">
-              <p className="text-lg text-gray-800 font-semibold mb-4">
-                No app installation. No login required. No behavior change.
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 text-center">
+              <p className="text-lg text-gray-800 font-bold mb-3">
+                Three Ways to Pay: QR Code, Mobile Login, or Public Form
               </p>
-              <p className="text-gray-600">
-                For residents, FlatFund Pro is invisible. It just works.
+              <p className="text-gray-600 mb-4">
+                No app installation required. No password to remember. Track payment status anytime from Notification Center or public links.
               </p>
+              <div className="flex flex-wrap justify-center gap-3 text-sm">
+                <span className="bg-white px-4 py-2 rounded-full text-gray-700 font-medium">Works on Any Device</span>
+                <span className="bg-white px-4 py-2 rounded-full text-gray-700 font-medium">Login Optional</span>
+                <span className="bg-white px-4 py-2 rounded-full text-gray-700 font-medium">Instant Feedback</span>
+              </div>
             </div>
           </div>
         </div>
