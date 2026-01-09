@@ -69,12 +69,19 @@ export default function DemoRequestModal({ isOpen, onClose, onNavigateToFullPage
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-2xl sm:text-3xl font-bold">Request a Demo of FlatFund Pro</h2>
-            <p className="text-blue-100 text-sm sm:text-base mt-1">
-              For Committees, Society Decision-Makers & Management Teams
-            </p>
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <img
+              src="/flatfunprologo.jpg"
+              alt="FlatFund Pro Logo"
+              className="h-12 sm:h-14 w-auto rounded-lg shadow-md bg-white p-1.5 flex-shrink-0"
+            />
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold">Request a Demo of FlatFund Pro</h2>
+              <p className="text-blue-100 text-xs sm:text-sm mt-0.5">
+                For Committees, Society Decision-Makers & Management Teams
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
