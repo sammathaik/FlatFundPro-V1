@@ -156,7 +156,8 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   async function loadOccupantDetails() {
     setLoadingOccupant(true);
     try {
-      const { data } = await supabase
+      // First, check flat_email_mappings table
+      const { data: mappingData } = await supabase
         .from('flat_email_mappings')
         .select('name, email, mobile, occupant_type, whatsapp_optin')
         .eq('apartment_id', adminData!.apartment_id)
@@ -164,13 +165,39 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
         .eq('flat_id', selectedFlatId)
         .maybeSingle();
 
-      if (data) {
-        setOccupantName(data.name || '');
-        setEmail(data.email || '');
-        setMobile(data.mobile || '');
-        setOccupantType(data.occupant_type || 'Owner');
-        setWhatsappOptin(data.whatsapp_optin || false);
+      if (mappingData) {
+        // Found in mappings table - use this data
+        setOccupantName(mappingData.name || '');
+        setEmail(mappingData.email || '');
+        setMobile(mappingData.mobile || '');
+        setOccupantType(mappingData.occupant_type || 'Owner');
+        setWhatsappOptin(mappingData.whatsapp_optin || false);
+      } else {
+        // Not in mappings table - check payment_submissions for existing records
+        const { data: paymentData } = await supabase
+          .from('payment_submissions')
+          .select('name, email, contact_number, occupant_type')
+          .eq('apartment_id', adminData!.apartment_id)
+          .eq('block_id', selectedBlockId)
+          .eq('flat_id', selectedFlatId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (paymentData) {
+          // Found previous payment - pre-fill with that data
+          setOccupantName(paymentData.name || '');
+          setEmail(paymentData.email || '');
+          setMobile(paymentData.contact_number || '');
+          setOccupantType(paymentData.occupant_type || 'Owner');
+          // Don't set whatsapp_optin since it's not in payment_submissions
+          setWhatsappOptin(false);
+        }
+        // If no data found in either table, fields remain empty (new occupant)
       }
+    } catch (error) {
+      console.error('Error loading occupant details:', error);
+      // Silent fail - user can enter details manually
     } finally {
       setLoadingOccupant(false);
     }
@@ -430,9 +457,9 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
                 <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-900">
                   {occupantName ? (
-                    <p>Existing occupant details loaded. You can update these if needed.</p>
+                    <p>Existing occupant details loaded from previous records. You can update these if needed.</p>
                   ) : (
-                    <p>No existing occupant found for this flat. Please enter their details below.</p>
+                    <p>No previous records found for this flat. Please enter the occupant details below.</p>
                   )}
                 </div>
               </div>
