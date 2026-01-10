@@ -32,8 +32,8 @@ interface Collection {
   id: string;
   collection_name: string;
   due_date: string;
-  amount_per_flat: number;
-  late_fine_per_day: number;
+  amount_due: number;
+  daily_fine: number;
 }
 
 interface FlatMapping {
@@ -199,17 +199,24 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
       }
 
       // Get existing payment submissions for this flat AND occupant type
+      // Include all statuses that indicate payment has been made (Approved, Pending, Received)
       const { data: existingPayments } = await supabase
         .from('payment_submissions')
-        .select('collection_id')
+        .select('expected_collection_id, occupant_type')
         .eq('apartment_id', adminData.apartment_id)
         .eq('block_id', selectedBlockId)
         .eq('flat_id', selectedFlatId)
-        .eq('occupant_type', occupantType)
-        .in('status', ['Approved', 'Pending']);
+        .in('status', ['Approved', 'Pending', 'Received']);
 
+      // Filter by occupant type, handling null values
       const paidCollectionIds = new Set(
-        existingPayments?.map(p => p.collection_id) || []
+        existingPayments
+          ?.filter(p => {
+            // If payment has no occupant_type (null), consider it as belonging to any occupant
+            // Otherwise, only filter by matching occupant type
+            return p.occupant_type === null || p.occupant_type === occupantType;
+          })
+          .map(p => p.expected_collection_id) || []
       );
 
       // Filter out collections that already have submissions
@@ -299,7 +306,7 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
     const collection = availableCollections.find(c => c.id === selectedCollectionId);
     if (!collection) return;
 
-    const expected = collection.amount_per_flat || 0;
+    const expected = parseFloat(String(collection.amount_due || 0));
     setCalculatedAmount(expected);
 
     const dueDate = new Date(collection.due_date);
@@ -308,14 +315,12 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
     let calculatedFine = 0;
     if (payDate > dueDate) {
       const daysLate = Math.floor((payDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      calculatedFine = daysLate * (collection.late_fine_per_day || 0);
+      calculatedFine = daysLate * parseFloat(String(collection.daily_fine || 0));
     }
     setLateFine(calculatedFine);
 
-    // Auto-fill payment amount with expected + fine (only if not already set)
-    if (!paymentAmount) {
-      setPaymentAmount(String(expected + calculatedFine));
-    }
+    // Auto-fill payment amount with expected + fine (always update when collection or date changes)
+    setPaymentAmount(String(expected + calculatedFine));
   }
 
   function validateStep(step: number): boolean {
