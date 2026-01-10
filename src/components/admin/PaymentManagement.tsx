@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import React from 'react';
-import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Shield, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Download, Trash2, Eye, Search, Filter, RefreshCw, Check, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Shield, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportToCSV, logAudit, formatDateTime, formatDate } from '../../lib/utils';
 import DocumentClassificationBadge from './DocumentClassificationBadge';
 import PaymentReviewPanel from './PaymentReviewPanel';
+import AdminManualPaymentEntry from './AdminManualPaymentEntry';
 
 interface PaymentWithDetails {
   id: string;
@@ -84,6 +85,7 @@ export default function PaymentManagement() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [reviewingPaymentId, setReviewingPaymentId] = useState<string | null>(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
   const toggleRow = (paymentId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -518,6 +520,13 @@ export default function PaymentManagement() {
               Delete Selected ({selectedIds.size})
             </button>
           )}
+          <button
+            onClick={() => setShowManualEntry(true)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Payment
+          </button>
           <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium"
@@ -1835,6 +1844,18 @@ export default function PaymentManagement() {
             <p className="font-medium">{successMessage}</p>
           </div>
         </div>
+      )}
+
+      {showManualEntry && (
+        <AdminManualPaymentEntry
+          onClose={() => setShowManualEntry(false)}
+          onSuccess={() => {
+            setShowManualEntry(false);
+            setSuccessMessage('Payment successfully recorded and notifications queued!');
+            setTimeout(() => setSuccessMessage(null), 5000);
+            loadPayments();
+          }}
+        />
       )}
     </div>
   );
