@@ -115,25 +115,21 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   useEffect(() => {
     if (selectedFlatId && selectedBlockId && adminData?.apartment_id) {
       loadOccupantDetails();
-      // Reset collection selection when flat changes
-      setSelectedCollectionId('');
-      setCalculatedAmount(0);
-      setLateFine(0);
-      setPaymentAmount('');
     } else {
       setAvailableCollections([]);
     }
+    // Reset collection selection when flat changes
+    setSelectedCollectionId('');
+    setCalculatedAmount(0);
+    setLateFine(0);
+    setPaymentAmount('');
   }, [selectedFlatId, selectedBlockId]);
 
-  // Reload collections when occupant type changes
+  // Reload collections when occupant type changes (which happens after loadOccupantDetails completes)
   useEffect(() => {
     if (selectedFlatId && selectedBlockId && adminData?.apartment_id && occupantType) {
+      console.log('[useEffect] Triggering loadAvailableCollections due to:', { selectedFlatId, selectedBlockId, occupantType });
       loadAvailableCollections();
-      // Reset collection selection when occupant type changes
-      setSelectedCollectionId('');
-      setCalculatedAmount(0);
-      setLateFine(0);
-      setPaymentAmount('');
     }
   }, [occupantType]);
 
@@ -179,19 +175,28 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
 
   async function loadAvailableCollections() {
     if (!selectedFlatId || !selectedBlockId || !adminData?.apartment_id || !occupantType) {
+      console.log('[loadAvailableCollections] Missing required data:', {
+        selectedFlatId, selectedBlockId, apartment_id: adminData?.apartment_id, occupantType
+      });
       setAvailableCollections([]);
       return;
     }
 
+    console.log('[loadAvailableCollections] Loading collections for:', {
+      selectedFlatId, selectedBlockId, apartment_id: adminData.apartment_id, occupantType
+    });
+
     setLoadingCollections(true);
     try {
       // Get all active collections
-      const { data: allCollections } = await supabase
+      const { data: allCollections, error: collectionsError } = await supabase
         .from('expected_collections')
         .select('*')
         .eq('apartment_id', adminData.apartment_id)
         .eq('is_active', true)
         .order('due_date', { ascending: false });
+
+      console.log('[loadAvailableCollections] Active collections:', allCollections?.length, collectionsError);
 
       if (!allCollections || allCollections.length === 0) {
         setAvailableCollections([]);
@@ -200,13 +205,16 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
 
       // Get existing payment submissions for this flat AND occupant type
       // Include all statuses that indicate payment has been made (Approved, Pending, Received)
-      const { data: existingPayments } = await supabase
+      const { data: existingPayments, error: paymentsError } = await supabase
         .from('payment_submissions')
-        .select('expected_collection_id, occupant_type')
+        .select('expected_collection_id, occupant_type, status')
         .eq('apartment_id', adminData.apartment_id)
         .eq('block_id', selectedBlockId)
         .eq('flat_id', selectedFlatId)
         .in('status', ['Approved', 'Pending', 'Received']);
+
+      console.log('[loadAvailableCollections] Existing payments:', existingPayments?.length, paymentsError);
+      console.log('[loadAvailableCollections] Payment details:', existingPayments);
 
       // Filter by occupant type, handling null values
       const paidCollectionIds = new Set(
@@ -219,11 +227,14 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
           .map(p => p.expected_collection_id) || []
       );
 
+      console.log('[loadAvailableCollections] Paid collection IDs:', Array.from(paidCollectionIds));
+
       // Filter out collections that already have submissions
       const available = allCollections.filter(
         col => !paidCollectionIds.has(col.id)
       );
 
+      console.log('[loadAvailableCollections] Available collections:', available.length, available.map(c => c.collection_name));
       setAvailableCollections(available);
     } catch (error) {
       console.error('Error loading available collections:', error);
@@ -299,6 +310,9 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
       setWhatsappOptin(true);
     } finally {
       setLoadingOccupant(false);
+      // CRITICAL: Load available collections after occupant details are loaded
+      // This ensures collections are loaded even if occupantType doesn't change from default
+      loadAvailableCollections();
     }
   }
 
@@ -362,8 +376,15 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   function handleNextStep() {
     if (validateStep(currentStep)) {
       if (currentStep < 4) {
-        setCurrentStep(currentStep + 1);
+        const nextStep = currentStep + 1;
+        setCurrentStep(nextStep);
         setError('');
+
+        // When moving to step 3, ensure collections are loaded
+        if (nextStep === 3) {
+          console.log('[handleNextStep] Moving to step 3, loading collections');
+          loadAvailableCollections();
+        }
       } else {
         setShowConfirmation(true);
       }
