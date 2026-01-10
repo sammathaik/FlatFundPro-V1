@@ -75,6 +75,8 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
 
   // Step 3: Collection & Amount
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [availableCollections, setAvailableCollections] = useState<Collection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
   const [selectedCollectionId, setSelectedCollectionId] = useState('');
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0);
   const [lateFine, setLateFine] = useState<number>(0);
@@ -113,6 +115,14 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   useEffect(() => {
     if (selectedFlatId && selectedBlockId && adminData?.apartment_id) {
       loadOccupantDetails();
+      loadAvailableCollections();
+      // Reset collection selection when flat changes
+      setSelectedCollectionId('');
+      setCalculatedAmount(0);
+      setLateFine(0);
+      setPaymentAmount('');
+    } else {
+      setAvailableCollections([]);
     }
   }, [selectedFlatId, selectedBlockId]);
 
@@ -151,6 +161,54 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
       .order('due_date', { ascending: false });
 
     if (data) setCollections(data);
+  }
+
+  async function loadAvailableCollections() {
+    if (!selectedFlatId || !selectedBlockId || !adminData?.apartment_id) {
+      setAvailableCollections([]);
+      return;
+    }
+
+    setLoadingCollections(true);
+    try {
+      // Get all active collections
+      const { data: allCollections } = await supabase
+        .from('expected_collections')
+        .select('*')
+        .eq('apartment_id', adminData.apartment_id)
+        .eq('is_active', true)
+        .order('due_date', { ascending: false });
+
+      if (!allCollections || allCollections.length === 0) {
+        setAvailableCollections([]);
+        return;
+      }
+
+      // Get existing payment submissions for this flat
+      const { data: existingPayments } = await supabase
+        .from('payment_submissions')
+        .select('collection_id')
+        .eq('apartment_id', adminData.apartment_id)
+        .eq('block_id', selectedBlockId)
+        .eq('flat_id', selectedFlatId)
+        .in('status', ['Approved', 'Pending']);
+
+      const paidCollectionIds = new Set(
+        existingPayments?.map(p => p.collection_id) || []
+      );
+
+      // Filter out collections that already have submissions
+      const available = allCollections.filter(
+        col => !paidCollectionIds.has(col.id)
+      );
+
+      setAvailableCollections(available);
+    } catch (error) {
+      console.error('Error loading available collections:', error);
+      setAvailableCollections([]);
+    } finally {
+      setLoadingCollections(false);
+    }
   }
 
   async function loadOccupantDetails() {
@@ -204,7 +262,7 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   }
 
   function calculateExpectedAmount() {
-    const collection = collections.find(c => c.id === selectedCollectionId);
+    const collection = availableCollections.find(c => c.id === selectedCollectionId);
     if (!collection) return;
 
     const expected = collection.amount_per_flat || 0;
@@ -213,16 +271,16 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
     const dueDate = new Date(collection.due_date);
     const payDate = new Date(paymentDate);
 
+    let calculatedFine = 0;
     if (payDate > dueDate) {
       const daysLate = Math.floor((payDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const fine = daysLate * (collection.late_fine_per_day || 0);
-      setLateFine(fine);
-    } else {
-      setLateFine(0);
+      calculatedFine = daysLate * (collection.late_fine_per_day || 0);
     }
+    setLateFine(calculatedFine);
 
+    // Auto-fill payment amount with expected + fine (only if not already set)
     if (!paymentAmount) {
-      setPaymentAmount(String(expected + lateFine));
+      setPaymentAmount(String(expected + calculatedFine));
     }
   }
 
@@ -567,28 +625,52 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
           {/* Step 3: Collection & Amount */}
           {currentStep === 3 && (
             <div className="max-w-2xl mx-auto space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Collection *
-                </label>
-                <select
-                  value={selectedCollectionId}
-                  onChange={(e) => setSelectedCollectionId(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    validationErrors.collection ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">-- Select Collection Type --</option>
-                  {collections.map(col => (
-                    <option key={col.id} value={col.id}>
-                      {col.collection_name} - Due: {new Date(col.due_date).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.collection && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.collection}</p>
-                )}
-              </div>
+              {loadingCollections ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-sm text-gray-600 mt-2">Loading available collections...</p>
+                </div>
+              ) : availableCollections.length === 0 ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">All Payments Up to Date!</h3>
+                  <p className="text-sm text-green-700">
+                    This flat has no pending collections. All active collections have been paid.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                    <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-900">
+                      <p>Showing {availableCollections.length} pending collection{availableCollections.length !== 1 ? 's' : ''} for this flat.</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Collection *
+                    </label>
+                    <select
+                      value={selectedCollectionId}
+                      onChange={(e) => setSelectedCollectionId(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        validationErrors.collection ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">-- Select Collection Type --</option>
+                      {availableCollections.map(col => (
+                        <option key={col.id} value={col.id}>
+                          {col.collection_name} - Due: {new Date(col.due_date).toLocaleDateString()}
+                        </option>
+                      ))}
+                    </select>
+                    {validationErrors.collection && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.collection}</p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {selectedCollectionId && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
@@ -746,7 +828,7 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
 
           <button
             onClick={handleNextStep}
-            disabled={loading}
+            disabled={loading || (currentStep === 3 && availableCollections.length === 0)}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {currentStep === 4 ? 'Review' : 'Next'}
