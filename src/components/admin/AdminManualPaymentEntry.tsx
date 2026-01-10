@@ -115,7 +115,6 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   useEffect(() => {
     if (selectedFlatId && selectedBlockId && adminData?.apartment_id) {
       loadOccupantDetails();
-      loadAvailableCollections();
       // Reset collection selection when flat changes
       setSelectedCollectionId('');
       setCalculatedAmount(0);
@@ -126,9 +125,24 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
     }
   }, [selectedFlatId, selectedBlockId]);
 
+  // Reload collections when occupant type changes
+  useEffect(() => {
+    if (selectedFlatId && selectedBlockId && adminData?.apartment_id && occupantType) {
+      loadAvailableCollections();
+      // Reset collection selection when occupant type changes
+      setSelectedCollectionId('');
+      setCalculatedAmount(0);
+      setLateFine(0);
+      setPaymentAmount('');
+    }
+  }, [occupantType]);
+
   useEffect(() => {
     if (selectedCollectionId) {
       calculateExpectedAmount();
+    } else {
+      setCalculatedAmount(0);
+      setLateFine(0);
     }
   }, [selectedCollectionId, paymentDate]);
 
@@ -164,7 +178,7 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   }
 
   async function loadAvailableCollections() {
-    if (!selectedFlatId || !selectedBlockId || !adminData?.apartment_id) {
+    if (!selectedFlatId || !selectedBlockId || !adminData?.apartment_id || !occupantType) {
       setAvailableCollections([]);
       return;
     }
@@ -184,13 +198,14 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
         return;
       }
 
-      // Get existing payment submissions for this flat
+      // Get existing payment submissions for this flat AND occupant type
       const { data: existingPayments } = await supabase
         .from('payment_submissions')
         .select('collection_id')
         .eq('apartment_id', adminData.apartment_id)
         .eq('block_id', selectedBlockId)
         .eq('flat_id', selectedFlatId)
+        .eq('occupant_type', occupantType)
         .in('status', ['Approved', 'Pending']);
 
       const paidCollectionIds = new Set(
@@ -214,14 +229,28 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
   async function loadOccupantDetails() {
     setLoadingOccupant(true);
     try {
-      // First, check flat_email_mappings table
-      const { data: mappingData } = await supabase
+      // First, check flat_email_mappings table for Owner
+      const { data: ownerData } = await supabase
         .from('flat_email_mappings')
-        .select('name, email, mobile, occupant_type, whatsapp_optin')
+        .select('name, email, mobile, occupant_type, whatsapp_opt_in')
         .eq('apartment_id', adminData!.apartment_id)
         .eq('block_id', selectedBlockId)
         .eq('flat_id', selectedFlatId)
+        .eq('occupant_type', 'Owner')
         .maybeSingle();
+
+      // Also check for Tenant
+      const { data: tenantData } = await supabase
+        .from('flat_email_mappings')
+        .select('name, email, mobile, occupant_type, whatsapp_opt_in')
+        .eq('apartment_id', adminData!.apartment_id)
+        .eq('block_id', selectedBlockId)
+        .eq('flat_id', selectedFlatId)
+        .eq('occupant_type', 'Tenant')
+        .maybeSingle();
+
+      // Prefer Owner data if available, otherwise use Tenant data
+      const mappingData = ownerData || tenantData;
 
       if (mappingData) {
         // Found in mappings table - use this data
@@ -229,7 +258,8 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
         setEmail(mappingData.email || '');
         setMobile(mappingData.mobile || '');
         setOccupantType(mappingData.occupant_type || 'Owner');
-        setWhatsappOptin(mappingData.whatsapp_optin || false);
+        // Use stored opt-in preference, default to true if not set
+        setWhatsappOptin(mappingData.whatsapp_opt_in !== null ? mappingData.whatsapp_opt_in : true);
       } else {
         // Not in mappings table - check payment_submissions for existing records
         const { data: paymentData } = await supabase
@@ -248,14 +278,18 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
           setEmail(paymentData.email || '');
           setMobile(paymentData.contact_number || '');
           setOccupantType(paymentData.occupant_type || 'Owner');
-          // Don't set whatsapp_optin since it's not in payment_submissions
-          setWhatsappOptin(false);
+          // Default to checked for users without stored preference
+          setWhatsappOptin(true);
+        } else {
+          // New occupant - default to checked
+          setWhatsappOptin(true);
         }
-        // If no data found in either table, fields remain empty (new occupant)
       }
     } catch (error) {
       console.error('Error loading occupant details:', error);
       // Silent fail - user can enter details manually
+      // Default to checked for new users
+      setWhatsappOptin(true);
     } finally {
       setLoadingOccupant(false);
     }
@@ -565,6 +599,9 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
                     Tenant
                   </label>
                 </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Collections will be filtered based on the selected occupant type
+                </p>
               </div>
 
               <div>
