@@ -85,7 +85,8 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
   useEffect(() => {
     loadData();
-  }, [occupant, selectedFlatId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFlatId]);
 
   useEffect(() => {
     if (flatMobile) {
@@ -156,12 +157,6 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         setFlatEmail(flatMapping.email || occupant.email);
         setFlatMobile(flatMapping.mobile || occupant.mobile);
         setFlatOccupantName(flatMapping.name || null);
-
-        // Update occupant object with flat-specific data
-        occupant.email = flatMapping.email || occupant.email;
-        occupant.mobile = flatMapping.mobile || occupant.mobile;
-        occupant.name = flatMapping.name || null;
-        occupant.occupant_type = flatMapping.occupant_type || occupant.occupant_type;
       }
 
       // Load apartment info for selected flat from occupant's flat list
