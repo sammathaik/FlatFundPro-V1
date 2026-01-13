@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  publicDir: 'public',
+  build: {
+    copyPublicDir: false,
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
@@ -14,6 +18,7 @@ export default defineConfig({
     watch: {
       usePolling: false,
       interval: 1000,
+      ignored: ['**/public/AppLogo-FlatFund Pro.jpg'],
     },
   },
   preview: {
