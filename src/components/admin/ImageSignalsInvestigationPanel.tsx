@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle, Info, Eye, Camera, FileImage, Hash, HelpCircle, ExternalLink, Building2, Home, Calendar, IndianRupee, FileCheck } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, Eye, Camera, FileImage, Hash, HelpCircle, ExternalLink, Building2, Home, Calendar, IndianRupee, FileCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface ImageSignal {
@@ -54,6 +54,7 @@ export default function ImageSignalsInvestigationPanel({
   const [expanded, setExpanded] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [metadataExpanded, setMetadataExpanded] = useState(false);
 
   useEffect(() => {
     loadImageSignals();
@@ -431,42 +432,184 @@ export default function ImageSignalsInvestigationPanel({
                   Lightweight EXIF metadata analysis (informational only - absence is NOT fraud)
                 </p>
 
-                <div className={`border rounded p-3 space-y-2 ${
+                <div className={`border rounded p-3 space-y-3 ${
                   signals.exif_editor_detected
                     ? 'bg-yellow-50 border-yellow-200'
                     : 'bg-blue-50 border-blue-200'
                 }`}>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="font-medium text-gray-700">EXIF Available:</span>
-                      <span className={`ml-2 ${signals.exif_available ? 'text-green-700' : 'text-gray-500'}`}>
+                  {/* Quick Summary */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-700">EXIF Available:</span>
+                      <span className={`text-xs font-semibold ${signals.exif_available ? 'text-green-700' : 'text-gray-500'}`}>
                         {signals.exif_available ? 'Yes' : 'No (common for screenshots)'}
                       </span>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Source Type:</span>
-                      <span className="ml-2 text-gray-900 capitalize">{signals.exif_source_type || 'Unknown'}</span>
-                    </div>
-                    {signals.exif_creation_date && (
-                      <div className="col-span-2">
-                        <span className="font-medium text-gray-700">Created:</span>
-                        <span className="ml-2 text-gray-900">
-                          {new Date(signals.exif_creation_date).toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {signals.exif_editor_detected && (
-                      <div className="col-span-2">
-                        <span className="font-medium text-yellow-700">Editor Detected:</span>
-                        <span className="ml-2 text-yellow-900">{signals.exif_editor_detected}</span>
-                      </div>
+                    {signals.exif_available && (
+                      <button
+                        onClick={() => setMetadataExpanded(!metadataExpanded)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 rounded transition-colors"
+                      >
+                        {metadataExpanded ? (
+                          <>
+                            <ChevronUp className="w-3 h-3" />
+                            Hide Details
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3" />
+                            Show Details
+                          </>
+                        )}
+                      </button>
                     )}
                   </div>
 
-                  {signals.metadata_notes && (
-                    <p className="text-xs text-gray-700 pt-2 border-t border-gray-300 italic">
-                      {signals.metadata_notes}
-                    </p>
+                  {/* Expanded Metadata Details (only when EXIF available) */}
+                  {signals.exif_available && metadataExpanded && (
+                    <div className="border-t border-blue-200 pt-3 space-y-3">
+                      {/* Header */}
+                      <div className="bg-blue-600 -mx-3 -mt-3 px-3 py-2 mb-3">
+                        <h5 className="text-xs font-bold text-white">Detected Image Metadata (EXIF)</h5>
+                      </div>
+
+                      {/* Metadata Fields - Only show fields that have values */}
+                      <div className="space-y-2">
+                        {/* Creation Date & Time */}
+                        {signals.exif_creation_date && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Created on:</span>
+                              <span className="ml-2 text-gray-900">
+                                {new Date(signals.exif_creation_date).toLocaleString('en-IN', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Source Type */}
+                        {signals.exif_source_type && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <Camera className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Source:</span>
+                              <span className="ml-2 text-gray-900 capitalize">
+                                {signals.exif_source_type}
+                                {signals.exif_source_type === 'screenshot' && ' 📱'}
+                                {signals.exif_source_type === 'camera' && ' 📷'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Resolution */}
+                        {signals.resolution_width && signals.resolution_height && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <FileImage className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Resolution:</span>
+                              <span className="ml-2 text-gray-900">
+                                {signals.resolution_width} × {signals.resolution_height} pixels
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Orientation (derived from aspect ratio) */}
+                        {signals.aspect_ratio && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Orientation:</span>
+                              <span className="ml-2 text-gray-900">
+                                {signals.resolution_height && signals.resolution_width && signals.resolution_height > signals.resolution_width
+                                  ? 'Portrait 📱'
+                                  : 'Landscape 🖼️'
+                                } ({signals.aspect_ratio})
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Software/Editor Detected */}
+                        {signals.exif_editor_detected && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-yellow-700">Software Used:</span>
+                              <span className="ml-2 text-yellow-900">{signals.exif_editor_detected}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Metadata Stripped */}
+                        {signals.exif_metadata_stripped !== null && (
+                          <div className="flex items-start gap-2 text-xs">
+                            <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Metadata Status:</span>
+                              <span className="ml-2 text-gray-900">
+                                {signals.exif_metadata_stripped ? 'Partially stripped or modified' : 'Complete'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Additional Notes */}
+                        {signals.metadata_notes && (
+                          <div className="flex items-start gap-2 text-xs pt-2 border-t border-blue-200">
+                            <Info className="w-4 h-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold text-gray-700">Notes:</span>
+                              <p className="text-gray-700 italic mt-1">{signals.metadata_notes}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Admin Help Text */}
+                      <div className="mt-3 pt-3 border-t border-blue-200 bg-blue-100 -mx-3 px-3 py-2 rounded-b">
+                        <div className="flex items-start gap-2">
+                          <HelpCircle className="w-4 h-4 text-blue-700 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-blue-900 space-y-1">
+                            <p className="font-semibold">Understanding EXIF Metadata</p>
+                            <ul className="list-disc ml-4 space-y-0.5">
+                              <li>EXIF metadata is technical information embedded in some images by cameras and apps</li>
+                              <li>Many apps automatically remove or modify this data for privacy reasons</li>
+                              <li><strong>Presence or absence of EXIF data does NOT confirm fraud</strong></li>
+                              <li>This information is provided only to assist manual review</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show basic info when EXIF not available */}
+                  {!signals.exif_available && (
+                    <div className="text-xs text-gray-600 space-y-2">
+                      <p>
+                        <span className="font-medium">Source Type:</span>{' '}
+                        <span className="capitalize">{signals.exif_source_type || 'Unknown'}</span>
+                      </p>
+                      {signals.metadata_notes && (
+                        <p className="italic text-gray-700 pt-2 border-t border-gray-300">
+                          {signals.metadata_notes}
+                        </p>
+                      )}
+                      <div className="pt-2 border-t border-gray-300 bg-gray-100 -mx-3 px-3 py-2 rounded-b">
+                        <p className="text-xs text-gray-700">
+                          ℹ️ No EXIF metadata found. This is <strong>completely normal</strong> for screenshots and many mobile uploads. Apps often strip metadata for privacy.
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
