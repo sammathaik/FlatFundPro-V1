@@ -366,20 +366,43 @@ export class ImageSignalsService {
 
       if (signalsError) throw signalsError;
 
-      const { error: hashError } = await supabase
+      const { data: existingHash } = await supabase
         .from('image_perceptual_hash_index')
-        .upsert({
-          payment_submission_id: paymentSubmissionId,
-          perceptual_hash: analysis.perceptualHash,
-          hash_algorithm: 'dhash',
-          image_url: imageUrl
-        }, {
-          onConflict: 'perceptual_hash,payment_submission_id',
-          ignoreDuplicates: false
-        });
+        .select('perceptual_hash, upload_count')
+        .eq('perceptual_hash', analysis.perceptualHash)
+        .maybeSingle();
 
-      if (hashError) {
-        console.warn('Hash index storage warning:', hashError);
+      if (existingHash) {
+        await supabase
+          .from('image_perceptual_hash_index')
+          .update({
+            upload_count: existingHash.upload_count + 1,
+            last_updated_at: new Date().toISOString()
+          })
+          .eq('perceptual_hash', analysis.perceptualHash);
+
+        await supabase
+          .from('payment_image_signals')
+          .update({
+            duplicate_detected: true,
+            similarity_percentage: 100,
+            similarity_explanation: 'Duplicate detected after hash index update'
+          })
+          .eq('payment_submission_id', paymentSubmissionId);
+      } else {
+        const { error: hashError } = await supabase
+          .from('image_perceptual_hash_index')
+          .insert({
+            perceptual_hash: analysis.perceptualHash,
+            hash_algorithm: 'dhash',
+            first_payment_id: paymentSubmissionId,
+            first_uploaded_at: new Date().toISOString(),
+            upload_count: 1
+          });
+
+        if (hashError) {
+          console.warn('Hash index storage warning:', hashError);
+        }
       }
     } catch (error) {
       console.error('Error storing image signals:', error);
