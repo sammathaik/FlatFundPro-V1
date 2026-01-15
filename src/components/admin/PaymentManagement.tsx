@@ -125,6 +125,22 @@ export default function PaymentManagement() {
     filterPayments();
   }, [payments, searchTerm, statusFilter, quarterFilter, paymentTypeFilter, fraudFilter]);
 
+  useEffect(() => {
+    const handleOpenPaymentReview = (event: CustomEvent) => {
+      const { paymentId } = event.detail;
+      if (paymentId) {
+        setReviewingPaymentId(paymentId);
+        setShowReviewPanel(true);
+      }
+    };
+
+    window.addEventListener('openPaymentReview', handleOpenPaymentReview as EventListener);
+
+    return () => {
+      window.removeEventListener('openPaymentReview', handleOpenPaymentReview as EventListener);
+    };
+  }, []);
+
   async function loadPayments() {
     if (!adminData?.apartment_id) return;
 
