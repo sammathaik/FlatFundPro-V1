@@ -767,43 +767,43 @@ export default function DynamicPaymentForm() {
         throw new Error('Please select a collection type before submitting. This payment cannot be processed without specifying what it is for.');
       }
 
-      const submissionData: PaymentSubmission = {
-        apartment_id: formData.apartmentId,
-        name: formData.name.trim(),
-        block_id: formData.blockId,
-        flat_id: formData.flatId,
-        email: formData.email.trim(),
-        contact_number: formData.contact_number.trim() || undefined,
-        payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : undefined,
-        // Ensure payment_date is saved if provided (even if empty string, convert to undefined)
-        payment_date: formData.payment_date && formData.payment_date.trim() ? formData.payment_date.trim() : undefined,
-        payment_type: formData.payment_type,
-        screenshot_url: screenshotUrl,
-        screenshot_filename: formData.screenshot!.name,
-        occupant_type: formData.occupant_type,
-        expected_collection_id: formData.expected_collection_id || selectedCollectionId,
-      };
-      
+      // Use RPC function to bypass RLS issues
+      const paymentDate = formData.payment_date && formData.payment_date.trim() ? formData.payment_date.trim() : null;
+
       // Debug log to verify payment_date is being saved
-      console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
+      console.debug('[PaymentForm] Submitting with payment_date:', paymentDate);
 
       const { data: insertedData, error: dbError } = await supabase
-        .from('payment_submissions')
-        .insert([submissionData])
-        .select('id')
-        .single();
+        .rpc('insert_payment_submission', {
+          p_apartment_id: formData.apartmentId,
+          p_name: formData.name.trim(),
+          p_block_id: formData.blockId,
+          p_flat_id: formData.flatId,
+          p_email: formData.email.trim(),
+          p_screenshot_url: screenshotUrl,
+          p_screenshot_filename: formData.screenshot!.name,
+          p_contact_number: formData.contact_number.trim() || null,
+          p_payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
+          p_payment_date: paymentDate,
+          p_payment_type: formData.payment_type || null,
+          p_occupant_type: formData.occupant_type || null,
+          p_expected_collection_id: formData.expected_collection_id || selectedCollectionId
+        });
 
       if (dbError) {
         console.error('Database error:', dbError);
         throw new Error(`Failed to save submission: ${dbError.message}`);
       }
 
+      // The RPC function returns the UUID directly
+      const paymentId = insertedData as string;
+
       // Run image signals analysis asynchronously (non-blocking)
-      if (insertedData?.id && screenshotUrl && formData.screenshot) {
+      if (paymentId && screenshotUrl && formData.screenshot) {
         const ImageSignalsService = (await import('../lib/imageSignalsService')).ImageSignalsService;
-        ImageSignalsService.analyzeImage(screenshotUrl, formData.screenshot, insertedData.id)
+        ImageSignalsService.analyzeImage(screenshotUrl, formData.screenshot, paymentId)
           .then(analysis => {
-            return ImageSignalsService.storeImageSignals(insertedData.id, screenshotUrl, analysis);
+            return ImageSignalsService.storeImageSignals(paymentId, screenshotUrl, analysis);
           })
           .catch(error => {
             console.warn('Image signals analysis failed (non-blocking):', error);

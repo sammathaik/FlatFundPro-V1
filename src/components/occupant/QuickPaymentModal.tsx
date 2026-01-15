@@ -160,31 +160,32 @@ export default function QuickPaymentModal({
         throw new Error('Could not determine building block');
       }
 
-      const { data: insertedData, error: insertError } = await supabase
-        .from('payment_submissions')
-        .insert({
-          apartment_id: apartmentId,
-          block_id: effectiveBlockId,
-          flat_id: flatId,
-          expected_collection_id: collection.collection_id,
-          name: occupantName || flatEmail,
-          email: flatEmail,
-          contact_number: occupantMobile || null,
-          payment_amount: parseFloat(paymentAmount),
-          payment_date: paymentDate,
-          payment_type: collection.payment_type,
-          payment_source: 'occupant_portal',
-          transaction_reference: transactionRef || null,
-          platform: paymentMode,
-          screenshot_url: screenshotUrl,
-          screenshot_filename: screenshot?.name || 'payment-proof',
-          status: 'Received',
-          comments: `Payment for ${collection.collection_name}${whatsappOptIn ? ' (WhatsApp notifications enabled)' : ''}`
-        })
-        .select('id')
-        .single();
+      // Use RPC function to bypass RLS issues
+      const { data: paymentId, error: insertError } = await supabase
+        .rpc('insert_payment_submission', {
+          p_apartment_id: apartmentId,
+          p_name: occupantName || flatEmail,
+          p_block_id: effectiveBlockId,
+          p_flat_id: flatId,
+          p_email: flatEmail,
+          p_screenshot_url: screenshotUrl,
+          p_screenshot_filename: screenshot?.name || 'payment-proof',
+          p_contact_number: occupantMobile || null,
+          p_payment_amount: parseFloat(paymentAmount),
+          p_payment_date: paymentDate,
+          p_payment_type: collection.payment_type,
+          p_occupant_type: null,
+          p_expected_collection_id: collection.collection_id,
+          p_payment_source: 'occupant_portal',
+          p_transaction_reference: transactionRef || null,
+          p_platform: paymentMode,
+          p_status: 'Received',
+          p_comments: `Payment for ${collection.collection_name}${whatsappOptIn ? ' (WhatsApp notifications enabled)' : ''}`
+        });
 
       if (insertError) throw insertError;
+
+      const insertedData = { id: paymentId };
 
       // Run image signals analysis asynchronously (non-blocking)
       if (insertedData?.id && screenshotUrl && screenshot) {
