@@ -17,6 +17,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import DocumentClassificationBadge from './DocumentClassificationBadge';
+import ImageSignalsInvestigationPanel from './ImageSignalsInvestigationPanel';
 
 interface PaymentReviewPanelProps {
   paymentId: string;
@@ -421,6 +422,14 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
                   <DocumentClassificationBadge paymentSubmissionId={payment.id} />
                 </div>
               )}
+
+              {/* Image-Level Fraud Signals Investigation Panel */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <ImageSignalsInvestigationPanel
+                  paymentSubmissionId={payment.id}
+                  className="mb-4"
+                />
+              </div>
 
               {payment.is_fraud_flagged && (
                 <div className="mt-6 pt-6 border-t border-gray-200">

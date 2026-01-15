@@ -787,13 +787,27 @@ export default function DynamicPaymentForm() {
       // Debug log to verify payment_date is being saved
       console.debug('[PaymentForm] Submitting with payment_date:', submissionData.payment_date);
 
-      const { error: dbError } = await supabase
+      const { data: insertedData, error: dbError } = await supabase
         .from('payment_submissions')
-        .insert([submissionData]);
+        .insert([submissionData])
+        .select('id')
+        .single();
 
       if (dbError) {
         console.error('Database error:', dbError);
         throw new Error(`Failed to save submission: ${dbError.message}`);
+      }
+
+      // Run image signals analysis asynchronously (non-blocking)
+      if (insertedData?.id && screenshotUrl && formData.screenshot) {
+        const ImageSignalsService = (await import('../lib/imageSignalsService')).ImageSignalsService;
+        ImageSignalsService.analyzeImage(screenshotUrl, formData.screenshot, insertedData.id)
+          .then(analysis => {
+            return ImageSignalsService.storeImageSignals(insertedData.id, screenshotUrl, analysis);
+          })
+          .catch(error => {
+            console.warn('Image signals analysis failed (non-blocking):', error);
+          });
       }
 
       setUploadProgress(100);

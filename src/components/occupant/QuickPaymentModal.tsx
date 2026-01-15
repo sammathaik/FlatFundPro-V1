@@ -160,7 +160,7 @@ export default function QuickPaymentModal({
         throw new Error('Could not determine building block');
       }
 
-      const { error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from('payment_submissions')
         .insert({
           apartment_id: apartmentId,
@@ -180,9 +180,23 @@ export default function QuickPaymentModal({
           screenshot_filename: screenshot?.name || 'payment-proof',
           status: 'Received',
           comments: `Payment for ${collection.collection_name}${whatsappOptIn ? ' (WhatsApp notifications enabled)' : ''}`
-        });
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      // Run image signals analysis asynchronously (non-blocking)
+      if (insertedData?.id && screenshotUrl && screenshot) {
+        const ImageSignalsService = (await import('../../lib/imageSignalsService')).ImageSignalsService;
+        ImageSignalsService.analyzeImage(screenshotUrl, screenshot, insertedData.id)
+          .then(analysis => {
+            return ImageSignalsService.storeImageSignals(insertedData.id, screenshotUrl, analysis);
+          })
+          .catch(error => {
+            console.warn('Image signals analysis failed (non-blocking):', error);
+          });
+      }
 
       setSuccess(true);
 

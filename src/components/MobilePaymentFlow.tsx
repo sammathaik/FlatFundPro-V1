@@ -545,6 +545,18 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         created_at: new Date().toISOString()
       };
 
+      // Run image signals analysis asynchronously (non-blocking)
+      if (submitResult.payment_id && publicUrl && screenshot) {
+        const ImageSignalsService = (await import('../lib/imageSignalsService')).ImageSignalsService;
+        ImageSignalsService.analyzeImage(publicUrl, screenshot, submitResult.payment_id)
+          .then(analysis => {
+            return ImageSignalsService.storeImageSignals(submitResult.payment_id, publicUrl, analysis);
+          })
+          .catch(error => {
+            console.warn('Image signals analysis failed (non-blocking):', error);
+          });
+      }
+
       // Update WhatsApp opt-in and send acknowledgment
       try {
         // Update WhatsApp opt-in preference using secure RPC function
