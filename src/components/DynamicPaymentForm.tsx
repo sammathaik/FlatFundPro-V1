@@ -25,6 +25,7 @@ interface FormErrors {
   block?: string;
   flat?: string;
   email?: string;
+  contact_number?: string;
   payment_type?: string;
   screenshot?: string;
   submit?: string;
@@ -101,6 +102,8 @@ export default function DynamicPaymentForm() {
       setFlats([]);
       setActiveCollections([]);
     }
+    // Clear contact number when apartment changes
+    setFormData(prev => ({ ...prev, contact_number: '' }));
   }, [formData.apartmentId]);
 
   useEffect(() => {
@@ -109,6 +112,8 @@ export default function DynamicPaymentForm() {
     } else {
       setFlats([]);
     }
+    // Clear contact number when building/block changes
+    setFormData(prev => ({ ...prev, contact_number: '' }));
   }, [formData.blockId]);
 
   useEffect(() => {
@@ -405,6 +410,12 @@ export default function DynamicPaymentForm() {
 
     if (!formData.occupant_type) {
       newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
+    }
+
+    if (!formData.contact_number.trim()) {
+      newErrors.contact_number = 'Contact number is required';
+    } else if (formData.contact_number.trim().length < 10) {
+      newErrors.contact_number = 'Please enter a valid contact number';
     }
 
     if (!selectedCollectionId) {
@@ -1109,13 +1120,18 @@ export default function DynamicPaymentForm() {
               </div>
 
               <div>
+                <label htmlFor="contact_number" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Contact Number <span className="text-red-500">*</span>
+                </label>
                 <MobileNumberInput
                   value={formData.contact_number}
                   onChange={(value) => setFormData({ ...formData, contact_number: value })}
-                  label="Contact Number"
                   disabled={submissionState === 'loading'}
                   showValidation={false}
                 />
+                {errors.contact_number && (
+                  <p className="mt-1 text-sm text-red-600">{errors.contact_number}</p>
+                )}
               </div>
 
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5">

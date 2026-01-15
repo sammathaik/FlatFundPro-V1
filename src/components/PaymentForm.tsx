@@ -19,6 +19,7 @@ interface FormErrors {
   building_block_phase?: string;
   flat_number?: string;
   email?: string;
+  contact_number?: string;
   screenshot?: string;
   submit?: string;
 }
@@ -65,6 +66,12 @@ export default function PaymentForm() {
       newErrors.email = 'Email address is required';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.contact_number.trim()) {
+      newErrors.contact_number = 'Contact number is required';
+    } else if (formData.contact_number.trim().length < 10) {
+      newErrors.contact_number = 'Please enter a valid contact number';
     }
 
     if (!formData.screenshot) {
@@ -348,13 +355,18 @@ export default function PaymentForm() {
               </div>
 
               <div>
+                <label htmlFor="contact_number" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Contact Number <span className="text-red-500">*</span>
+                </label>
                 <MobileNumberInput
                   value={formData.contact_number}
                   onChange={(value) => setFormData({ ...formData, contact_number: value })}
-                  label="Contact Number"
                   disabled={submissionState === 'loading'}
                   showValidation={false}
                 />
+                {errors.contact_number && (
+                  <p className="mt-1 text-sm text-red-600">{errors.contact_number}</p>
+                )}
               </div>
 
               <div>

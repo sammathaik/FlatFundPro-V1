@@ -22,6 +22,7 @@ interface FormErrors {
   building_block_phase?: string;
   flat_number?: string;
   email?: string;
+  contact_number?: string;
   screenshot?: string;
   submit?: string;
   occupant_type?: string;
@@ -108,6 +109,12 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
     if (!formData.occupant_type) {
       newErrors.occupant_type = 'Please select whether you are an Owner or Tenant';
+    }
+
+    if (!formData.contact_number.trim()) {
+      newErrors.contact_number = 'Contact number is required';
+    } else if (formData.contact_number.trim().length < 10) {
+      newErrors.contact_number = 'Please enter a valid contact number';
     }
 
     if (!formData.screenshot) {
@@ -677,13 +684,18 @@ export default function EnhancedPaymentForm({ onSuccess }: EnhancedPaymentFormPr
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
+                  <label htmlFor="contact_number" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
                   <MobileNumberInput
                     value={formData.contact_number}
                     onChange={(value) => setFormData({ ...formData, contact_number: value })}
-                    label="Contact Number"
                     disabled={submissionState === 'loading'}
                     showValidation={false}
                   />
+                  {errors.contact_number && (
+                    <p className="mt-1 text-sm text-red-600">{errors.contact_number}</p>
+                  )}
                 </div>
 
                 <div>
