@@ -47,6 +47,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
     { id: 'whatsapp-audit', label: 'WhatsApp Audit', icon: MessageSquare },
     { id: 'whatsapp-notifications', label: 'WhatsApp Preview', icon: Eye },
     { id: 'analytics', label: 'Executive Summary', icon: TrendingUp },
+    { id: 'settings', label: 'Admin Tools', icon: Settings },
     { id: 'faq', label: 'Help Center', icon: HelpCircle },
   ];
 

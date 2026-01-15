@@ -30,7 +30,13 @@ The Image Signals Backfill Tool processes **existing payment submissions** to po
 
 ### Step 1: Access the Tool
 
-1. Log in as **Admin** or **Super Admin**
+**For Regular Admins:**
+1. Log in as **Admin**
+2. Navigate to **Dashboard** → **Admin Tools** (in the left sidebar)
+3. You'll see the **Image Signals Backfill Tool**
+
+**For Super Admins:**
+1. Log in as **Super Admin**
 2. Navigate to **Dashboard** → **System Settings**
 3. Click the **"Tools"** tab
 4. You'll see the **Image Signals Backfill Tool**

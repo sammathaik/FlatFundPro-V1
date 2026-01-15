@@ -18,6 +18,7 @@ import DiagnosticTest from './DiagnosticTest';
 import { CommunicationAuditDashboard } from './CommunicationAuditDashboard';
 import NotificationsPage from './NotificationsPage';
 import BudgetPlanningDashboard from './BudgetPlanningDashboard';
+import ImageSignalsBackfillTool from './ImageSignalsBackfillTool';
 import { useAuth } from '../../contexts/AuthContext';
 import ChatBot from '../ChatBot';
 
@@ -61,6 +62,15 @@ export default function ApartmentAdminDashboard() {
       {activeTab === 'whatsapp-notifications' && <WhatsAppNotifications />}
       {activeTab === 'diagnostic' && <DiagnosticTest />}
       {activeTab === 'faq' && <FAQManagement />}
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Admin Tools</h2>
+            <p className="text-gray-600">Management and maintenance tools for your apartment</p>
+          </div>
+          <ImageSignalsBackfillTool />
+        </div>
+      )}
 
       {/* Admin Chatbot */}
       <ChatBot userRole="admin" userId={adminData?.user_id} apartmentId={adminData?.apartment_id} />

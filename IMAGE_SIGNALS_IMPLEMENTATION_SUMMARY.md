@@ -116,6 +116,13 @@ Each signal shows:
 
 **Important:** Run this once after deployment!
 
+**For Regular Admins:**
+1. Go to **Dashboard** → **Admin Tools** (left sidebar)
+2. Click **"Start Backfill"**
+3. Watch progress in real-time
+4. Review activity log for any issues
+
+**For Super Admins:**
 1. Go to **Dashboard** → **System Settings**
 2. Click the **"Tools"** tab
 3. Click **"Start Backfill"**

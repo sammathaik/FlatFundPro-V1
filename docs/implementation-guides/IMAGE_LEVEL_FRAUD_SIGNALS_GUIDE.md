@@ -124,7 +124,9 @@ Image signals are automatically analyzed and stored for:
 
 For existing payment submissions in the database, use the **Image Signals Backfill Tool**:
 
-📍 **Location**: Dashboard → System Settings → Tools tab
+📍 **Location**:
+- **Regular Admin**: Dashboard → Admin Tools (left sidebar)
+- **Super Admin**: Dashboard → System Settings → Tools tab
 
 **Purpose**: Processes all historical payment submissions to:
 - Populate the perceptual hash index
