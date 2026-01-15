@@ -129,6 +129,15 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
   const loadData = async () => {
     setLoading(true);
+
+    // CRITICAL: Clear all profile state before loading new data
+    // This prevents showing stale data from previous flat
+    setWhatsappOptIn(false);
+    setFlatEmail('');
+    setFlatMobile('');
+    setFlatOccupantName(null);
+    setPayments([]);
+
     try {
       // Load all flats for this occupant
       if (occupant.all_flats && occupant.all_flats.length > 0) {
@@ -167,14 +176,25 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
         }
       );
 
+      console.log('Profile RPC Result:', {
+        flat_id: selectedFlatId,
+        data: profileData,
+        error: profileError
+      });
+
       if (profileError) {
         console.error('Error loading profile data:', profileError);
+        // Don't fallback - show error or empty state
       } else if (profileData && profileData.length > 0) {
         const flatMapping = profileData[0];
+        // Use ONLY the data from this specific flat - NO FALLBACKS
         setWhatsappOptIn(flatMapping.whatsapp_opt_in || false);
-        setFlatEmail(flatMapping.email || occupant.email);
-        setFlatMobile(flatMapping.mobile || occupant.mobile);
+        setFlatEmail(flatMapping.email || '');
+        setFlatMobile(flatMapping.mobile || '');
         setFlatOccupantName(flatMapping.name || null);
+      } else {
+        console.warn('No profile data returned for flat:', selectedFlatId);
+        // Set empty values if no data found - NO FALLBACKS
       }
 
       // Load apartment info for selected flat from occupant's flat list
