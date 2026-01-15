@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, Shield, Coins, Calendar, Bell, AlertTriangle, Check, X } from 'lucide-react';
+import { Settings, Save, RefreshCw, Shield, Coins, Calendar, Bell, AlertTriangle, Check, X, Wrench } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import ImageSignalsBackfillTool from './ImageSignalsBackfillTool';
 
 interface SystemSetting {
   id: string;
@@ -347,6 +348,8 @@ export default function SystemSettings() {
         return Coins;
       case 'notification':
         return Bell;
+      case 'tools':
+        return Wrench;
       default:
         return Shield;
     }
@@ -411,12 +414,27 @@ export default function SystemSettings() {
               </button>
             );
           })}
+          {/* Tools Tab */}
+          <button
+            onClick={() => setActiveTab('tools')}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-colors ${
+              activeTab === 'tools'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            Tools
+          </button>
         </nav>
       </div>
 
       <div className="space-y-4">
-        {groupedSettings[activeTab]?.map((setting) => (
-          <div key={setting.id} className="bg-white border border-gray-200 rounded-lg p-6">
+        {activeTab === 'tools' ? (
+          <ImageSignalsBackfillTool />
+        ) : (
+          groupedSettings[activeTab]?.map((setting) => (
+            <div key={setting.id} className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{setting.setting_key}</h3>
@@ -458,7 +476,8 @@ export default function SystemSettings() {
               </button>
             )}
           </div>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

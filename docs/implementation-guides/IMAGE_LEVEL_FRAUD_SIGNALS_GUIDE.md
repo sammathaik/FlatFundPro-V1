@@ -120,6 +120,25 @@ Image signals are automatically analyzed and stored for:
 
 **Manual admin entries without screenshots** safely bypass image checks.
 
+### Backfilling Existing Data
+
+For existing payment submissions in the database, use the **Image Signals Backfill Tool**:
+
+📍 **Location**: Dashboard → System Settings → Tools tab
+
+**Purpose**: Processes all historical payment submissions to:
+- Populate the perceptual hash index
+- Enable duplicate detection across old and new submissions
+- Provide complete historical analysis
+
+**Features**:
+- ✅ Safe to run multiple times (skips already-processed payments)
+- ✅ Processes in batches to avoid system overload
+- ✅ Real-time progress tracking with activity log
+- ✅ Handles failures gracefully (broken image URLs, etc.)
+
+See [IMAGE_SIGNALS_BACKFILL_GUIDE.md](./IMAGE_SIGNALS_BACKFILL_GUIDE.md) for detailed instructions.
+
 ---
 
 ## Admin Investigation Interface
