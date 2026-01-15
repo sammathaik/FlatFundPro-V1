@@ -110,6 +110,8 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
       setFlats([]);
       setSelectedFlatId('');
     }
+    // Clear contact number when building/block changes
+    setMobile('');
   }, [selectedBlockId]);
 
   useEffect(() => {
@@ -350,6 +352,10 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
       if (!email.trim()) errors.email = 'Email is required';
       else if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) {
         errors.email = 'Please enter a valid email address';
+      }
+      if (!mobile.trim()) errors.mobile = 'Contact number is required';
+      else if (mobile.trim().length < 10) {
+        errors.mobile = 'Please enter a valid contact number';
       }
     }
 
@@ -651,14 +657,17 @@ export default function AdminManualPaymentEntry({ onClose, onSuccess }: AdminMan
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile Number
+                  Mobile Number *
                 </label>
                 <MobileNumberInput
                   value={mobile}
                   onChange={setMobile}
                   placeholder="Mobile number"
-                  className="w-full"
+                  className={`w-full ${validationErrors.mobile ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.mobile && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.mobile}</p>
+                )}
                 <p className="mt-1 text-xs text-gray-500">Required for WhatsApp notifications (if opted in)</p>
               </div>
 
