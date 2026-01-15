@@ -187,8 +187,8 @@ export default function QuickPaymentModal({
 
       const insertedData = { id: paymentId };
 
-      // Run image signals analysis asynchronously (non-blocking)
-      if (insertedData?.id && screenshotUrl && screenshot) {
+      // Run image signals analysis asynchronously (non-blocking) - only for images, not PDFs
+      if (insertedData?.id && screenshotUrl && screenshot && screenshot.type.startsWith('image/')) {
         const ImageSignalsService = (await import('../../lib/imageSignalsService')).ImageSignalsService;
         ImageSignalsService.analyzeImage(screenshotUrl, screenshot, insertedData.id)
           .then(analysis => {

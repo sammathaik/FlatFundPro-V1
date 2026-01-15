@@ -51,6 +51,20 @@ export default function ImageSignalsBackfillTool() {
       // Fetch image as blob
       const imageBlob = await fetchImageAsBlob(payment.screenshot_url);
 
+      // Skip analysis for PDFs - only process images
+      if (imageBlob.type === 'application/pdf') {
+        addLog(`⏭️  Skipped ${payment.flat_id} - PDF files are not analyzed`);
+        setStats(prev => ({ ...prev, skipped: prev.skipped + 1 }));
+        return true;
+      }
+
+      // Skip if not an image type
+      if (!imageBlob.type.startsWith('image/')) {
+        addLog(`⏭️  Skipped ${payment.flat_id} - Not an image file (${imageBlob.type})`);
+        setStats(prev => ({ ...prev, skipped: prev.skipped + 1 }));
+        return true;
+      }
+
       // Analyze image
       const analysis = await ImageSignalsService.analyzeImage(
         payment.screenshot_url,

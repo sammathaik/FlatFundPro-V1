@@ -798,8 +798,8 @@ export default function DynamicPaymentForm() {
       // The RPC function returns the UUID directly
       const paymentId = insertedData as string;
 
-      // Run image signals analysis asynchronously (non-blocking)
-      if (paymentId && screenshotUrl && formData.screenshot) {
+      // Run image signals analysis asynchronously (non-blocking) - only for images, not PDFs
+      if (paymentId && screenshotUrl && formData.screenshot && formData.screenshot.type.startsWith('image/')) {
         const ImageSignalsService = (await import('../lib/imageSignalsService')).ImageSignalsService;
         ImageSignalsService.analyzeImage(screenshotUrl, formData.screenshot, paymentId)
           .then(analysis => {

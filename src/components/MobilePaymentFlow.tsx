@@ -545,8 +545,8 @@ export default function MobilePaymentFlow({ onBack }: MobilePaymentFlowProps) {
         created_at: new Date().toISOString()
       };
 
-      // Run image signals analysis asynchronously (non-blocking)
-      if (submitResult.payment_id && publicUrl && screenshot) {
+      // Run image signals analysis asynchronously (non-blocking) - only for images, not PDFs
+      if (submitResult.payment_id && publicUrl && screenshot && screenshot.type.startsWith('image/')) {
         const ImageSignalsService = (await import('../lib/imageSignalsService')).ImageSignalsService;
         ImageSignalsService.analyzeImage(publicUrl, screenshot, submitResult.payment_id)
           .then(analysis => {
