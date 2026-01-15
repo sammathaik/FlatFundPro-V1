@@ -130,7 +130,7 @@ export default function ImageSignalsInvestigationPanel({
               )
             )
           ),
-          collection:expected_collections!payment_submissions_collection_id_fkey(
+          collection:expected_collection_id(
             collection_name
           )
         `)
