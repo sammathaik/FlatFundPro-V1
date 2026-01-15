@@ -85,19 +85,29 @@ export default function ImageSignalsInvestigationPanel({
 
   async function loadDuplicateMatches(perceptualHash: string) {
     try {
-      const { data: hashMatches, error: hashError } = await supabase
+      const { data: hashMatch, error: hashError } = await supabase
         .from('image_perceptual_hash_index')
-        .select('payment_submission_id')
-        .eq('perceptual_hash', perceptualHash);
+        .select('first_payment_id, upload_count')
+        .eq('perceptual_hash', perceptualHash)
+        .maybeSingle();
 
-      if (hashError || !hashMatches || hashMatches.length === 0) {
+      if (hashError || !hashMatch) {
         console.error('Error loading hash matches:', hashError);
         return;
       }
 
-      const paymentIds = hashMatches
-        .map(m => m.payment_submission_id)
-        .filter(id => id !== paymentSubmissionId);
+      const { data: allPayments, error: allPaymentsError } = await supabase
+        .from('payment_image_signals')
+        .select('payment_submission_id')
+        .eq('perceptual_hash', perceptualHash)
+        .neq('payment_submission_id', paymentSubmissionId);
+
+      if (allPaymentsError || !allPayments || allPayments.length === 0) {
+        console.error('Error loading all payments with hash:', allPaymentsError);
+        return;
+      }
+
+      const paymentIds = allPayments.map(p => p.payment_submission_id);
 
       if (paymentIds.length === 0) return;
 

@@ -419,7 +419,10 @@ export default function PaymentReviewPanel({ paymentId, onClose, onSuccess }: Pa
                     <ImageIcon className="w-4 h-4" />
                     View Payment Screenshot
                   </a>
-                  <DocumentClassificationBadge paymentSubmissionId={payment.id} />
+                  <DocumentClassificationBadge
+                    paymentId={payment.id}
+                    ocrText={payment.other_text}
+                  />
                 </div>
               )}
 
