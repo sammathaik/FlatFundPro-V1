@@ -223,16 +223,26 @@ export default function ImageSignalsInvestigationPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               e.stopPropagation();
               setShowHelp(!showHelp);
             }}
-            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowHelp(!showHelp);
+              }
+            }}
+            className="p-2 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
             title="What do these signals mean?"
+            aria-label="Toggle help information"
           >
             <HelpCircle className="w-4 h-4 text-blue-600" />
-          </button>
+          </div>
           <span className={`text-xs font-medium px-2 py-1 rounded ${hasAnyFlags ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
             {expanded ? 'Collapse' : 'Expand'}
           </span>
