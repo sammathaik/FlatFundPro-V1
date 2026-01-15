@@ -69,8 +69,10 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [apartmentInfo, setApartmentInfo] = useState<ApartmentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [allFlats, setAllFlats] = useState<any[]>([]);
-  const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.flat_id);
+  // Initialize allFlats from occupant data
+  const [allFlats, setAllFlats] = useState<any[]>(occupant.allFlats || occupant.all_flats || []);
+  // Initialize selectedFlatId from occupant data (prefer selectedFlatId from login)
+  const [selectedFlatId, setSelectedFlatId] = useState<string>(occupant.selectedFlatId || occupant.flat_id);
   const [switchingFlat, setSwitchingFlat] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'pending' | 'help'>(initialTab);
   const [whatsappOptIn, setWhatsappOptIn] = useState<boolean>(false);
@@ -82,6 +84,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
   const [flatOccupantName, setFlatOccupantName] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showFlatSelector, setShowFlatSelector] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -93,6 +96,21 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
       loadUnreadCount();
     }
   }, [flatMobile]);
+
+  // Close flat selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showFlatSelector && !target.closest('.flat-selector-container')) {
+        setShowFlatSelector(false);
+      }
+    };
+
+    if (showFlatSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showFlatSelector]);
 
   const loadUnreadCount = async () => {
     try {
@@ -205,6 +223,23 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
 
     setSwitchingFlat(true);
     setSelectedFlatId(flatId);
+    setShowFlatSelector(false);
+
+    // Persist the selection
+    try {
+      const selectedFlat = allFlats.find(f => f.flat_id === flatId);
+      if (selectedFlat) {
+        await supabase.rpc('set_last_selected_flat', {
+          p_mobile: occupant.loginMobile || flatMobile,
+          p_email: occupant.loginEmail || flatEmail,
+          p_flat_id: flatId,
+          p_apartment_id: selectedFlat.apartment_id,
+        });
+      }
+    } catch (error) {
+      console.error('Error persisting flat selection:', error);
+    }
+
     setSwitchingFlat(false);
   };
 
@@ -352,10 +387,65 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
                   Occupant Portal
                   <Home className="w-5 h-5 text-blue-600" />
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600 truncate">
-                  {apartmentInfo?.apartment_name} - {apartmentInfo?.block_name} - Flat{' '}
-                  {apartmentInfo?.flat_number}
-                </p>
+                {allFlats.length > 1 ? (
+                  <div className="relative flat-selector-container">
+                    <button
+                      onClick={() => setShowFlatSelector(!showFlatSelector)}
+                      className="flex items-center gap-2 text-xs sm:text-sm text-blue-700 hover:text-blue-900 font-medium bg-blue-50 px-3 py-1.5 rounded-lg transition-all hover:bg-blue-100"
+                      disabled={switchingFlat}
+                    >
+                      <Building className="w-4 h-4" />
+                      <span className="truncate max-w-[200px]">
+                        {apartmentInfo?.apartment_name} - {apartmentInfo?.block_name} - Flat {apartmentInfo?.flat_number}
+                      </span>
+                      <svg className={`w-4 h-4 transition-transform ${showFlatSelector ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showFlatSelector && (
+                      <div className="absolute top-full left-0 mt-2 w-full min-w-[300px] bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                        <div className="p-2">
+                          <p className="text-xs text-gray-500 px-3 py-2 font-semibold">Switch to:</p>
+                          {allFlats.map((flat) => (
+                            <button
+                              key={flat.flat_id}
+                              onClick={() => handleFlatSwitch(flat.flat_id)}
+                              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${
+                                selectedFlatId === flat.flat_id
+                                  ? 'bg-blue-600 text-white'
+                                  : 'hover:bg-blue-50 text-gray-700'
+                              }`}
+                              disabled={switchingFlat}
+                            >
+                              <div className="flex items-start gap-2">
+                                <Building className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm truncate">
+                                    Flat {flat.flat_number}
+                                  </p>
+                                  <p className="text-xs opacity-90 truncate">
+                                    {flat.apartment_name}
+                                  </p>
+                                  <p className="text-xs opacity-75">
+                                    {flat.block_name} • {flat.occupant_type || 'Occupant'}
+                                  </p>
+                                </div>
+                                {selectedFlatId === flat.flat_id && (
+                                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">
+                    {apartmentInfo?.apartment_name} - {apartmentInfo?.block_name} - Flat{' '}
+                    {apartmentInfo?.flat_number}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
