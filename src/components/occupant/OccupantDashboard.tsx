@@ -398,7 +398,7 @@ export default function OccupantDashboard({ occupant, onLogout }: OccupantDashbo
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <img
-                src="/flat-fund-pro-logo.jpg"
+                src="/flatfundpro-logo.svg"
                 alt="FlatFund Pro"
                 className="h-14 sm:h-16 lg:h-18 object-contain flex-shrink-0 drop-shadow-md"
               />

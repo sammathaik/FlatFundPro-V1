@@ -66,7 +66,7 @@ export default function RequestDemoPage({ onBack }: RequestDemoPageProps) {
             <div className="max-w-4xl mx-auto text-center">
               <div className="flex items-center justify-center mb-6">
                 <img
-                  src="/flat-fund-pro-logo.jpg"
+                  src="/flatfundpro-logo.svg"
                   alt="FlatFund Pro Logo"
                   className="h-20 sm:h-24 w-auto rounded-xl shadow-lg bg-white p-2"
                 />

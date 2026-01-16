@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   publicDir: 'public',
   build: {
-    copyPublicDir: false,
+    copyPublicDir: true,
   },
   server: {
     host: '0.0.0.0',

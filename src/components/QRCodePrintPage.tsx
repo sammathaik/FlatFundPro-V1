@@ -40,7 +40,7 @@ export default function QRCodePrintPage({ onBack }: QRCodePrintPageProps) {
           <div className="bg-white rounded-2xl p-8 shadow-lg print:shadow-none print:border-2 print:border-gray-300 flex flex-col items-center">
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-2">
-                <img src="/flat-fund-pro-logo.jpg" alt="FlatFund Pro" className="h-14 object-contain drop-shadow-md" />
+                <img src="/flatfundpro-logo.svg" alt="FlatFund Pro" className="h-14 object-contain drop-shadow-md" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">FlatFund Pro</h1>
               <p className="text-sm text-blue-600 font-medium">Smart Payment Management</p>
@@ -203,7 +203,7 @@ export default function QRCodePrintPage({ onBack }: QRCodePrintPageProps) {
 
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="mb-4">
-                <img src="/flat-fund-pro-logo.jpg" alt="FlatFund Pro" className="h-18 object-contain mx-auto mb-3 drop-shadow-md" />
+                <img src="/flatfundpro-logo.svg" alt="FlatFund Pro" className="h-18 object-contain mx-auto mb-3 drop-shadow-md" />
                 <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">Simplify Payment</h3>
                 <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">Management</h3>
               </div>
