@@ -133,7 +133,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <img
-                src="/flat-fund-pro-logo.jpg"
+                src="/ffp-logo.jpg"
                 alt="FlatFund Pro"
                 className="h-8 w-auto rounded-lg"
               />
@@ -285,7 +285,7 @@ export default function LearnMorePage({ onNavigate, onRequestDemo }: LearnMorePa
         <div className="relative max-w-5xl mx-auto text-center">
           <div className="flex items-center justify-center mb-6">
             <img
-              src="/flat-fund-pro-logo.jpg"
+              src="/ffp-logo.jpg"
               alt="FlatFund Pro Logo"
               className="h-16 sm:h-20 w-auto rounded-xl shadow-lg bg-white p-2"
             />

@@ -72,7 +72,7 @@ export default function DemoRequestModal({ isOpen, onClose, onNavigateToFullPage
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1">
             <img
-              src="/flat-fund-pro-logo.jpg"
+              src="/ffp-logo.jpg"
               alt="FlatFund Pro Logo"
               className="h-12 sm:h-14 w-auto rounded-lg shadow-md bg-white p-1.5 flex-shrink-0"
             />

@@ -12,7 +12,7 @@ export default function AdminLandingPage({ onLogin, onBackToPublic }: AdminLandi
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img
-              src="/flat-fund-pro-logo.jpg"
+              src="/ffp-logo.jpg"
               alt="FlatFund Pro"
               className="h-24 sm:h-28 w-auto object-contain mb-6 drop-shadow-lg"
             />
