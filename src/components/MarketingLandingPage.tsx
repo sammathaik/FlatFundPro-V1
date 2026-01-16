@@ -128,7 +128,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <img src="/flatfunprologo copy.jpg" alt="FlatFund Pro" className="h-16 sm:h-18 object-contain drop-shadow-md" />
+              <img src="/flatfundpro-logo.svg" alt="FlatFund Pro" className="h-16 sm:h-18 object-contain drop-shadow-md" />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">FlatFund Pro</h1>
                 <p className="text-xs text-blue-600 font-medium">Smart Society Management</p>
@@ -985,7 +985,7 @@ export default function MarketingLandingPage({ navigate }: MarketingLandingPageP
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <img src="/flatfunprologo copy.jpg" alt="FlatFund Pro" className="h-12 object-contain drop-shadow-md" />
+                <img src="/flatfundpro-logo.svg" alt="FlatFund Pro" className="h-12 object-contain drop-shadow-md" />
                 <div>
                   <h3 className="text-xl font-bold">FlatFund Pro</h3>
                   <p className="text-xs text-gray-400">Smart Payment Management</p>

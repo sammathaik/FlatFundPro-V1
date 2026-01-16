@@ -74,7 +74,7 @@ export default function DashboardLayout({ children, activeTab, onTabChange, isSu
 
               {/* Logo - Subtle Brand Presence */}
               <img
-                src="/flatfunprologo copy.jpg"
+                src="/flatfundpro-logo.svg"
                 alt="FlatFund Pro"
                 className="h-10 sm:h-11 object-contain flex-shrink-0"
               />

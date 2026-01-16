@@ -32,7 +32,7 @@ export default function Header({ onLogoClick, onLoginClick, onDemoClick, onLearn
             className="flex items-center gap-3 hover:opacity-90 transition-all transform hover:scale-105 flex-shrink-0"
           >
             <img
-              src="/flatfunprologo copy.jpg"
+              src="/flatfundpro-logo.svg"
               alt="FlatFund Pro"
               className="h-16 sm:h-20 w-auto object-contain drop-shadow-md"
             />
