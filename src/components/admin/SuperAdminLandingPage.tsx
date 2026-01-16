@@ -12,7 +12,7 @@ export default function SuperAdminLandingPage({ onLogin, onBackToPublic }: Super
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img
-              src="/flatfundpro-logo.svg"
+              src="/flatfunprologo copy.jpg"
               alt="FlatFund Pro"
               className="h-24 sm:h-28 w-auto object-contain mb-6 drop-shadow-2xl"
             />
